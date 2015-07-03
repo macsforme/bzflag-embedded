@@ -34,7 +34,9 @@
 
 // Local implementation headers
 #include "ImageFont.h"
+#ifndef HAVE_GLES
 #include "BitmapFont.h"
+#endif // !HAVE_GLES
 #include "TextureFont.h"
 
 // initialize the singleton
@@ -141,7 +143,11 @@ void FontManager::loadAll(std::string directory)
   if (directory.size() == 0)
     return;
 
+#ifdef HAVE_GLES
+  const bool bitmapRenderer = false;
+#else
   const bool bitmapRenderer = BZDB.isTrue("useBitmapFontRenderer");
+#endif // HAVE_GLES
   canScale = !bitmapRenderer;
 
   // save this in case we have to rebuild
@@ -156,9 +162,11 @@ void FontManager::loadAll(std::string directory)
 
     if (TextUtils::compare_nocase(ext, "fmt") == 0) {
       ImageFont *pFont;
+#ifndef HAVE_GLES
       if (bitmapRenderer)
 	pFont = new BitmapFont;
       else
+#endif // !HAVE_GLES
 	pFont = new TextureFont;
       if (pFont) {
 	if (pFont->load(file)) {
