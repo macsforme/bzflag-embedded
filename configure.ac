@@ -123,6 +123,7 @@ AC_ARG_WITH(gles,  [  --with-gles		  use OpenGL ES])
 if test x$with_gles = xyes ; then
     AC_DEFINE(HAVE_GLES, 1, [Using OpenGL ES])
 fi
+AM_CONDITIONAL(GLES, test x$with_gles = xyes)
 
 # OpenGL ES requires SDL 2
 if test x$with_gles = xyes ; then
