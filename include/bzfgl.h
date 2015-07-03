@@ -17,17 +17,27 @@
 
 #include "common.h"
 
-#ifdef __APPLE__
-#  include <OpenGL/OpenGL.h>
-#  include <OpenGL/gl.h>
-#  include <OpenGL/glu.h>
+#ifdef HAVE_GLES
+#  include <GLES/gl.h>
 #else
-#  include <GL/gl.h>
-#  include <GL/glu.h>
+#  ifdef __APPLE__
+#    include <OpenGL/OpenGL.h>
+#    include <OpenGL/gl.h>
+#    include <OpenGL/glu.h>
+#  else
+#    include <GL/gl.h>
+#    include <GL/glu.h>
+#  endif
 #endif
 
-#ifndef GL_VERSION_1_1
-# error OpenGL version 1.1 functionality is required
+#ifdef HAVE_GLES
+#  ifndef GL_VERSION_ES_CM_1_1
+#    error OpenGL ES version 1.1 common profile functionality is required
+#  endif
+#else
+#  ifndef GL_VERSION_1_1
+#    error OpenGL version 1.1 functionality is required
+#  endif
 #endif
 
 // Windows, at least, needs to have GL_TEXTURE_MAX_ANISOTROPY_EXT defined.
