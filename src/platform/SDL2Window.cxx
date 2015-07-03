@@ -16,6 +16,7 @@
 // Common includes
 #include "OpenGLGState.h"
 #include "TimeKeeper.h"
+#include "config.h"
 
 SDLWindow::SDLWindow(const SDLDisplay* _display, SDLVisual*)
   : BzfWindow(_display), hasGamma(true), windowId(NULL), glContext(NULL),
@@ -155,6 +156,12 @@ bool SDLWindow::create(void) {
   const Uint32 flags = SDL_WINDOW_OPENGL |
       (fullScreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE) |
       (windowWasGrabbed ? SDL_WINDOW_INPUT_GRABBED : 0);
+
+#ifdef HAVE_GLES
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#endif
 
   windowId = SDL_CreateWindow(
       title.c_str(),
