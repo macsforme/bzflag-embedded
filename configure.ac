@@ -118,6 +118,17 @@ if test "x$with_SDL" != xno; then
     AC_ARG_WITH(SDL2, [  --with-SDL2		  use Simple DirectMedia Layer version 2 (experimental)])
 fi
 
+# check for OpenGL ES option
+AC_ARG_WITH(gles,  [  --with-gles		  use OpenGL ES])
+if test x$with_gles = xyes ; then
+    AC_DEFINE(HAVE_GLES, 1, [Using OpenGL ES])
+fi
+
+# OpenGL ES requires SDL 2
+if test x$with_gles = xyes ; then
+    with_SDL2=yes
+fi
+
 # check whether plugins are desired
 AC_ARG_ENABLE(plugins, AS_HELP_STRING([--disable-plugins],[do not compile plugins]))
 if test "x$enable_plugins" != xno ; then
@@ -435,6 +446,12 @@ if test "x$enable_UPnP" = "xyes"; then
 fi
 AC_SUBST(LIBMINIUPNPC)
 
+AM_CONDITIONAL(BUILD_CPPUTESTS, test "x$ac_cv_header_CppUTest_TestHarness_h" = "xyes")
+
+if test x$with_gles = xyes ; then
+    AC_CHECK_HEADER(GLES/gl.h, [], [AC_MSG_ERROR([OpenGL ES headers were not found... please install OpenGL ES headers or try a standard OpenGL build])])
+fi
+
 dnl **********************************
 dnl *** Check for types/structures ***
 dnl **********************************
@@ -509,104 +526,107 @@ AC_CHECK_TYPES([std::shared_ptr<int>],
 		[[#include <tr1/memory>]])],
 	[#include <memory>])
 
-ac_cv_search_glBegin=no
-ac_cv_search_gluScaleImage=no
-ac_func_search_save_LIBS=$LIBS
+# detect OpenGL or OpenGL ES libraries
+if test x$with_gles = xyes ; then
+    AC_CHECK_LIB(GLESv1_CM, glDrawArrays, GLIBS="-lGLESv1_CM $GLIBS", [AC_MSG_ERROR([no OpenGL ES library was found... please install an OpenGL ES library or try a standard OpenGL build])])
+else
+    ac_cv_search_glBegin=no
+    ac_cv_search_gluScaleImage=no
+    ac_func_search_save_LIBS=$LIBS
 
-dnl check whether the OpenGL framework is available
-AC_MSG_CHECKING([for OpenGL framework (Darwin-specific)])
-FRAMEWORK_OPENGL=""
-PRELIBS="$LIBS"
-LIBS="$LIBS -framework OpenGL"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <OpenGL/gl.h>]], [[glBegin(GL_POINTS)]])],[FRAMEWORK_OPENGL="-framework OpenGL" ; ac_cv_search_glBegin="-framework OpenGL" ; AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
-LIBS="$PRELIBS"
-AC_SUBST(FRAMEWORK_OPENGL)
+    dnl check whether the OpenGL framework is available
+    AC_MSG_CHECKING([for OpenGL framework (Darwin-specific)])
+    FRAMEWORK_OPENGL=""
+    PRELIBS="$LIBS"
+    LIBS="$LIBS -framework OpenGL"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <OpenGL/gl.h>]], [[glBegin(GL_POINTS)]])],[FRAMEWORK_OPENGL="-framework OpenGL" ; ac_cv_search_glBegin="-framework OpenGL" ; AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+    LIBS="$PRELIBS"
+    AC_SUBST(FRAMEWORK_OPENGL)
 
-# don't use X11 flags if we have an OpenGL framework
-if test "x$FRAMEWORK_OPENGL" = "x" ; then
-    AC_PATH_XTRA
-    CONF_CPPFLAGS="$CONF_CPPFLAGS $X_CFLAGS"
-    LDFLAGS="$LDFLAGS $X_LIBS"
-fi
+    # don't use X11 flags if we have an OpenGL framework
+    if test "x$FRAMEWORK_OPENGL" = "x" ; then
+	AC_PATH_XTRA
+	CONF_CPPFLAGS="$CONF_CPPFLAGS $X_CFLAGS"
+	LDFLAGS="$LDFLAGS $X_LIBS"
+    fi
 
-case $host_os in
-    solaris*)
-	if test -d /usr/demo/SOUND/lib ; then
+    case $host_os in
+	solaris*)
+	    if test -d /usr/demo/SOUND/lib ; then
 		GLIBS="-laudio $GLIBS"
 		LDFLAGS="$LDFLAGS -L/usr/demo/SOUND/lib"
-	fi
-	GLIBS="-lresolv $GLIBS"
-	LIBS="$LIBS -lsocket -lnsl -lresolv"
-	LDFLAGS="$LDFLAGS -lresolv"	# for hstrerror()
-	;;
-    irix*)
-	GLIBS="-lXsgivc -lX11 -laudio $GLIBS"
-	;;
-    beos)
-	GLIBS=" -lmedia -lgame $GLIBS"
-	LIBS="-lbe"
-	;;
-    macos|darwin*)
-	;;
-    *)
-	;;
-esac
+	    fi
+	    GLIBS="-lresolv $GLIBS"
+	    LIBS="$LIBS -lsocket -lnsl -lresolv"
+	    LDFLAGS="$LDFLAGS -lresolv"	# for hstrerror()
+	    ;;
+	irix*)
+	    GLIBS="-lXsgivc -lX11 -laudio $GLIBS"
+	    ;;
+	beos)
+	    GLIBS=" -lmedia -lgame $GLIBS"
+	    LIBS="-lbe"
+	    ;;
+	macos|darwin*)
+	    ;;
+	*)
+	    ;;
+    esac
 
+    # avoid using X11 in BeOS and Mac OS X
+    case $host_os in
+	macos|darwin*)
+	    ;;
+	beos*)
+	    ;;
+	*)
+	    CONF_CPPFLAGS="$CONF_CPPFLAGS $X_CFLAGS"
+	    if test x$no_x = x; then
+		GLIBS="$X_PRE_LIBS -lX11 $EXTRA_LIBS $GLIBS"
+	    fi
 
-# avoid using X11 in BeOS and Mac OS X
-case $host_os in
-    macos|darwin*)
-	;;
-    beos*)
-	;;
-    *)
-	CONF_CPPFLAGS="$CONF_CPPFLAGS $X_CFLAGS"
-	if test x$no_x = x; then
-	    GLIBS="$X_PRE_LIBS -lX11 $EXTRA_LIBS $GLIBS"
-	fi
+	    AC_CHECK_LIB(Xext, XextAddDisplay, [GLIBS="-lXext $GLIBS"], [], $GLIBS)
 
-	AC_CHECK_LIB(Xext, XextAddDisplay, [GLIBS="-lXext $GLIBS"], [], $GLIBS)
+	    AC_CHECK_HEADERS(X11/extensions/xf86vmode.h,
+		[AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension,
+		    [ AC_DEFINE(XF86VIDMODE_EXT, 1, [XFree86 Video Mode Extension])
+		    GLIBS="-lXxf86vm $GLIBS"
+		    ],,
+		)],,[#include <X11/Xlib.h>]
+	    )
+	    ;;
+    esac
 
-	AC_CHECK_HEADERS(X11/extensions/xf86vmode.h,
-	    [AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension,
-		[ AC_DEFINE(XF86VIDMODE_EXT, 1, [XFree86 Video Mode Extension])
-		  GLIBS="-lXxf86vm $GLIBS"
-		],,
-	    )],,[#include <X11/Xlib.h>]
-	)
-	;;
-esac
-
-for ac_lib in opengl32 GL GL2; do
-    LIBS="-l$ac_lib $GLIBS $ac_func_search_save_LIBS"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <GL/gl.h>]],
-				    [[glBegin(GL_POINTS)]])],
-		   [ac_cv_search_glBegin="-l$ac_lib"
-		    break],[])
-done
-if test "$ac_cv_search_glBegin" != no; then
-    GLIBS="$ac_cv_search_glBegin $GLIBS"
-    if test "$ac_cv_search_glBegin" = -lGL2; then
-	AC_DEFINE(BEOS_USE_GL2, 1, [Use new GL Kit for BeOS])
-    fi
-
-    LIBS="-framework OpenGL $ac_func_search_save_LIBS"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <OpenGL/glu.h>]],
-		   [[gluScaleImage(GL_RED,0,0,GL_INT,0,0,0,GL_INT,0)]])],
-		    [ac_cv_search_gluScaleImage="-framework OpenGL"],[])
-    for ac_lib in glu32 GL GLU; do
+    for ac_lib in opengl32 GL GL2; do
 	LIBS="-l$ac_lib $GLIBS $ac_func_search_save_LIBS"
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <GL/glu.h>]],
-		       [[gluScaleImage(GL_RED,0,0,GL_INT,0,0,0,GL_INT,0)]])],
-		        [ac_cv_search_gluScaleImage="-l$ac_lib"
-		         break],[])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <GL/gl.h>]],
+		[[glBegin(GL_POINTS)]])],
+		[ac_cv_search_glBegin="-l$ac_lib"
+			break],[])
     done
-    if test "$ac_cv_search_gluScaleImage" != no; then
-	GLIBS="$ac_cv_search_gluScaleImage $GLIBS"
-    fi
-fi
+    if test "$ac_cv_search_glBegin" != no; then
+	GLIBS="$ac_cv_search_glBegin $GLIBS"
+	if test "$ac_cv_search_glBegin" = -lGL2; then
+	    AC_DEFINE(BEOS_USE_GL2, 1, [Use new GL Kit for BeOS])
+	fi
 
-LIBS=$ac_func_search_save_LIBS
+	LIBS="-framework OpenGL $ac_func_search_save_LIBS"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <OpenGL/glu.h>]],
+			[[gluScaleImage(GL_RED,0,0,GL_INT,0,0,0,GL_INT,0)]])],
+			[ac_cv_search_gluScaleImage="-framework OpenGL"],[])
+	for ac_lib in glu32 GL GLU; do
+	    LIBS="-l$ac_lib $GLIBS $ac_func_search_save_LIBS"
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <GL/glu.h>]],
+		    [[gluScaleImage(GL_RED,0,0,GL_INT,0,0,0,GL_INT,0)]])],
+		    [ac_cv_search_gluScaleImage="-l$ac_lib"
+			    break],[])
+	done
+	if test "$ac_cv_search_gluScaleImage" != no; then
+	    GLIBS="$ac_cv_search_gluScaleImage $GLIBS"
+	fi
+    fi
+    LIBS=$ac_func_search_save_LIBS
+fi
 AC_SUBST(GLIBS)
 
 # try out pthreads if it's enabled, disable it if we don't have it
@@ -702,6 +722,9 @@ fi
 AM_CONDITIONAL(HAVE_SDL, test x$with_SDL = xyes)
 AM_CONDITIONAL(HAVE_SDL2, test x$with_SDL2 = xyes)
 
+if test x$with_gles = xyes -a x$with_SDL = xno; then
+    AC_MSG_ERROR([OpenGL ES support depends on SDL 2... please install SDL 2 or try a standard OpenGL build])
+fi
 
 # dumb temp hacks to add missing linkage stuff
 case $host_os in
@@ -1164,7 +1187,11 @@ if test "x$enable_client" = "xno"; then
 else
     if test x$with_SDL != xno; then
 	if test x$with_SDL2 = xyes; then
-	    build_bzflag="yes (with SDL2) (Note: Still experimental!)"
+	    if test x$with_gles = xyes; then
+		build_bzflag="yes (with SDL2 and OpenGL ES)"
+	    else
+		build_bzflag="yes (with SDL2)"
+	    fi
 	else
 	    build_bzflag="yes (with SDL)"
 	fi
