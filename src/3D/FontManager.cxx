@@ -358,7 +358,7 @@ void FontManager::drawString(float x, float y, float z, int faceID, float size,
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawData);
 	glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawData + 4);
-	glDrawArrays(GL_POINTS, 0, 2);
+	glDrawArrays(GL_LINES, 0, 2);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 
