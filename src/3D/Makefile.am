@@ -17,12 +17,6 @@ lib3D_la_SOURCES =		\
 	TextureManager.cxx	\
 	ImageFont.h		\
 	TextureFont.h
-if GLES
-else
-lib3D_la_SOURCES +=		\
-	BitmapFont.cxx		\
-	BitmapFont.h
-endif
 
 EXTRA_DIST = \
 	README
