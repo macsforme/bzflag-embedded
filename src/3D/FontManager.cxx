@@ -333,34 +333,24 @@ void FontManager::drawString(float x, float y, float z, int faceID, float size,
       if (underline) {
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
-	GLfloat* drawColor = NULL;
 	if (bright && underlineColor[0] >= 0) {
-	  drawColor = underlineColor;
+	  glColor4f(underlineColor[0], underlineColor[1], underlineColor[2], underlineColor[3]);
 	} else if (underlineColor[0] >= 0) {
-	  drawColor = dimUnderlineColor;
+	  glColor4f(dimUnderlineColor[0], dimUnderlineColor[1], dimUnderlineColor[2], dimUnderlineColor[3]);
 	} else if (color[0] >= 0) {
-	  drawColor = color;
+	  glColor4f(color[0], color[1], color[2], color[3]);
 	}
-	GLfloat blankColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	if(drawColor == NULL)
-	  drawColor = blankColor;
 	// still have a translated matrix, these coordinates are
 	// with respect to the string just drawn
 	GLfloat drawData[] = {
-	  drawColor[0], drawColor[1], drawColor[2], drawColor[3],
 	  0.0f, 0.0f,
-
-	  drawColor[0], drawColor[1], drawColor[2], drawColor[3],
 	  width, 0.0f
 	};
 
-	glEnableClientState(GL_COLOR_ARRAY);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawData);
-	glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawData + 4);
+	glVertexPointer(2, GL_FLOAT, 0, drawData);
 	glDrawArrays(GL_LINES, 0, 2);
 	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
 
 	glEnable(GL_TEXTURE_2D);
       }
