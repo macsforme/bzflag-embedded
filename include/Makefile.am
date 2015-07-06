@@ -37,6 +37,7 @@ noinst_HEADERS =			\
 	ConfigFileManager.h		\
 	Country.h			\
 	DirectoryNames.h		\
+	DrawArrays.h			\
 	DynamicColor.h			\
 	EighthDBaseSceneNode.h		\
 	EighthDBoxSceneNode.h		\

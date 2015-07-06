@@ -75,44 +75,34 @@ void TextureFont::preLoadLists()
   tm.setTextureFilter(textureID, OpenGLTexture::Nearest);
 
   for (int i = 0; i < numberOfCharacters; i++) {
-    if (listIDs[i] != INVALID_GL_LIST_ID) {
-      glDeleteLists(listIDs[i], 1);
-      listIDs[i] = INVALID_GL_LIST_ID; // make it a habit
+    if (listIDs[i] != INVALID_DRAW_ARRAY_ID) {
+      DrawArrays::deleteArray(listIDs[i]);
+      listIDs[i] = INVALID_DRAW_ARRAY_ID; // make it a habit
     }
-    listIDs[i] = glGenLists(1);
-    glNewList(listIDs[i], GL_COMPILE);
-    {
-      glTranslatef((float)fontMetrics[i].initialDist, 0, 0);
 
-      float fFontY = (float)(fontMetrics[i].endY - fontMetrics[i].startY);
-      float fFontX = (float)(fontMetrics[i].endX - fontMetrics[i].startX);
+    listIDs[i] = DrawArrays::newArray();
+    DrawArrays::beginArray(listIDs[i]);
 
-      glBegin(GL_QUADS);
-	glNormal3f(0.0f, 0.0f, 1.0f);
-	glTexCoord2f((float)fontMetrics[i].startX / (float)textureXSize,
-		     1.0f - (float)fontMetrics[i].startY / (float)textureYSize);
-	glVertex3f(0.0f, fFontY, 0.0f);
+    float fFontY = (float)(fontMetrics[i].endY - fontMetrics[i].startY);
+    float fFontX = (float)(fontMetrics[i].endX - fontMetrics[i].startX);
 
-	glTexCoord2f((float)fontMetrics[i].startX / (float)textureXSize,
-		     1.0f - (float)fontMetrics[i].endY / (float)textureYSize);
-	glVertex3f(0.0f, 0.0f, 0.0f);
+    DrawArrays::addTexCoord((float)fontMetrics[i].startX / (float)textureXSize,
+			    1.0f - (float)fontMetrics[i].startY / (float)textureYSize);
+    DrawArrays::addVertex(0.0f, fFontY, 0.0f);
 
-	glTexCoord2f((float)fontMetrics[i].endX / (float)textureXSize,
-		     1.0f - (float)fontMetrics[i].endY / (float)textureYSize);
-	glVertex3f(fFontX, 0.0f, 0.0f);
+    DrawArrays::addTexCoord((float)fontMetrics[i].startX / (float)textureXSize,
+			    1.0f - (float)fontMetrics[i].endY / (float)textureYSize);
+    DrawArrays::addVertex(0.0f, 0.0f, 0.0f);
 
-	glTexCoord2f((float)fontMetrics[i].endX / (float)textureXSize,
-		     1.0f - (float)fontMetrics[i].startY / (float)textureYSize);
-	glVertex3f(fFontX, fFontY, 0.0f);
-      glEnd();
+    DrawArrays::addTexCoord((float)fontMetrics[i].endX / (float)textureXSize,
+			    1.0f - (float)fontMetrics[i].endY / (float)textureYSize);
+    DrawArrays::addVertex(fFontX, 0.0f, 0.0f);
 
-      // this plus the initial 'initialDist' equal 'fullWidth'
-      float fFontPostX = (float)(fontMetrics[i].charWidth +
-				 fontMetrics[i].whiteSpaceDist);
+    DrawArrays::addTexCoord((float)fontMetrics[i].endX / (float)textureXSize,
+			    1.0f - (float)fontMetrics[i].startY / (float)textureYSize);
+    DrawArrays::addVertex(fFontX, fFontY, 0.0f);
 
-      glTranslatef(fFontPostX, 0.0f, 0.0f);
-    }
-    glEndList();
+    DrawArrays::finishArray();
   }
 
   // create GState
@@ -158,7 +148,7 @@ void TextureFont::drawString(float scale, GLfloat color[4], const char *str,
     return;
 
   if (color[0] >= 0)
-    glColor4fv(color);
+    glColor4f(color[0], color[1], color[2], color[3]);
 
   glPushMatrix();
   glScalef(scale, scale, 1);
@@ -176,10 +166,15 @@ void TextureFont::drawString(float scale, GLfloat color[4], const char *str,
 
     charToUse -= space;
 
-    if (charToUse == 0)
+    if (charToUse == 0) {
       glTranslatef((float)(fontMetrics[charToUse].fullWidth), 0.0f, 0.0f);
-    else
-      glCallList(listIDs[charToUse]);
+    } else {
+      glTranslatef((float)fontMetrics[charToUse].initialDist, 0, 0);
+
+      DrawArrays::draw(listIDs[charToUse], GL_TRIANGLE_FAN);
+
+      glTranslatef((float)(fontMetrics[charToUse].charWidth + fontMetrics[charToUse].whiteSpaceDist), 0, 0);
+    }
   }
   glPopMatrix();
   if (color[0] >= 0)

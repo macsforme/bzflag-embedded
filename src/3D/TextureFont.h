@@ -16,6 +16,7 @@
 #include "bzfgl.h"
 #include "ImageFont.h"
 #include "OpenGLGState.h"
+#include "DrawArrays.h"
 
 class TextureFont : public ImageFont {
 public:
