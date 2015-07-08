@@ -172,10 +172,19 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
 
   if(arrayIDs[index].useColors)
     glEnableClientState(GL_COLOR_ARRAY);
+  else
+    glDisableClientState(GL_COLOR_ARRAY);
+
   if(arrayIDs[index].useTexCoords)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  else
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
   if(arrayIDs[index].useNormals)
     glEnableClientState(GL_NORMAL_ARRAY);
+  else
+    glDisableClientState(GL_NORMAL_ARRAY);
+
   glEnableClientState(GL_VERTEX_ARRAY);
 
   glColorPointer(4, GL_FLOAT, 12 * sizeof(GLfloat), arrayIDs[index].buffer + 0);
@@ -184,11 +193,6 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
   glVertexPointer(3, GL_FLOAT, 12 * sizeof(GLfloat), arrayIDs[index].buffer + 9);
 
   glDrawArrays(mode, 0, arrayIDs[index].elements);
-
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_NORMAL_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  glDisableClientState(GL_COLOR_ARRAY);
 }
 
 void DrawArrays::deleteArray(unsigned int index)

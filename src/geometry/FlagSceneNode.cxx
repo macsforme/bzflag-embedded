@@ -84,11 +84,13 @@ const float WaveGeometry::RippleSpeed2 = (float)(1.724 * M_PI);
 
 inline void WaveGeometry::executeNoList() const
 {
+  glDisableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(3, GL_FLOAT, 0, verts);
   glTexCoordPointer(2, GL_FLOAT, 0, txcds);
   glDrawArrays(GL_QUAD_STRIP, 0, (flagChunks + 1) * 2);
-  glEnableClientState(GL_NORMAL_ARRAY);
   return;
 }
 

@@ -347,10 +347,12 @@ void FontManager::drawString(float x, float y, float z, int faceID, float size,
 	  width, 0.0f
 	};
 
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, drawData);
 	glDrawArrays(GL_LINES, 0, 2);
-	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glEnable(GL_TEXTURE_2D);
       }
