@@ -135,13 +135,10 @@ void EighthDBaseSceneNode::EighthDBaseRenderNode::render()
   glDisableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_VERTEX_ARRAY);
 
-  glVertexPointer(3, GL_FLOAT, 0, corner[0]);
+  glVertexPointer(3, GL_FLOAT, 0, *corner);
 
   glDrawArrays(GL_LINE_LOOP, 0, 4);
-
-  glVertexPointer(3, GL_FLOAT, 0, corner[4]);
-
-  glDrawArrays(GL_LINE_LOOP, 0, 4);
+  glDrawArrays(GL_LINE_LOOP, 4, 4);
 
   GLfloat drawArray[] = {
     corner[0][0], corner[0][1], corner[0][2],
