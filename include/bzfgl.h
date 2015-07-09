@@ -19,6 +19,7 @@
 
 #ifdef HAVE_GLES
 #  include <GLES/gl.h>
+#  include <GLES/glu.h>
 #else
 #  ifdef __APPLE__
 #    include <OpenGL/OpenGL.h>
