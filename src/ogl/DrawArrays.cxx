@@ -86,13 +86,13 @@ void DrawArrays::addVertex(float x, float y, float z)
   assert(constructingID > 0);
 
   if(constructingDrawArray.colors.size() > 0)
-    assert(constructingDrawArray.colors.size() / 4 == constructinDrawArray.vertices.size() / 3 + 1);
+    assert(constructingDrawArray.colors.size() / 4 == constructingDrawArray.vertices.size() / 3 + 1);
 
   if(constructingDrawArray.texCoords.size() > 0)
-    assert(constructingDrawArray.texCoords.size() / 2 == constructinDrawArray.vertices.size() / 3 + 1);
+    assert(constructingDrawArray.texCoords.size() / 2 == constructingDrawArray.vertices.size() / 3 + 1);
 
   if(constructingDrawArray.normals.size() > 0)
-    assert(constructingDrawArray.normals.size() / 4 == constructinDrawArray.vertices.size() / 3 + 1);
+    assert(constructingDrawArray.normals.size() / 3 == constructingDrawArray.vertices.size() / 3 + 1);
 
   constructingDrawArray.vertices.push_back(x);
   constructingDrawArray.vertices.push_back(y);
@@ -152,11 +152,15 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
   assert(arrayIDs.find(index) != arrayIDs.end());
   assert(arrayIDs[index].buffer != NULL);
 
+  if(arrayIDs[index].elements == 0)
+    // this is allowed, but doesn't do anything
+    return;
+
   // GL_TRIANGLES requires vertices be divisible by 3
   unsigned int primitiveCoordinates = 1;
   if(mode == GL_TRIANGLES)
     primitiveCoordinates = 3;
-  assert(constructingDrawArray.vertices.size() / 3 % primitiveCoordinates == 0);
+  assert(arrayIDs[index].elements % primitiveCoordinates == 0);
 
   // GL_LINES requires 2+ vertices, and almost everything else requires 3+ vertices
   unsigned int minimumCoordinates = 1;
@@ -164,12 +168,13 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
     minimumCoordinates = 2;
   else if(mode != GL_POINTS)
     minimumCoordinates = 3;
-  assert(constructingDrawArray.vertices.size() / 3 >= minimumCoordinates);
+  assert(arrayIDs[index].elements >= minimumCoordinates);
 
-  // quell unused variable warnings (apparently assert() doesn't count?)
+  // quell unused variable warnings (assert() may not be called if it's not a debug build)
   primitiveCoordinates = primitiveCoordinates;
   minimumCoordinates = minimumCoordinates;
 
+  // set required state and draw
   if(arrayIDs[index].useColors)
     glEnableClientState(GL_COLOR_ARRAY);
   else
