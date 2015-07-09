@@ -346,9 +346,15 @@ void			BillboardSceneNode::BillboardRenderNode::
 
 void			BillboardSceneNode::BillboardRenderNode::render()
 {
+#ifdef HAVE_GLES
+  static const GLfloat groundPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
+
+  glClipPlanef(GL_CLIP_PLANE0, groundPlane);
+#else
   static const GLdouble groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
 
   glClipPlane(GL_CLIP_PLANE0, groundPlane);
+#endif
   glEnable(GL_CLIP_PLANE0);
 
   // want to move the billboard directly towards the eye a little bit.
@@ -374,16 +380,27 @@ void			BillboardSceneNode::BillboardRenderNode::render()
 
     // draw billboard
     myColor4fv(sceneNode->color);
-    glBegin(GL_QUADS);
-    glTexCoord2f(   u,    v);
-    glVertex2f  (-sceneNode->width, -sceneNode->height);
-    glTexCoord2f(du+u,    v);
-    glVertex2f  ( sceneNode->width, -sceneNode->height);
-    glTexCoord2f(du+u, dv+v);
-    glVertex2f  ( sceneNode->width,  sceneNode->height);
-    glTexCoord2f(   u, dv+v);
-    glVertex2f  (-sceneNode->width,  sceneNode->height);
-    glEnd();
+
+    GLfloat drawArray[] = {
+      u, v,
+      -sceneNode->width, -sceneNode->height,
+      du+u, v,
+      sceneNode->width, -sceneNode->height,
+      du+u, dv+v,
+      sceneNode->width, sceneNode->height,
+      u, dv+v,
+      -sceneNode->width, sceneNode->height
+    };
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray);
+    glVertexPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray + 2);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
   }
   glPopMatrix();
 
