@@ -39,8 +39,8 @@ using namespace TankGeometryUtils;
 // ---------------
 
 // the display lists
-static GLuint displayLists[LastTankShadow][LastTankLOD]
-			  [LastTankSize][LastTankPart];
+static unsigned int drawArrays[LastTankShadow][LastTankLOD]
+			      [LastTankSize][LastTankPart];
 
 // triangle counts
 static int partTriangles[LastTankShadow][LastTankLOD]
@@ -101,12 +101,12 @@ static void bzdbCallback(const std::string& str, void *data);
 
 void TankGeometryMgr::init()
 {
-  // initialize the lists to invalid
+  // initialize the draw arrays to invalid
   for (int shadow = 0; shadow < LastTankShadow; shadow++) {
     for (int lod = 0; lod < LastTankLOD; lod++) {
       for (int size = 0; size < LastTankSize; size++) {
 	for (int part = 0; part < LastTankPart; part++) {
-	  displayLists[shadow][lod][size][part] = INVALID_GL_LIST_ID;
+	  drawArrays[shadow][lod][size][part] = INVALID_DRAW_ARRAY_ID;
 	  partTriangles[shadow][lod][size][part] = 0;
 	}
       }
@@ -145,17 +145,17 @@ void TankGeometryMgr::kill()
 }
 
 
-void TankGeometryMgr::deleteLists()
+void TankGeometryMgr::deleteDrawArrays()
 {
-  // delete the lists that have been aquired
+  // delete the draw arrays that have been aquired
   for (int shadow = 0; shadow < LastTankShadow; shadow++) {
     for (int lod = 0; lod < LastTankLOD; lod++) {
       for (int size = 0; size < LastTankSize; size++) {
 	for (int part = 0; part < LastTankPart; part++) {
-	  GLuint& list = displayLists[shadow][lod][size][part];
-	  if (list != INVALID_GL_LIST_ID) {
-	    glDeleteLists(list, 1);
-	    list = INVALID_GL_LIST_ID;
+	  unsigned int& drawArrayID = drawArrays[shadow][lod][size][part];
+	  if (drawArrayID != INVALID_DRAW_ARRAY_ID) {
+	    DrawArrays::deleteArray(drawArrayID);
+	    drawArrayID = INVALID_DRAW_ARRAY_ID;
 	  }
 	}
       }
@@ -165,7 +165,7 @@ void TankGeometryMgr::deleteLists()
 }
 
 
-void TankGeometryMgr::buildLists()
+void TankGeometryMgr::buildDrawArrays()
 {
   // setup the tread style
   setTreadStyle(BZDB.evalInt("treadStyle"));
@@ -206,12 +206,12 @@ void TankGeometryMgr::buildLists()
 
 	for (int part = 0; part < lastPart; part++) {
 
-	  GLuint& list = displayLists[shadow][lod][size][part];
+	  unsigned int& drawArrayID = drawArrays[shadow][lod][size][part];
 	  int& count = partTriangles[shadow][lod][size][part];
 
-	  // get a new OpenGL display list
-	  list = glGenLists(1);
-	  glNewList(list, GL_COMPILE);
+	  // get a new draw array id
+	  drawArrayID = DrawArrays::newArray();
+	  DrawArrays::beginArray(drawArrayID);
 
 	  // setup the scale factor
 	  currentScaleFactor = scaleFactors[size];
@@ -245,8 +245,8 @@ void TankGeometryMgr::buildLists()
 	    }
 	  }
 
-	  // end of the list
-	  glEndList();
+	  // end of the array
+	  DrawArrays::finishArray();
 
 	} // part
       } // size
@@ -257,12 +257,12 @@ void TankGeometryMgr::buildLists()
 }
 
 
-GLuint TankGeometryMgr::getPartList(TankGeometryEnums::TankShadow shadow,
-				    TankGeometryEnums::TankPart part,
-				    TankGeometryEnums::TankSize size,
-				    TankGeometryEnums::TankLOD lod)
+unsigned int TankGeometryMgr::getPartDrawArray(TankGeometryEnums::TankShadow shadow,
+					       TankGeometryEnums::TankPart part,
+					       TankGeometryEnums::TankSize size,
+					       TankGeometryEnums::TankLOD lod)
 {
-  return displayLists[shadow][lod][size][part];
+  return drawArrays[shadow][lod][size][part];
 }
 
 
@@ -289,23 +289,23 @@ const float* TankGeometryMgr::getScaleFactor(TankSize size)
 
 static void bzdbCallback(const std::string& UNUSED(name), void * UNUSED(data))
 {
-  deleteLists();
-  buildLists();
+  deleteDrawArrays();
+  buildDrawArrays();
   return;
 }
 
 
 static void freeContext(void * UNUSED(data))
 {
-  // delete all of the lists
-  deleteLists();
+  // delete all of the draw arrays
+  deleteDrawArrays();
   return;
 }
 
 
 static void initContext(void * UNUSED(data))
 {
-  buildLists();
+  buildDrawArrays();
   return;
 }
 
@@ -361,7 +361,7 @@ void TankGeometryUtils::doVertex3f(GLfloat x, GLfloat y, GLfloat z)
   x = x * scale[0];
   y = y * scale[1];
   z = z * scale[2];
-  glVertex3f(x, y, z);
+  DrawArrays::addVertex(x, y, z);
   return;
 }
 
@@ -381,7 +381,7 @@ void TankGeometryUtils::doNormal3f(GLfloat x, GLfloat y, GLfloat z)
     y *= scale[1] / d;
     z *= scale[2] / d;
   }
-  glNormal3f(x, y, z);
+  DrawArrays::addNormal(x, y, z);
   return;
 }
 
@@ -391,7 +391,7 @@ void TankGeometryUtils::doTexCoord2f(GLfloat x, GLfloat y)
   if (shadowMode == ShadowOn) {
     return;
   }
-  glTexCoord2f(x, y);
+  DrawArrays::addTexCoord(x, y);
   return;
 }
 

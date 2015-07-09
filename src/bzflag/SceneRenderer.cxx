@@ -731,8 +731,8 @@ void SceneRenderer::render(bool _lastFrame, bool _sameFrame,
   }
 
   if (rebuildTanks) {
-    TankGeometryMgr::deleteLists();
-    TankGeometryMgr::buildLists();
+    TankGeometryMgr::deleteDrawArrays();
+    TankGeometryMgr::buildDrawArrays();
     rebuildTanks = false;
   }
 

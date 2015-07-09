@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "SceneNode.h"
+#include "DrawArrays.h"
 
 
 namespace TankGeometryEnums {
@@ -76,13 +77,13 @@ namespace TankGeometryMgr {
 
   void init();
   void kill();
-  void buildLists();
-  void deleteLists();
+  void buildDrawArrays();
+  void deleteDrawArrays();
 
-  GLuint getPartList(TankGeometryEnums::TankShadow shadow,
-		     TankGeometryEnums::TankPart part,
-		     TankGeometryEnums::TankSize size,
-		     TankGeometryEnums::TankLOD lod);
+  unsigned int getPartDrawArray(TankGeometryEnums::TankShadow shadow,
+				TankGeometryEnums::TankPart part,
+				TankGeometryEnums::TankSize size,
+				TankGeometryEnums::TankLOD lod);
 
   int getPartTriangleCount(TankGeometryEnums::TankShadow shadow,
 			   TankGeometryEnums::TankPart part,

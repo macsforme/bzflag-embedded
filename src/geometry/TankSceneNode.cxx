@@ -1242,19 +1242,18 @@ void TankSceneNode::TankRenderNode::renderPart(TankPart part)
 		myColor4fv(params.color);
   }
 
-  // get the list
-  GLuint list;
+  // get the draw array
+  unsigned int drawArrayID;
   TankShadow shadow = isShadow ? ShadowOn : ShadowOff;
-  list = TankGeometryMgr::getPartList(shadow, part, drawSize, drawLOD);
+  drawArrayID = TankGeometryMgr::getPartDrawArray(shadow, part, drawSize, drawLOD);
 
   if (!overide || params.draw)
   {
-		// draw the part
-	  glCallList(list);
+    // draw the part
+    DrawArrays::draw(drawArrayID);
 
-	  // add to the triangle count
-	  addTriangleCount(TankGeometryMgr::getPartTriangleCount(
-						  shadow, part, drawSize, drawLOD));
+    // add to the triangle count
+    addTriangleCount(TankGeometryMgr::getPartTriangleCount(shadow, part, drawSize, drawLOD));
   }
 
   // draw the lights on the turret
