@@ -206,7 +206,11 @@ class TankSceneNode : public SceneNode {
     bool		clip;
     bool		inTheCockpit;
     GLfloat		color[4];
+#ifdef HAVE_GLES
+    GLfloat		clipPlane[4];
+#else
     GLdouble		clipPlane[4];
+#endif
     OpenGLGState	gstate;
 	OpenGLGState	treadState;
     OpenGLGState	lightsGState;

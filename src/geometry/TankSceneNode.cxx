@@ -426,10 +426,17 @@ void TankSceneNode::setClipPlane(const GLfloat* _plane)
     clip = false;
   } else {
     clip = true;
+ #ifdef HAVE_GLES
+    clipPlane[0] = _plane[0];
+    clipPlane[1] = _plane[1];
+    clipPlane[2] = _plane[2];
+    clipPlane[3] = _plane[3];
+ #else
     clipPlane[0] = GLdouble(_plane[0]);
     clipPlane[1] = GLdouble(_plane[1]);
     clipPlane[2] = GLdouble(_plane[2]);
     clipPlane[3] = GLdouble(_plane[3]);
+ #endif
   }
 }
 
@@ -922,7 +929,11 @@ void TankSceneNode::TankRenderNode::render()
   }
 
   if (sceneNode->clip && !isShadow) {
+ #ifdef HAVE_GLES
+    glClipPlanef(GL_CLIP_PLANE0, sceneNode->clipPlane);
+ #else
     glClipPlane(GL_CLIP_PLANE0, sceneNode->clipPlane);
+ #endif
     glEnable(GL_CLIP_PLANE0);
   }
 
