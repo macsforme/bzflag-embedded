@@ -298,20 +298,36 @@ void			BoltSceneNode::BoltRenderNode::setColor(
 
 void drawFin ( float maxRad, float finRadius, float boosterLen, float finForeDelta, float finCapSize)
 {
-	glBegin(GL_QUADS);
+  GLfloat drawArray[] = {
+    1.0f, 0.0f, 0.0f,
+    0, maxRad, 0,
+    1.0f, 0.0f, 0.0f,
+    0, maxRad, boosterLen,
+    1.0f, 0.0f, 0.0f,
+    0, maxRad+finRadius, boosterLen-finForeDelta,
+    1.0f, 0.0f, 0.0f,
+    0, maxRad+finRadius, boosterLen-finForeDelta-finCapSize,
 
-	glNormal3f(1,0,0);
-	glVertex3f(0,maxRad,0);
-	glVertex3f(0,maxRad,boosterLen);
-	glVertex3f(0,maxRad+finRadius,boosterLen-finForeDelta);
-	glVertex3f(0,maxRad+finRadius,boosterLen-finForeDelta-finCapSize);
+    -1.0f, 0.0f, 0.0f,
+    0.0f, maxRad+finRadius, boosterLen-finForeDelta-finCapSize,
+    -1.0f, 0.0f, 0.0f,
+    0.0f, maxRad+finRadius, boosterLen-finForeDelta,
+    -1.0f, 0.0f, 0.0f,
+    0.0f, maxRad, boosterLen,
+    -1.0f, 0.0f, 0.0f,
+    0.0f, maxRad, 0.0f
+  };
 
-	glNormal3f(-1,0,0);
-	glVertex3f(0,maxRad+finRadius,boosterLen-finForeDelta-finCapSize);
-	glVertex3f(0,maxRad+finRadius,boosterLen-finForeDelta);
-	glVertex3f(0,maxRad,boosterLen);
-	glVertex3f(0,maxRad,0);
-	glEnd();
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glNormalPointer(GL_FLOAT, 6 * sizeof(GLfloat), drawArray);
+  glVertexPointer(3, GL_FLOAT, 6 * sizeof(GLfloat), drawArray + 3);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+  glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
 }
 
 void BoltSceneNode::BoltRenderNode::renderGeoGMBolt()
@@ -611,7 +627,6 @@ void			BoltSceneNode::BoltRenderNode::render()
 			if (sceneNode->texturing) glDisable(GL_TEXTURE_2D);
 			myColor4fv(flareColor);
 			if (!BZDBCache::blend) myStipple(flareColor[3]);
-			glBegin(GL_QUADS);
 			for (int i = 0; i < numFlares; i++) {
 				// pick random direction in 3-space.  picking a random theta with
 				// a uniform distribution is fine, but doing so with phi biases
@@ -623,12 +638,23 @@ void			BoltSceneNode::BoltRenderNode::render()
 				const float s = FlareSize * sinf(phi[i]);
 				const float ti = theta[i];
 				const float fs = FlareSpread;
-				glVertex3fv(core[0]);
-				glVertex3f(c * cosf(ti - fs),   c * sinf(ti - fs),   s);
-				glVertex3f(c * cosf(ti) * 2.0f, c * sinf(ti) * 2.0f, s * 2.0f);
-				glVertex3f(c * cosf(ti + fs),   c * sinf(ti + fs),   s);
+
+				GLfloat drawArray[] = {
+					core[0][0], core[0][1], core[0][2],
+					c * cosf(ti - fs), c * sinf(ti - fs), s,
+					c * cosf(ti) * 2.0f, c * sinf(ti) * 2.0f, s * 2.0f,
+					c * cosf(ti + fs),   c * sinf(ti + fs),   s
+				};
+
+				glDisableClientState(GL_COLOR_ARRAY);
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+				glDisableClientState(GL_NORMAL_ARRAY);
+				glEnableClientState(GL_VERTEX_ARRAY);
+
+				glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 			}
-			glEnd();
 			if (sceneNode->texturing) glEnable(GL_TEXTURE_2D);
 
 			addTriangleCount(numFlares * 2);
@@ -641,12 +667,28 @@ void			BoltSceneNode::BoltRenderNode::render()
 			const float u1 = u0 + du;
 			const float v1 = v0 + dv;
 			myColor4fv(textureColor); // 1.0f all
-			glBegin(GL_QUADS);
-			glTexCoord2f(u0, v0); glVertex2f(-1.0f, -1.0f);
-			glTexCoord2f(u1, v0); glVertex2f(+1.0f, -1.0f);
-			glTexCoord2f(u1, v1); glVertex2f(+1.0f, +1.0f);
-			glTexCoord2f(u0, v1); glVertex2f(-1.0f, +1.0f);
-			glEnd();
+
+			GLfloat drawArray[] = {
+				u0, v0,
+				-1.0f, -1.0f,
+				u1, v0,
+				1.0f, -1.0f,
+				u1, v1,
+				1.0f, 1.0f,
+				u0, v1,
+				-1.0f, +1.0f
+			};
+
+			glDisableClientState(GL_COLOR_ARRAY);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_NORMAL_ARRAY);
+			glEnableClientState(GL_VERTEX_ARRAY);
+
+			glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray);
+			glVertexPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray + 2);
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 			addTriangleCount(2);
 
 			// draw shot trail  (more billboarded quads)
@@ -654,7 +696,8 @@ void			BoltSceneNode::BoltRenderNode::render()
 				const float startSize  = 0.6f;
 				const float startAlpha = 0.8f;
 
-				glPushAttrib(GL_TEXTURE_BIT);
+				GLint lastTextureBinding;
+				glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureBinding);
 				TextureManager &tm = TextureManager::instance();
 				const int texID = tm.getTextureID("shot_tail");
 				const ImageInfo& texInfo = tm.getInfo(texID);
@@ -704,57 +747,239 @@ void			BoltSceneNode::BoltRenderNode::render()
 					RENDERER.getViewFrustum().executeBillboard();
 					glScalef(s, s, s);
 
-					glBegin(GL_QUADS);
-					glTexCoord2f(U0, V0); glVertex2f(-1.0f, -1.0f);
-					glTexCoord2f(U1, V0); glVertex2f(+1.0f, -1.0f);
-					glTexCoord2f(U1, V1); glVertex2f(+1.0f, +1.0f);
-					glTexCoord2f(U0, V1); glVertex2f(-1.0f, +1.0f);
-					glEnd();
+					GLfloat drawArray2[] = {
+						U0, V0,
+						-1.0f, -1.0f,
+						U1, V0,
+						1.0f, -1.0f,
+						U1, V1,
+						1.0f, 1.0f,
+						U0, V1,
+						-1.0f, 1.0f
+					};
+
+					glDisableClientState(GL_COLOR_ARRAY);
+					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+					glDisableClientState(GL_NORMAL_ARRAY);
+					glEnableClientState(GL_VERTEX_ARRAY);
+
+					glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray2);
+					glVertexPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray2 + 2);
+
+					glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 				}
 
 				addTriangleCount(shotLength * 2);
 				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-				glPopAttrib(); // revert the texture
+				glBindTexture(GL_TEXTURE_2D, (GLuint) lastTextureBinding); // revert the texture
 			}
 		}
 		else if (BZDBCache::blend) {
 			// draw corona
-			glBegin(GL_QUAD_STRIP);
-			myColor4fv(mainColor);  glVertex2fv(core[1]);
-			myColor4fv(outerColor); glVertex2fv(corona[0]);
-			myColor4fv(mainColor);  glVertex2fv(core[2]);
-			myColor4fv(outerColor); glVertex2fv(corona[1]);
-			myColor4fv(mainColor);  glVertex2fv(core[3]);
-			myColor4fv(outerColor); glVertex2fv(corona[2]);
-			myColor4fv(mainColor);  glVertex2fv(core[4]);
-			myColor4fv(outerColor); glVertex2fv(corona[3]);
-			myColor4fv(mainColor);  glVertex2fv(core[5]);
-			myColor4fv(outerColor); glVertex2fv(corona[4]);
-			myColor4fv(mainColor);  glVertex2fv(core[6]);
-			myColor4fv(outerColor); glVertex2fv(corona[5]);
-			myColor4fv(mainColor);  glVertex2fv(core[7]);
-			myColor4fv(outerColor); glVertex2fv(corona[6]);
-			myColor4fv(mainColor);  glVertex2fv(core[8]);
-			myColor4fv(outerColor); glVertex2fv(corona[7]);
-			myColor4fv(mainColor);  glVertex2fv(core[1]);
-			myColor4fv(outerColor); glVertex2fv(corona[0]);
-			glEnd(); // 18 verts -> 16 tris
+			GLfloat drawArray[] = {
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[1][0], core[1][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[0][0], corona[0][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[1][0], corona[1][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[1][0], corona[1][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[2][0], core[2][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[1][0], core[1][1],
+
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[2][0], core[2][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[1][0], corona[1][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[2][0], corona[2][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[2][0], corona[2][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[3][0], core[3][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[2][0], core[2][1],
+
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[3][0], core[3][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[2][0], corona[2][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[3][0], corona[3][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[3][0], corona[3][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[4][0], core[4][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[3][0], core[3][1],
+
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[4][0], core[4][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[3][0], corona[3][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[4][0], corona[4][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[4][0], corona[4][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[5][0], core[5][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[4][0], core[4][1],
+
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[5][0], core[5][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[4][0], corona[4][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[5][0], corona[5][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[5][0], corona[5][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[6][0], core[6][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[5][0], core[5][1],
+
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[6][0], core[6][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[5][0], corona[5][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[6][0], corona[6][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[6][0], corona[6][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[7][0], core[7][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[6][0], core[6][1],
+
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[7][0], core[7][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[6][0], corona[6][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[7][0], corona[7][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[7][0], corona[7][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[8][0], core[8][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[7][0], core[7][1],
+
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[8][0], core[8][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[7][0], corona[7][1],
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[0][0], corona[0][1],
+
+
+				outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+				corona[0][0], corona[0][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[1][0], core[1][1],
+
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[8][0], core[8][1]
+			};
+
+			glEnableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_NORMAL_ARRAY);
+			glEnableClientState(GL_VERTEX_ARRAY);
+
+			glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawArray);
+			glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawArray + 4);
+
+			glDrawArrays(GL_TRIANGLES, 0, 48);
 
 			// draw core
-			glBegin(GL_TRIANGLE_FAN);
-			myColor4fv(innerColor);
-			glVertex2fv(core[0]);
-			myColor4fv(mainColor);
-			glVertex2fv(core[1]);
-			glVertex2fv(core[2]);
-			glVertex2fv(core[3]);
-			glVertex2fv(core[4]);
-			glVertex2fv(core[5]);
-			glVertex2fv(core[6]);
-			glVertex2fv(core[7]);
-			glVertex2fv(core[8]);
-			glVertex2fv(core[1]);
-			glEnd(); // 10 verts -> 8 tris
+			GLfloat drawArray2[] = {
+				innerColor[0], innerColor[1], innerColor[2], innerColor[3],
+				core[0][0], core[0][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[1][0], core[1][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[2][0], core[2][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[3][0], core[3][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[4][0], core[4][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[5][0], core[5][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[6][0], core[6][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[7][0], core[7][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[8][0], core[8][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[1][0], core[1][1]
+			};
+
+			glEnableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_NORMAL_ARRAY);
+			glEnableClientState(GL_VERTEX_ARRAY);
+
+			glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawArray2);
+			glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawArray2 + 4);
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 10);
 
 			addTriangleCount(24);
 		}
@@ -762,43 +987,117 @@ void			BoltSceneNode::BoltRenderNode::render()
 			// draw corona
 			myColor4fv(coronaColor);
 			myStipple(coronaColor[3]);
-			glBegin(GL_QUAD_STRIP);
-			glVertex2fv(core[1]);
-			glVertex2fv(corona[0]);
-			glVertex2fv(core[2]);
-			glVertex2fv(corona[1]);
-			glVertex2fv(core[3]);
-			glVertex2fv(corona[2]);
-			glVertex2fv(core[4]);
-			glVertex2fv(corona[3]);
-			glVertex2fv(core[5]);
-			glVertex2fv(corona[4]);
-			glVertex2fv(core[6]);
-			glVertex2fv(corona[5]);
-			glVertex2fv(core[7]);
-			glVertex2fv(corona[6]);
-			glVertex2fv(core[8]);
-			glVertex2fv(corona[7]);
-			glVertex2fv(core[1]);
-			glVertex2fv(corona[0]);
-			glEnd(); // 18 verts -> 16 tris
+
+			GLfloat drawArray[] = {
+				core[1][0], core[1][1],
+				corona[0][0], corona[0][1],
+				corona[1][0], corona[1][1],
+
+				corona[1][0], corona[1][1],
+				core[2][0], core[2][1],
+				core[1][0], core[1][1],
+
+				core[2][0], core[2][1],
+				corona[1][0], corona[1][1],
+				corona[2][0], corona[2][1],
+
+				corona[2][0], corona[2][1],
+				core[3][0], core[3][1],
+				core[2][0], core[2][1],
+
+				core[3][0], core[3][1],
+				corona[2][0], corona[2][1],
+				corona[3][0], corona[3][1],
+
+				corona[3][0], corona[3][1],
+				core[4][0], core[4][1],
+				core[3][0], core[3][1],
+
+				core[4][0], core[4][1],
+				corona[3][0], corona[3][1],
+				corona[4][0], corona[4][1],
+
+				corona[4][0], corona[4][1],
+				core[5][0], core[5][1],
+				core[4][0], core[4][1],
+
+				core[5][0], core[5][1],
+				corona[4][0], corona[4][1],
+				corona[5][0], corona[5][1],
+
+				corona[5][0], corona[5][1],
+				core[6][0], core[6][1],
+				core[5][0], core[5][1],
+
+				core[6][0], core[6][1],
+				corona[5][0], corona[5][1],
+				corona[6][0], corona[6][1],
+
+				corona[6][0], corona[6][1],
+				core[7][0], core[7][1],
+				core[6][0], core[6][1],
+
+				core[7][0], core[7][1],
+				corona[6][0], corona[6][1],
+				corona[7][0], corona[7][1],
+
+				corona[7][0], corona[7][1],
+				core[8][0], core[8][1],
+				core[7][0], core[7][1],
+
+				core[8][0], core[8][1],
+				corona[7][0], corona[7][1],
+				corona[0][0], corona[0][1],
+
+				corona[0][0], corona[0][1],
+				core[1][0], core[1][1],
+				core[8][0], core[8][1]
+			};
+
+			glDisableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_NORMAL_ARRAY);
+			glEnableClientState(GL_VERTEX_ARRAY);
+
+			glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+			glDrawArrays(GL_TRIANGLES, 0, 48);
 
 			// draw core
 			myStipple(1.0f);
-			glBegin(GL_TRIANGLE_FAN);
-			myColor4fv(innerColor);
-			glVertex2fv(core[0]);
-			myColor4fv(mainColor);
-			glVertex2fv(core[1]);
-			glVertex2fv(core[2]);
-			glVertex2fv(core[3]);
-			glVertex2fv(core[4]);
-			glVertex2fv(core[5]);
-			glVertex2fv(core[6]);
-			glVertex2fv(core[7]);
-			glVertex2fv(core[8]);
-			glVertex2fv(core[1]);
-			glEnd(); // 10 verts -> 8 tris
+
+			GLfloat drawArray2[] = {
+				innerColor[0], innerColor[1], innerColor[2], innerColor[3],
+				core[0][0], core[0][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[1][0], core[1][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[2][0], core[2][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[3][0], core[3][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[4][0], core[4][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[5][0], core[5][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[6][0], core[6][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[7][0], core[7][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[8][0], core[8][1],
+				mainColor[0], mainColor[1], mainColor[2], mainColor[3],
+				core[1][0], core[1][1]
+			};
+
+			glEnableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_NORMAL_ARRAY);
+			glEnableClientState(GL_VERTEX_ARRAY);
+
+			glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawArray2);
+			glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawArray2 + 4);
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 10);
 
 			myStipple(0.5f);
 
