@@ -19,6 +19,7 @@
 
 #ifdef HAVE_GLES
 #  include <GLES/gl.h>
+#  define __USE_SDL_GLES__
 #  include <GLES/glu.h>
 #else
 #  ifdef __APPLE__

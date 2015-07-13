@@ -451,7 +451,11 @@ AM_CONDITIONAL(BUILD_CPPUTESTS, test "x$ac_cv_header_CppUTest_TestHarness_h" = "
 
 if test x$with_gles = xyes ; then
     AC_CHECK_HEADER([GLES/gl.h], [], [AC_MSG_ERROR([no OpenGL ES headers were found... please install OpenGL ES headers or try a standard OpenGL build])])
+
+    OLD_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS -D__USE_SDL_GLES__"
     AC_CHECK_HEADER([GLES/glu.h], [], [AC_MSG_ERROR([no OpenGL GLU ES headers were found... please install GLU for OpenGL ES])])
+    CPPFLAGS="$OLD_CPPFLAGS"
 fi
 
 dnl **********************************
@@ -530,8 +534,8 @@ AC_CHECK_TYPES([std::shared_ptr<int>],
 
 # detect OpenGL or OpenGL ES libraries
 if test x$with_gles = xyes ; then
-    AC_CHECK_LIB([GLESv1_CM], [glDrawArrays], GLIBS="-lGLESv1_CM $GLIBS", [AC_MSG_ERROR([no OpenGL ES library was found... please install an OpenGL ES library or try a standard OpenGL build])])
-    AC_CHECK_LIB([GLUES], [gluNewQuadric], GLIBS="-lGLESv1_CM -lGLUES $GLIBS", [AC_MSG_ERROR([no OpenGL GLU ES library was found... please install GLU for OpenGL ES])])
+    AC_CHECK_LIB([GLESv1_CM], [glDrawArrays], GLIBS="$GLIBS -lGLESv1_CM", [AC_MSG_ERROR([no OpenGL ES library was found... please install an OpenGL ES library or try a standard OpenGL build])])
+    AC_CHECK_LIB([GLUES], [gluNewQuadric], GLIBS="$GLIBS -lGLUES", [AC_MSG_ERROR([no OpenGL GLU ES library was found... please install GLU for OpenGL ES])])
 else
     ac_cv_search_glBegin=no
     ac_cv_search_gluScaleImage=no
