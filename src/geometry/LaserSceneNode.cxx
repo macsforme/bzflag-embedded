@@ -211,36 +211,97 @@ void LaserSceneNode::LaserRenderNode::renderFlatLaser()
 
 	if (sceneNode->texturing) {
 		myColor3f(1.0f, 1.0f, 1.0f);
-		glBegin(GL_TRIANGLE_FAN);
-		glTexCoord2f(0.5f,  0.5f);
-		glVertex3f(  0.0f,  0.0f,  0.0f);
-		glTexCoord2f(0.0f,  0.0f);
-		glVertex3f(  0.0f,  0.0f,  1.0f);
-		glVertex3f(  0.0f,  1.0f,  0.0f);
-		glVertex3f(  0.0f,  0.0f, -1.0f);
-		glVertex3f(  0.0f, -1.0f,  0.0f);
-		glVertex3f(  0.0f,  0.0f,  1.0f);
-		glEnd(); // 6 verts -> 4 tris
 
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f,  0.0f);
-		glVertex3f(  0.0f,  0.0f,  1.0f);
-		glTexCoord2f(0.0f,  1.0f);
-		glVertex3f(   len,  0.0f,  1.0f);
-		glTexCoord2f(1.0f,  1.0f);
-		glVertex3f(   len,  0.0f, -1.0f);
-		glTexCoord2f(1.0f,  0.0f);
-		glVertex3f(  0.0f,  0.0f, -1.0f);
+		GLfloat drawArray[] = {
+			0.5f, 0.5f,
+			0.0f, 0.0f, 0.0f,
 
-		glTexCoord2f(0.0f,  0.0f);
-		glVertex3f(  0.0f,  1.0f,  0.0f);
-		glTexCoord2f(0.0f,  1.0f);
-		glVertex3f(   len,  1.0f,  0.0f);
-		glTexCoord2f(1.0f,  1.0f);
-		glVertex3f(   len, -1.0f,  0.0f);
-		glTexCoord2f(1.0f,  0.0f);
-		glVertex3f(  0.0f, -1.0f,  0.0f);
-		glEnd(); // 8 verts -> 4 tris
+			0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f,
+
+			0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+
+
+			0.5f, 0.5f,
+			0.0f, 0.0f, 0.0f,
+
+			0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+
+			0.0f, 0.0f,
+			0.0f, 0.0f, -1.0f,
+
+
+			0.5f, 0.5f,
+			0.0f, 0.0f, 0.0f,
+
+			0.0f, 0.0f,
+			0.0f, 0.0f, -1.0f,
+
+			0.0f, 0.0f,
+			0.0f, -1.0f, 0.0f,
+
+
+			0.5f, 0.5f,
+			0.0f, 0.0f, 0.0f,
+
+			0.0f, 0.0f,
+			0.0f, -1.0f, 0.0f,
+
+			0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f,
+
+
+			0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f,
+
+			0.0f, 1.0f,
+			len, 0.0f, 1.0f,
+
+			1.0f, 1.0f,
+			len, 0.0f, -1.0f,
+
+
+			1.0f, 1.0f,
+			len, 0.0f, -1.0f,
+
+			1.0f, 0.0f,
+			0.0f, 0.0f, -1.0f,
+
+			0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f,
+
+
+			0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+
+			0.0f, 1.0f,
+			len, 1.0f, 0.0f,
+
+			1.0f, 1.0f,
+			len, -1.0f, 0.0f,
+
+
+			1.0f, 1.0f,
+			len, -1.0f, 0.0f,
+
+			1.0f, 0.0f,
+			0.0f, -1.0f, 0.0f,
+
+			0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f
+		};
+
+		glDisableClientState(GL_COLOR_ARRAY);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);
+		glEnableClientState(GL_VERTEX_ARRAY);
+
+		glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+		glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+		glDrawArrays(GL_TRIANGLES, 0, 24);
 
 		addTriangleCount(8);
 	}
@@ -248,34 +309,83 @@ void LaserSceneNode::LaserRenderNode::renderFlatLaser()
 	else {
 		// draw beam
 		myColor4f(1.0f, 0.25f, 0.0f, 0.85f);
-		glBegin(GL_QUAD_STRIP);
-		{
-			glVertex3f(  0.0f, geom[0][0], geom[0][1]);
-			glVertex3f(   len, geom[0][0], geom[0][1]);
-			glVertex3f(  0.0f, geom[1][0], geom[1][1]);
-			glVertex3f(   len, geom[1][0], geom[1][1]);
-			glVertex3f(  0.0f, geom[2][0], geom[2][1]);
-			glVertex3f(   len, geom[2][0], geom[2][1]);
-			glVertex3f(  0.0f, geom[3][0], geom[3][1]);
-			glVertex3f(   len, geom[3][0], geom[3][1]);
-			glVertex3f(  0.0f, geom[4][0], geom[4][1]);
-			glVertex3f(   len, geom[4][0], geom[4][1]);
-			glVertex3f(  0.0f, geom[5][0], geom[5][1]);
-			glVertex3f(   len, geom[5][0], geom[5][1]);
-			glVertex3f(  0.0f, geom[0][0], geom[0][1]);
-			glVertex3f(   len, geom[0][0], geom[0][1]);
-		}
-		glEnd(); // 14 verts -> 12 tris
+
+		GLfloat drawArray[] = {
+			0.0f, geom[0][0], geom[0][1],
+			len, geom[0][0], geom[0][1],
+			0.0f, geom[1][0], geom[1][1],
+
+			len, geom[0][0], geom[0][1],
+			0.0f, geom[1][0], geom[1][1],
+			len, geom[1][0], geom[1][1],
+
+
+			0.0f, geom[1][0], geom[1][1],
+			len, geom[1][0], geom[1][1],
+			0.0f, geom[2][0], geom[2][1],
+
+			len, geom[1][0], geom[1][1],
+			0.0f, geom[2][0], geom[2][1],
+			len, geom[2][0], geom[2][1],
+
+
+			0.0f, geom[2][0], geom[2][1],
+			len, geom[2][0], geom[2][1],
+			0.0f, geom[3][0], geom[3][1],
+
+			len, geom[2][0], geom[2][1],
+			0.0f, geom[3][0], geom[3][1],
+			len, geom[3][0], geom[3][1],
+
+
+			0.0f, geom[3][0], geom[3][1],
+			len, geom[3][0], geom[3][1],
+			0.0f, geom[4][0], geom[4][1],
+
+			len, geom[3][0], geom[3][1],
+			0.0f, geom[4][0], geom[4][1],
+			len, geom[4][0], geom[4][1],
+
+
+			0.0f, geom[4][0], geom[4][1],
+			len, geom[4][0], geom[4][1],
+			0.0f, geom[5][0], geom[5][1],
+
+			len, geom[4][0], geom[4][1],
+			0.0f, geom[5][0], geom[5][1],
+			len, geom[5][0], geom[5][1],
+
+
+			0.0f, geom[5][0], geom[5][1],
+			len, geom[5][0], geom[5][1],
+			0.0f, geom[0][0], geom[0][1],
+
+			len, geom[5][0], geom[5][1],
+			0.0f, geom[0][0], geom[0][1],
+			len, geom[0][0], geom[0][1]
+		};
+
+		glDisableClientState(GL_COLOR_ARRAY);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);
+		glEnableClientState(GL_VERTEX_ARRAY);
+
+		glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// also draw a line down the middle (so the beam is visible even
 		// if very far away).  this will also give the beam an extra bright
 		// center.
-		glBegin(GL_LINES);
-		{
-			glVertex3f(  0.0f, 0.0f, 0.0f);
-			glVertex3f(   len, 0.0f, 0.0f);
-		}
-		glEnd(); // count 1 line as 1 tri
+
+		GLfloat drawArray2[] = {
+			0.0f, 0.0f, 0.0f,
+			len, 0.0f, 0.0f
+		};
+
+		glVertexPointer(3, GL_FLOAT, 0, drawArray2);
+
+		glDrawArrays(GL_LINES, 0, 2);
 
 		addTriangleCount(13);
 	}
