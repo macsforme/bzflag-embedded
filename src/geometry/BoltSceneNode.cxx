@@ -640,7 +640,7 @@ void			BoltSceneNode::BoltRenderNode::render()
 				const float fs = FlareSpread;
 
 				GLfloat drawArray[] = {
-					core[0][0], core[0][1], core[0][2],
+					core[0][0], core[0][1], core[1][0], // this was a glVertex3fv(core[0]) before, but core[x] has only 2 elements...???
 					c * cosf(ti - fs), c * sinf(ti - fs), s,
 					c * cosf(ti) * 2.0f, c * sinf(ti) * 2.0f, s * 2.0f,
 					c * cosf(ti + fs),   c * sinf(ti + fs),   s
