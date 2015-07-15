@@ -37,7 +37,6 @@ static const int	waveLists = 8;		// GL list count
 static int		flagChunks = 8;		// draw flag as 8 quads
 static bool		geoPole = false;	// draw the pole as quads
 static bool		realFlag = false;	// don't use billboarding
-static bool		flagLists = false;	// use display lists
 static int		triCount = 0;		// number of rendered triangles
 
 static const GLfloat	Unit = 0.8f;		// meters
@@ -59,7 +58,6 @@ class WaveGeometry {
     void unrefer() { refCount--; }
 
     void waveFlag(float dt);
-    void freeFlag();
 
     void execute() const;
     void executeNoList() const;
@@ -69,7 +67,6 @@ class WaveGeometry {
     float ripple1;
     float ripple2;
 
-    GLuint glList;
     GLfloat verts[(maxChunks + 1) * 2][3];
     GLfloat txcds[(maxChunks + 1) * 2][2];
 
@@ -84,30 +81,82 @@ const float WaveGeometry::RippleSpeed2 = (float)(1.724 * M_PI);
 
 inline void WaveGeometry::executeNoList() const
 {
+  // convert this from a quad strip array to a triangle array
+  GLfloat* drawArray = new GLfloat[flagChunks * 30];
+
+  for(int i = 0; i < flagChunks; ++i) {
+    drawArray[i * 30 + 0] = txcds[i * 2 + 0][0];
+    drawArray[i * 30 + 1] = txcds[i * 2 + 0][1];
+
+    drawArray[i * 30 + 2] = verts[i * 2 + 0][0];
+    drawArray[i * 30 + 3] = verts[i * 2 + 0][1];
+    drawArray[i * 30 + 4] = verts[i * 2 + 0][2];
+
+
+    drawArray[i * 30 + 5] = txcds[i * 2 + 1][0];
+    drawArray[i * 30 + 6] = txcds[i * 2 + 1][1];
+
+    drawArray[i * 30 + 7] = verts[i * 2 + 1][0];
+    drawArray[i * 30 + 8] = verts[i * 2 + 1][1];
+    drawArray[i * 30 + 9] = verts[i * 2 + 1][2];
+
+
+    drawArray[i * 30 + 10] = txcds[i * 2 + 2][0];
+    drawArray[i * 30 + 11] = txcds[i * 2 + 2][1];
+
+    drawArray[i * 30 + 12] = verts[i * 2 + 2][0];
+    drawArray[i * 30 + 13] = verts[i * 2 + 2][1];
+    drawArray[i * 30 + 14] = verts[i * 2 + 2][2];
+
+
+    drawArray[i * 30 + 15] = txcds[i * 2 + 2][0];
+    drawArray[i * 30 + 16] = txcds[i * 2 + 2][1];
+
+    drawArray[i * 30 + 17] = verts[i * 2 + 2][0];
+    drawArray[i * 30 + 18] = verts[i * 2 + 2][1];
+    drawArray[i * 30 + 19] = verts[i * 2 + 2][2];
+
+
+    drawArray[i * 30 + 20] = txcds[i * 2 + 1][0];
+    drawArray[i * 30 + 21] = txcds[i * 2 + 1][1];
+
+    drawArray[i * 30 + 22] = verts[i * 2 + 1][0];
+    drawArray[i * 30 + 23] = verts[i * 2 + 1][1];
+    drawArray[i * 30 + 24] = verts[i * 2 + 1][2];
+
+
+    drawArray[i * 30 + 25] = txcds[i * 2 + 3][0];
+    drawArray[i * 30 + 26] = txcds[i * 2 + 3][1];
+
+    drawArray[i * 30 + 27] = verts[i * 2 + 3][0];
+    drawArray[i * 30 + 28] = verts[i * 2 + 3][1];
+    drawArray[i * 30 + 29] = verts[i * 2 + 3][2];
+  }
+
   glDisableClientState(GL_COLOR_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(3, GL_FLOAT, 0, verts);
-  glTexCoordPointer(2, GL_FLOAT, 0, txcds);
-  glDrawArrays(GL_QUAD_STRIP, 0, (flagChunks + 1) * 2);
+
+  glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+  glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+  glDrawArrays(GL_TRIANGLES, 0, 6 * flagChunks);
+
+  delete[] drawArray;
+
   return;
 }
 
 inline void WaveGeometry::execute() const
 {
-  if (flagLists) {
-    glCallList(glList);
-  } else {
-    executeNoList();
-  }
+  executeNoList();
   return;
 }
 
 
 WaveGeometry::WaveGeometry() : refCount(0)
 {
-  glList = INVALID_GL_LIST_ID;
   ripple1 = (float)(2.0 * M_PI * bzfrand());
   ripple2 = (float)(2.0 * M_PI * bzfrand());
   return;
@@ -165,27 +214,8 @@ void WaveGeometry::waveFlag(float dt)
     txcds[i*2+1][1] = 0.0f;
   }
 
-  // make a GL display list if desired
-  if (flagLists) {
-    glList = glGenLists(1);
-    glNewList(glList, GL_COMPILE);
-    executeNoList();
-    glEndList();
-  } else {
-    glList = INVALID_GL_LIST_ID;
-  }
-
   triCount = flagChunks * 2;
 
-  return;
-}
-
-
-void WaveGeometry::freeFlag()
-{
-  if ((refCount > 0) && (glList != INVALID_GL_LIST_ID)) {
-    glDeleteLists(glList, 1);
-  }
   return;
 }
 
@@ -220,18 +250,11 @@ FlagSceneNode::~FlagSceneNode()
 
 void			FlagSceneNode::waveFlag(float dt)
 {
-  flagLists = BZDB.isTrue("flagLists");
   for (int i = 0; i < waveLists; i++) {
     allWaves[i].waveFlag(dt);
   }
 }
 
-void			FlagSceneNode::freeFlag()
-{
-  for (int i = 0; i < waveLists; i++) {
-    allWaves[i].freeFlag();
-  }
-}
 
 void			FlagSceneNode::move(const GLfloat pos[3])
 {
@@ -450,20 +473,52 @@ void			FlagSceneNode::FlagRenderNode::render()
 
       // the pole
       const float topHeight = base + Height;
-      glBegin(GL_QUAD_STRIP);
-      {
-	glVertex3f(-poleWidth, 0.0f, 0.0f);
-	glVertex3f(-poleWidth, 0.0f, topHeight);
-	glVertex3f(0.0f, -poleWidth, 0.0f);
-	glVertex3f(0.0f, -poleWidth, topHeight);
-	glVertex3f(+poleWidth, 0.0f, 0.0f);
-	glVertex3f(+poleWidth, 0.0f, topHeight);
-	glVertex3f(0.0f, +poleWidth, 0.0f);
-	glVertex3f(0.0f, +poleWidth, topHeight);
-	glVertex3f(-poleWidth, 0.0f, 0.0f);
-	glVertex3f(-poleWidth, 0.0f, topHeight);
-      }
-      glEnd();
+      glDisableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      GLfloat drawArray[] = {
+	-poleWidth, 0.0f, 0.0f,
+	-poleWidth, 0.0f, topHeight,
+	0.0f, -poleWidth, 0.0f,
+
+	-poleWidth, 0.0f, topHeight,
+	0.0f, -poleWidth, 0.0f,
+	0.0f, -poleWidth, topHeight,
+
+
+	0.0f, -poleWidth, 0.0f,
+	0.0f, -poleWidth, topHeight,
+	+poleWidth, 0.0f, 0.0f,
+
+	0.0f, -poleWidth, topHeight,
+	+poleWidth, 0.0f, 0.0f,
+	+poleWidth, 0.0f, topHeight,
+
+
+	+poleWidth, 0.0f, 0.0f,
+	+poleWidth, 0.0f, topHeight,
+	0.0f, +poleWidth, 0.0f,
+
+	+poleWidth, 0.0f, topHeight,
+	0.0f, +poleWidth, 0.0f,
+	0.0f, +poleWidth, topHeight,
+
+
+	0.0f, +poleWidth, 0.0f,
+	0.0f, +poleWidth, topHeight,
+	-poleWidth, 0.0f, 0.0f,
+
+	0.0f, +poleWidth, topHeight,
+	-poleWidth, 0.0f, 0.0f,
+	-poleWidth, 0.0f, topHeight
+      };
+
+      glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+      glDrawArrays(GL_TRIANGLES, 0, 8);
+
       addTriangleCount(8);
     }
     else {
@@ -474,16 +529,32 @@ void			FlagSceneNode::FlagRenderNode::render()
       } else {
 	glRotatef(sceneNode->angle + 180.0f, 0.0f, 0.0f, 1.0f);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	glBegin(GL_QUADS);
-	  glTexCoord2f(0.0f, 0.0f);
-	  glVertex3f(0.0f, base, 0.0f);
-	  glTexCoord2f(1.0f, 0.0f);
-	  glVertex3f(Width, base, 0.0f);
-	  glTexCoord2f(1.0f, 1.0f);
-	  glVertex3f(Width, base + Height, 0.0f);
-	  glTexCoord2f(0.0f, 1.0f);
-	  glVertex3f(0.0f, base + Height, 0.0f);
-	glEnd();
+
+	GLfloat drawArray[] = {
+	  0.0f, 0.0f,
+	  0.0f, base, 0.0f,
+
+	  1.0f, 0.0f,
+	  Width, base, 0.0f,
+
+	  1.0f, 1.0f,
+	  Width, base + Height, 0.0f,
+
+	  0.0f, 1.0f,
+	  0.0f, base + Height, 0.0f
+	};
+
+
+	glDisableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+	glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 	addTriangleCount(2);
       }
 
@@ -494,22 +565,38 @@ void			FlagSceneNode::FlagRenderNode::render()
       }
 
       if (geoPole) {
-	glBegin(GL_QUADS);
-	{
-	  glVertex3f(-poleWidth, 0.0f, 0.0f);
-	  glVertex3f(+poleWidth, 0.0f, 0.0f);
-	  glVertex3f(+poleWidth, base + Height, 0.0f);
-	  glVertex3f(-poleWidth, base + Height, 0.0f);
-	}
-	glEnd();
+	GLfloat drawArray[] = {
+	  -poleWidth, 0.0f, 0.0f,
+	  +poleWidth, 0.0f, 0.0f,
+	  +poleWidth, base + Height, 0.0f,
+	  -poleWidth, base + Height, 0.0f
+	};
+
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 	addTriangleCount(2);
       } else {
-	glBegin(GL_LINE_STRIP);
-	{
-	  glVertex3f(0.0f, 0.0f, 0.0f);
-	  glVertex3f(0.0f, base + Height, 0.0f);
-	}
-	glEnd();
+	GLfloat drawArray[] = {
+	  0.0f, 0.0f, 0.0f,
+	  0.0f, base + Height, 0.0f
+	};
+
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+	glDrawArrays(GL_LINES, 0, 2);
+
 	addTriangleCount(1);
       }
     }

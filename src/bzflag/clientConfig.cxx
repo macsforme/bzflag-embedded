@@ -293,6 +293,9 @@ void updateConfigFile(void)
   case 5:
     break;
 
+  case 5: // undefined version upgrade
+    BZDB.unset("flagLists");  // removed in embedded branch
+
   default: // hm, we don't know about this one...
 	  printError(TextUtils::format("Config file is tagged version \"%d\", "
 		  "which was not expected (too new perhaps). "

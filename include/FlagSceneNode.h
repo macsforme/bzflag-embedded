@@ -27,7 +27,6 @@ class FlagSceneNode : public SceneNode {
 			~FlagSceneNode();
 
     static void		waveFlag(float dt);
-    static void		freeFlag();
 
     void		move(const GLfloat pos[3]);
     void		setAngle(GLfloat angle);
