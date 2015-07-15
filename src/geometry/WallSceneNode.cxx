@@ -373,7 +373,7 @@ void			WallSceneNode::notifyStyleChange()
     builder.setAlphaFunc(GL_GEQUAL, alphaThreshold);
   }
   if (noCulling) {
-    builder.setCulling(GL_NONE);
+    builder.disableCulling();
   }
   if (noSorting) {
     builder.setNeedsSorting(false);

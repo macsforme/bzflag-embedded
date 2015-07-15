@@ -344,9 +344,9 @@ void			FlagSceneNode::notifyStyleChange()
   }
 
   if (billboard && !realFlag) {
-    builder.setCulling(GL_BACK);
+    builder.enableCulling(GL_BACK);
   } else {
-    builder.setCulling(GL_NONE);
+    builder.disableCulling();
   }
   gstate = builder.getState();
 

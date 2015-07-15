@@ -41,7 +41,7 @@ SphereSceneNode::SphereSceneNode(const GLfloat pos[3], GLfloat _radius)
   transparent = false;
 
   OpenGLGStateBuilder builder(gstate);
-  builder.setCulling(GL_NONE);
+  builder.disableCulling();
   gstate = builder.getState();
 
   setColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -230,7 +230,7 @@ SphereLodSceneNode::SphereLodSceneNode(const GLfloat pos[3], GLfloat _radius) :
 
   // adjust the gstate for this type of sphere
   OpenGLGStateBuilder builder(gstate);
-  builder.setCulling(GL_BACK);
+  builder.enableCulling(GL_BACK);
   builder.setShading(GL_SMOOTH);
   const float spec[4] = {1.0f, 1.0f, 1.0f, 1.0f};
   const float emis[4] = {0.0f, 0.0f, 0.0f, 0.0f};

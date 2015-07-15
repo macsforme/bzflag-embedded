@@ -57,7 +57,8 @@ class OpenGLGStateState {
     void		setBlending(GLenum sFactor, GLenum dFactor);
     void		setStipple(float alpha);
     void		setSmoothing(bool smooth);
-    void		setCulling(GLenum culling);
+    void		enableCulling(GLenum mode);
+    void		disableCulling();
     void		setShading(GLenum);
     void		setAlphaFunc(GLenum func, GLclampf ref);
     void		setNeedsSorting(bool value);
@@ -393,10 +394,15 @@ void			OpenGLGStateState::setSmoothing(bool smooth)
   unsorted.hasSmoothing = smooth;
 }
 
-void			OpenGLGStateState::setCulling(GLenum _culling)
+void			OpenGLGStateState::enableCulling(GLenum mode)
 {
-  unsorted.hasCulling = (_culling != GL_NONE);
-  unsorted.culling = _culling;
+  unsorted.hasCulling = true;
+  unsorted.culling = mode;
+}
+
+void			OpenGLGStateState::disableCulling()
+{
+  unsorted.hasCulling = false;
 }
 
 void			OpenGLGStateState::setShading(GLenum shading)
@@ -1409,9 +1415,14 @@ void			OpenGLGStateBuilder::setSmoothing(bool smooth)
   state->setSmoothing(smooth);
 }
 
-void			OpenGLGStateBuilder::setCulling(GLenum culling)
+void			OpenGLGStateBuilder::enableCulling(GLenum mode)
 {
-  state->setCulling(culling);
+  state->enableCulling(mode);
+}
+
+void			OpenGLGStateBuilder::disableCulling()
+{
+  state->disableCulling();
 }
 
 void			OpenGLGStateBuilder::setShading(GLenum shading)

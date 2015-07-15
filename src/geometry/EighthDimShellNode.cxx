@@ -118,7 +118,7 @@ EighthDimShellNode::ShellRenderNode::ShellRenderNode(RenderNode *node,
   } else {
     gb.resetBlending();
   }
-  gb.setCulling(GL_FRONT); // invert the culling
+  gb.enableCulling(GL_FRONT); // invert the culling
   gstate = gb.getState(); // get the modified gstate
 
   return;

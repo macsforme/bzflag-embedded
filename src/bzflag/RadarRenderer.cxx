@@ -920,7 +920,7 @@ void RadarRenderer::renderBoxPyrMeshFast(float _range)
   OpenGLGStateBuilder gb;
   gb.setTexture(gradientTexId);
   gb.setShading(GL_FLAT);
-  gb.setCulling(GL_BACK);
+  gb.enableCulling(GL_BACK);
   gb.setBlending(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   OpenGLGState gs = gb.getState();
   gs.setState();

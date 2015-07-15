@@ -154,7 +154,7 @@ void bzMat2gstate(const BzMaterial* bzmat, OpenGLGState& gstate,
 
   // culling
   if (bzmat->getNoCulling()) {
-    builder.setCulling(GL_NONE);
+    builder.disableCulling();
   }
 
   // generate the gstate
