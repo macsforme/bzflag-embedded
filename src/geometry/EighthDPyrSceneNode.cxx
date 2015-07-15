@@ -140,18 +140,41 @@ EighthDPyrSceneNode::EighthDPyrRenderNode::~EighthDPyrRenderNode()
 void			EighthDPyrSceneNode::EighthDPyrRenderNode::render()
 {
   myColor3f(1.0f, 1.0f, 1.0f);
-  glBegin(GL_LINE_LOOP);
-  glVertex3fv(corner[0]);
-  glVertex3fv(corner[1]);
-  glVertex3fv(corner[2]);
-  glVertex3fv(corner[3]);
-  glEnd();
-  glBegin(GL_LINES);
-  glVertex3fv(corner[0]);  glVertex3fv(corner[4]);
-  glVertex3fv(corner[1]);  glVertex3fv(corner[4]);
-  glVertex3fv(corner[2]);  glVertex3fv(corner[4]);
-  glVertex3fv(corner[3]);  glVertex3fv(corner[4]);
-  glEnd();
+
+  GLfloat drawArray[] = {
+    corner[0][0], corner[0][1], corner[0][2],
+    corner[1][0], corner[1][1], corner[1][2],
+
+    corner[1][0], corner[1][1], corner[1][2],
+    corner[2][0], corner[2][1], corner[2][2],
+
+    corner[2][0], corner[2][1], corner[2][2],
+    corner[3][0], corner[3][1], corner[3][2],
+
+    corner[3][0], corner[3][1], corner[3][2],
+    corner[0][0], corner[0][1], corner[0][2],
+
+    corner[0][0], corner[0][1], corner[0][2],
+    corner[4][0], corner[4][1], corner[4][2],
+
+    corner[1][0], corner[1][1], corner[1][2],
+    corner[4][0], corner[4][1], corner[4][2],
+
+    corner[2][0], corner[2][1], corner[2][2],
+    corner[4][0], corner[4][1], corner[4][2],
+
+    corner[3][0], corner[3][1], corner[3][2],
+    corner[4][0], corner[4][1], corner[4][2]
+  };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, &drawArray);
+
+  glDrawArrays(GL_LINES, 0, 16);
 }
 
 // Local Variables: ***
