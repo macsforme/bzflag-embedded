@@ -26,6 +26,7 @@
 
 // FIXME (SceneRenderer.cxx is in src/bzflag)
 #include "SceneRenderer.h"
+#include "DrawArrays.h"
 
 EighthDimSceneNode::EighthDimSceneNode(int numPolygons) :
 				renderNode(this, numPolygons)
@@ -76,7 +77,8 @@ EighthDimSceneNode::EighthDimRenderNode::EighthDimRenderNode(
 				const EighthDimSceneNode* _sceneNode,
 				int numPolys) :
 				sceneNode(_sceneNode),
-				numPolygons(numPolys)
+				numPolygons(numPolys),
+				drawArrayID(INVALID_DRAW_ARRAY_ID)
 {
   color = (GLfloat(*)[4])new GLfloat[4 * numPolygons];
   poly = (GLfloat(*)[3][3])new GLfloat[9 * numPolygons];
@@ -94,25 +96,47 @@ EighthDimSceneNode::EighthDimRenderNode::~EighthDimRenderNode()
 {
   delete[] color;
   delete[] poly;
+
+  if(drawArrayID != INVALID_DRAW_ARRAY_ID) {
+    DrawArrays::deleteArray(drawArrayID);
+    drawArrayID = INVALID_DRAW_ARRAY_ID;
+  }
 }
 
 void			EighthDimSceneNode::EighthDimRenderNode::render()
 {
-  // draw polygons
-  glBegin(GL_TRIANGLES);
-  for (int i = 0; i < numPolygons; i++) {
-    myColor4fv(color[i]);
-    glVertex3fv(poly[i][0]);
-    glVertex3fv(poly[i][2]);
-    glVertex3fv(poly[i][1]);
+  // rebuild the draw array if necessary
+  if(drawArrayID == INVALID_DRAW_ARRAY_ID) {
+    drawArrayID = DrawArrays::newArray();
+    DrawArrays::beginArray(drawArrayID);
+
+    for (int i = 0; i < numPolygons; i++) {
+      DrawArrays::addColor(color[i][0], color[i][1], color[i][2], color[i][3]);
+      DrawArrays::addVertex(poly[i][0][0], poly[i][0][1], poly[i][0][2]);
+
+      DrawArrays::addColor(color[i][0], color[i][1], color[i][2], color[i][3]);
+      DrawArrays::addVertex(poly[i][2][0], poly[i][2][1], poly[i][2][2]);
+
+      DrawArrays::addColor(color[i][0], color[i][1], color[i][2], color[i][3]);
+      DrawArrays::addVertex(poly[i][1][0], poly[i][1][1], poly[i][1][2]);
+    }
+
+    DrawArrays::finishArray();
   }
-  glEnd();
+
+  // draw polygons
+  DrawArrays::draw(drawArrayID);
 }
 
 void			EighthDimSceneNode::EighthDimRenderNode::setPolygon(
 				int index, const GLfloat vertex[3][3])
 {
   ::memcpy(poly[index], vertex, sizeof(GLfloat[3][3]));
+
+  if(drawArrayID != INVALID_DRAW_ARRAY_ID) {
+    DrawArrays::deleteArray(drawArrayID);
+    drawArrayID = INVALID_DRAW_ARRAY_ID;
+  }
 }
 
 // Local Variables: ***

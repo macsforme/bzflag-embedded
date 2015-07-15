@@ -48,6 +48,7 @@ class EighthDimSceneNode : public SceneNode {
 	int		numPolygons;
 	GLfloat		(*color)[4];
 	GLfloat		(*poly)[3][3];
+	unsigned int drawArrayID;
     };
 
   private:
