@@ -47,7 +47,7 @@ PolyWallSceneNode::Geometry::~Geometry()
 void			PolyWallSceneNode::Geometry::render()
 {
   wall->setColor();
-  glNormal3fv(normal);
+  glNormal3f(normal[0], normal[1], normal[2]);
   if (style >= 2) {
     drawVT();
   } else {
@@ -60,21 +60,57 @@ void			PolyWallSceneNode::Geometry::render()
 void			PolyWallSceneNode::Geometry::drawV() const
 {
   const int count = vertex.getSize();
-  glBegin(GL_TRIANGLE_FAN);
-  for (int i = 0; i < count; i++)
-    glVertex3fv(vertex[i]);
-  glEnd();
+  if(count < 3)
+    return;
+
+  GLfloat *drawArray = new GLfloat[count * 3];
+
+  for (int i = 0; i < count; i++) {
+    drawArray[i * 3 + 0] = vertex[i][0];
+    drawArray[i * 3 + 1] = vertex[i][1];
+    drawArray[i * 3 + 2] = vertex[i][2];
+  }
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+  delete[] drawArray;
 }
 
 void			PolyWallSceneNode::Geometry::drawVT() const
 {
   const int count = vertex.getSize();
-  glBegin(GL_TRIANGLE_FAN);
+  if(count < 3)
+    return;
+
+  GLfloat *drawArray = new GLfloat[count * 5];
+
   for (int i = 0; i < count; i++) {
-    glTexCoord2fv(uv[i]);
-    glVertex3fv(vertex[i]);
+    drawArray[i * 5 + 0] = uv[i][0];
+    drawArray[i * 5 + 1] = uv[i][1];
+
+    drawArray[i * 5 + 2] = vertex[i][0];
+    drawArray[i * 5 + 3] = vertex[i][1];
+    drawArray[i * 5 + 4] = vertex[i][2];
   }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+  glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+  delete[] drawArray;
 }
 
 //
