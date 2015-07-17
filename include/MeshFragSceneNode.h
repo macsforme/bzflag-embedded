@@ -55,9 +55,7 @@ class MeshFragSceneNode : public WallSceneNode {
     class Geometry : public RenderNode {
       public:
 	Geometry(MeshFragSceneNode* node);
-	~Geometry();
 
-	void init();
 	void setStyle(int _style) { style = _style; }
 	void render();
 	void renderRadar();
@@ -70,14 +68,8 @@ class MeshFragSceneNode : public WallSceneNode {
 	void drawVN() const; // draw with normals
 	void drawVTN() const; // draw with texcoords and normals
 
-	void initDisplayList();
-	void freeDisplayList();
-	static void initContext(void *data);
-	static void freeContext(void *data);
-
       private:
 	int style;
-	GLuint list;
 	MeshFragSceneNode* sceneNode;
     };
 

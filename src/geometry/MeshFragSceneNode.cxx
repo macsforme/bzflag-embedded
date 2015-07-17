@@ -45,62 +45,6 @@ MeshFragSceneNode::Geometry::Geometry(MeshFragSceneNode* node)
 {
   style = 0;
   sceneNode = node;
-  list = INVALID_GL_LIST_ID;
-  OpenGLGState::registerContextInitializer (freeContext, initContext, this);
-  return;
-}
-
-
-MeshFragSceneNode::Geometry::~Geometry()
-{
-  OpenGLGState::unregisterContextInitializer (freeContext, initContext, this);
-  return;
-}
-
-
-void MeshFragSceneNode::Geometry::init()
-{
-  initDisplayList();
-  return;
-}
-
-
-void MeshFragSceneNode::Geometry::initDisplayList()
-{
-  if (list != INVALID_GL_LIST_ID) {
-    glDeleteLists(list, 1);
-  }
-  list = INVALID_GL_LIST_ID;
-  if (BZDB.isTrue("meshLists")) {
-    list = glGenLists(1);
-    glNewList(list, GL_COMPILE);
-    drawVTN();
-    glEndList();
-  }
-  return;
-}
-
-
-void MeshFragSceneNode::Geometry::freeDisplayList()
-{
-  if (list != INVALID_GL_LIST_ID) {
-    glDeleteLists(list, 1);
-  }
-  list = INVALID_GL_LIST_ID;
-  return;
-}
-
-
-void MeshFragSceneNode::Geometry::freeContext(void *data)
-{
-  ((MeshFragSceneNode::Geometry*)data)->freeDisplayList();
-  return;
-}
-
-
-void MeshFragSceneNode::Geometry::initContext(void *data)
-{
-  ((MeshFragSceneNode::Geometry*)data)->initDisplayList();
   return;
 }
 
@@ -177,22 +121,17 @@ void MeshFragSceneNode::Geometry::render()
   // set the color
   sceneNode->setColor();
 
-  if (list != INVALID_GL_LIST_ID) {
-    glCallList(list);
-  }
-  else {
-    if (BZDBCache::lighting) {
-      if (BZDBCache::texture) {
-	drawVTN();
-      } else {
-	drawVN();
-      }
+  if (BZDBCache::lighting) {
+    if (BZDBCache::texture) {
+      drawVTN();
     } else {
-      if (BZDBCache::texture) {
-	drawVT();
-      } else {
-	drawV();
-      }
+      drawVN();
+    }
+  } else {
+    if (BZDBCache::texture) {
+      drawVT();
+    } else {
+      drawV();
     }
   }
 
@@ -209,17 +148,15 @@ void MeshFragSceneNode::Geometry::render()
 void MeshFragSceneNode::Geometry::renderRadar()
 {
   const int triangles = sceneNode->arrayCount;
-  if (list != INVALID_GL_LIST_ID) {
-    glCallList(list);
-  } else {
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_VERTEX_ARRAY);
 
-    glVertexPointer(3, GL_FLOAT, 0, sceneNode->vertices);
-    glDrawArrays(GL_TRIANGLES, 0, triangles * 3);
-  }
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, sceneNode->vertices);
+  glDrawArrays(GL_TRIANGLES, 0, triangles * 3);
+
   addTriangleCount(triangles);
   return;
 }
@@ -228,17 +165,15 @@ void MeshFragSceneNode::Geometry::renderRadar()
 void MeshFragSceneNode::Geometry::renderShadow()
 {
   const int triangles = sceneNode->arrayCount;
-  if (list != INVALID_GL_LIST_ID) {
-    glCallList(list);
-  } else {
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_VERTEX_ARRAY);
 
-    glVertexPointer(3, GL_FLOAT, 0, sceneNode->vertices);
-    glDrawArrays(GL_TRIANGLES, 0, triangles * 3);
-  }
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, sceneNode->vertices);
+  glDrawArrays(GL_TRIANGLES, 0, triangles * 3);
+
   addTriangleCount(triangles);
   return;
 }
@@ -356,8 +291,6 @@ MeshFragSceneNode::MeshFragSceneNode(int _faceCount, const MeshFace** _faces)
   }
 
   assert(arrayIndex == (arrayCount * 3));
-
-  renderNode.init(); // setup the display list
 
   return;
 }
