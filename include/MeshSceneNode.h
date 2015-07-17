@@ -60,8 +60,8 @@ class MeshSceneNode : public SceneNode {
 
     void getRenderNodes(std::vector<RenderSet>& rnodes);
 
-    void makeXFormList();
-    void freeXFormList();
+    void makeXFormArray();
+    void freeXFormArray();
     static void initContext(void* data);
     static void freeContext(void* data);
 
@@ -77,8 +77,8 @@ class MeshSceneNode : public SceneNode {
 
     bool animRepos;
 
-    // transform display list
-    GLuint xformList;
+    // transform matrix array
+    GLfloat *xformArray;
 
     struct MeshMaterial {
       const BzMaterial* bzmat;

@@ -31,13 +31,13 @@
 
 
 OpaqueRenderNode::OpaqueRenderNode(MeshDrawMgr* _drawMgr,
-				   GLuint* _xformList, bool _normalize,
+				   GLfloat _xformArray[], bool _normalize,
 				   const GLfloat* _color,
 				   int _lod, int _set,
 				   const Extents* _exts, int tris)
 {
   drawMgr = _drawMgr;
-  xformList = _xformList;
+  memcpy(xformArray, _xformArray, 16 * sizeof(GLfloat));
   normalize = _normalize;
   lod = _lod;
   set = _set;
@@ -58,10 +58,9 @@ void OpaqueRenderNode::render()
   myColor4fv(color);
 
   // do the transformation
-  if (*xformList != INVALID_GL_LIST_ID) {
-    glPushMatrix();
-    glCallList(*xformList);
-  }
+  glPushMatrix();
+  glMultMatrixf(xformArray);
+
   if (normalize) {
     glEnable(GL_NORMALIZE);
   }
@@ -73,9 +72,8 @@ void OpaqueRenderNode::render()
   if (normalize) {
     glDisable(GL_NORMALIZE);
   }
-  if (*xformList != INVALID_GL_LIST_ID) {
-    glPopMatrix();
-  }
+
+  glPopMatrix();
 
   if (switchLights) {
     RENDERER.reenableLights();
@@ -89,14 +87,12 @@ void OpaqueRenderNode::render()
 
 void OpaqueRenderNode::renderRadar()
 {
-  if (*xformList != INVALID_GL_LIST_ID) {
-    glPushMatrix();
-    glCallList(*xformList);
-  }
+  glPushMatrix();
+  glMultMatrixf(xformArray);
+
   drawMgr->executeSetGeometry(lod, set);
-  if (*xformList != INVALID_GL_LIST_ID) {
-    glPopMatrix();
-  }
+
+  glPopMatrix();
 
   addTriangleCount(triangles);
 
@@ -106,14 +102,12 @@ void OpaqueRenderNode::renderRadar()
 
 void OpaqueRenderNode::renderShadow()
 {
-  if (*xformList != INVALID_GL_LIST_ID) {
-    glPushMatrix();
-    glCallList(*xformList);
-  }
+  glPushMatrix();
+  glMultMatrixf(xformArray);
+
   drawMgr->executeSetGeometry(lod, set);
-  if (*xformList != INVALID_GL_LIST_ID) {
-    glPopMatrix();
-  }
+
+  glPopMatrix();
 
   addTriangleCount(triangles);
 
@@ -124,14 +118,14 @@ void OpaqueRenderNode::renderShadow()
 /******************************************************************************/
 
 AlphaGroupRenderNode::AlphaGroupRenderNode(MeshDrawMgr* _drawMgr,
-					   GLuint* _xformList,
+					   GLfloat _xformArray[],
 					   bool _normalize,
 					   const GLfloat* _color,
 					   int _lod, int _set,
 					   const Extents* _exts,
 					   const GLfloat _pos[3],
 					   int _triangles) :
-    OpaqueRenderNode(_drawMgr, _xformList, _normalize,
+    OpaqueRenderNode(_drawMgr, _xformArray, _normalize,
 		     _color, _lod, _set, _exts, _triangles)
 {
   memcpy(pos, _pos, sizeof(GLfloat[3]));
