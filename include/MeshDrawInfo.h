@@ -296,7 +296,6 @@ class DrawSet {
     int count;
     DrawCmd* cmds;
     const BzMaterial* material;
-    bool wantList;
     float sphere[4];
     int triangleCount;
 };

@@ -24,18 +24,12 @@ class MeshDrawMgr {
     void executeSet(int lod, int set, bool normals, bool texcoords);
     void executeSetGeometry(int lod, int set);
 
-    static void disableArrays();
     static void init();
     static void kill();
 
   private:
     void rawExecuteCommands(int lod, int set);
-    static void rawDisableArrays();
-
-    void makeLists();
-    void freeLists();
-    static void initContext(void* data);
-    static void freeContext(void* data);
+    static void disableArrays();
 
   private:
     const MeshDrawInfo* drawInfo;
@@ -52,8 +46,6 @@ class MeshDrawMgr {
 
     int lodCount;
     LodList* lodLists;
-
-    static GLuint unloadList;
 };
 
 #endif // _MESH_DRAW_MGR_H_

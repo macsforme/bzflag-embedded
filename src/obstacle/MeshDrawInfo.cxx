@@ -708,7 +708,7 @@ static bool parseDrawSet(std::istream& input, DrawSet& set, int& lines)
       break;
     }
     else if (strcasecmp(label.c_str(),"dlist") == 0) {
-      set.wantList = true;
+      // this is ignored; OpenGL ES can't do display lists
     }
     else if (strcasecmp(label.c_str(), "center") == 0) {
       if (!(parms >> set.sphere[0]) || !(parms >> set.sphere[1]) ||
@@ -811,7 +811,6 @@ bool MeshDrawInfo::parse(std::istream& input)
   TimeKeeper start = TimeKeeper::getCurrent();
 
   bool success = true;
-  bool allDList = false;
 
   int i;
 
@@ -843,7 +842,7 @@ bool MeshDrawInfo::parse(std::istream& input)
       break;
     }
     else if (strcasecmp(cmd.c_str(), "dlist") == 0) {
-      allDList = true;
+      // this is ignored; OpenGL ES can't do display lists
     }
     else if (strcasecmp(cmd.c_str(), "angvel") == 0) {
       if (animInfo != NULL) {
@@ -990,24 +989,6 @@ bool MeshDrawInfo::parse(std::istream& input)
     }
   }
 
-  // ask for all display lists
-  if (allDList) {
-    for (i = 0; i < lodCount; i++) {
-      DrawLod& lodref = lods[i];
-      for (int j = 0; j < lodref.count; j++) {
-	DrawSet& set = lodref.sets[j];
-	set.wantList = true;
-      }
-    }
-    for (i = 0; i < radarCount; i++) {
-      DrawLod& lodref = radarLods[i];
-      for (int j = 0; j < lodref.count; j++) {
-	DrawSet& set = lodref.sets[j];
-	set.wantList = true;
-      }
-    }
-  }
-
   if (debugLevel >= 4) {
     TimeKeeper end = TimeKeeper::getCurrent();
     const float elapsed = float(end - start);
@@ -1085,9 +1066,6 @@ void MeshDrawInfo::print(std::ostream& out, const std::string& indent) const
       out << indent << "    matref ";
       MATERIALMGR.printReference(out, set.material);
       out << std::endl;
-      if (set.wantList) {
-	out << indent << "      dlist" << std::endl;
-      }
       out << indent << "      sphere " << set.sphere[0] << " "
 				       << set.sphere[1] << " "
 				       << set.sphere[2] << " "
@@ -1128,9 +1106,6 @@ void MeshDrawInfo::print(std::ostream& out, const std::string& indent) const
       out << indent << "    material ";
       MATERIALMGR.printReference(out, set.material);
       out << std::endl;
-      if (set.wantList) {
-	out << indent << "      dlist" << std::endl;
-      }
       const int cmdCount = set.count;
       for (int k = 0; k < cmdCount; k++) {
 	const DrawCmd& command = set.cmds[k];
@@ -1584,7 +1559,6 @@ DrawSet::DrawSet()
   count = 0;
   cmds = NULL;
   material = NULL;
-  wantList = false;
   sphere[0] = sphere[1] = sphere[2] = sphere[3] = +MAXFLOAT;
   return;
 }
@@ -1632,7 +1606,6 @@ void* DrawSet::pack(void* buf) const
 
   // state bits
   uint8_t state = 0;
-  state |= wantList ? (1 << 0) : 0;
   buf = nboPackUByte(buf, state);
 
   return buf;
@@ -1660,7 +1633,6 @@ const void* DrawSet::unpack(const void* buf)
   // state bits
   uint8_t state;
   buf = nboUnpackUByte(buf, state);
-  wantList = (state & (1 << 0)) != 0;
 
   return buf;
 }
