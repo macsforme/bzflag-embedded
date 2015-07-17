@@ -80,6 +80,13 @@ void __stdcall		SceneNode::noColor4f(
 				GLfloat, GLfloat, GLfloat, GLfloat) { }
 void __stdcall		SceneNode::noColor3fv(const GLfloat*) { }
 void __stdcall		SceneNode::noColor4fv(const GLfloat*) { }
+
+void __stdcall		SceneNode::stubColor3f(GLfloat r, GLfloat g, GLfloat b)
+				{ glColor4f(r, g, b, 1.0); }
+void __stdcall		SceneNode::stubColor3fv(const GLfloat* rgb)
+				{ glColor4f(rgb[0], rgb[1], rgb[2], 1.0f); }
+void __stdcall		SceneNode::stubColor4fv(const GLfloat* rgba)
+				{ glColor4f(rgba[0], rgba[1], rgba[2], rgba[3]); }
 #endif
 void			SceneNode::noStipple(GLfloat) { }
 
@@ -105,10 +112,10 @@ void			SceneNode::setColorOverride(bool on)
     color4fv = &oglColor4fv;
 #else
 #ifndef __MINGW32__
-    color3f  = &::glColor3f;
+    color3f  = &stubColor3f;
     color4f  = &::glColor4f;
-    color3fv = &::glColor3fv;
-    color4fv = &::glColor4fv;
+    color3fv = &stubColor3fv;
+    color4fv = &stubColor4fv;
 #endif
 #endif
     stipple  = &OpenGLGState::setStipple;

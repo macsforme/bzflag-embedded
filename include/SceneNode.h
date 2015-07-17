@@ -149,6 +149,10 @@ class SceneNode {
     static void __stdcall	noColor4f(GLfloat, GLfloat, GLfloat, GLfloat);
     static void __stdcall	noColor3fv(const GLfloat*);
     static void __stdcall	noColor4fv(const GLfloat*);
+
+    static void __stdcall	stubColor3f(GLfloat, GLfloat, GLfloat);
+    static void __stdcall	stubColor3fv(const GLfloat*);
+    static void __stdcall	stubColor4fv(const GLfloat*);
 #endif
     static void			noStipple(GLfloat);
 
