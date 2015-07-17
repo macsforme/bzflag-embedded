@@ -54,11 +54,28 @@ MeshPolySceneNode::Geometry::~Geometry()
 inline void MeshPolySceneNode::Geometry::drawV() const
 {
   const int count = vertices.getSize();
-  glBegin(GL_TRIANGLE_FAN);
+  if(count < 3)
+    return;
+
+  GLfloat *drawArray = new GLfloat[count * 3];
+
   for (int i = 0; i < count; i++) {
-    glVertex3fv(vertices[i]);
+    drawArray[i * 3 + 0] = vertices[i][0];
+    drawArray[i * 3 + 1] = vertices[i][1];
+    drawArray[i * 3 + 2] = vertices[i][2];
   }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+  delete[] drawArray;
+
   return;
 }
 
@@ -66,12 +83,32 @@ inline void MeshPolySceneNode::Geometry::drawV() const
 inline void MeshPolySceneNode::Geometry::drawVT() const
 {
   const int count = vertices.getSize();
-  glBegin(GL_TRIANGLE_FAN);
+  if(count < 3)
+    return;
+
+  GLfloat *drawArray = new GLfloat[count * 5];
+
   for (int i = 0; i < count; i++) {
-    glTexCoord2fv(texcoords[i]);
-    glVertex3fv(vertices[i]);
+    drawArray[i * 5 + 0] = texcoords[i][0];
+    drawArray[i * 5 + 1] = texcoords[i][1];
+
+    drawArray[i * 5 + 2] = vertices[i][0];
+    drawArray[i * 5 + 3] = vertices[i][1];
+    drawArray[i * 5 + 4] = vertices[i][2];
   }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+  glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+  delete[] drawArray;
+
   return;
 }
 
@@ -79,12 +116,33 @@ inline void MeshPolySceneNode::Geometry::drawVT() const
 inline void MeshPolySceneNode::Geometry::drawVN() const
 {
   const int count = vertices.getSize();
-  glBegin(GL_TRIANGLE_FAN);
+  if(count < 3)
+    return;
+
+  GLfloat *drawArray = new GLfloat[count * 6];
+
   for (int i = 0; i < count; i++) {
-    glNormal3fv(normals[i]);
-    glVertex3fv(vertices[i]);
+    drawArray[i * 6 + 0] = normals[i][0];
+    drawArray[i * 6 + 1] = normals[i][1];
+    drawArray[i * 6 + 2] = normals[i][2];
+
+    drawArray[i * 6 + 3] = vertices[i][0];
+    drawArray[i * 6 + 4] = vertices[i][1];
+    drawArray[i * 6 + 5] = vertices[i][2];
   }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glNormalPointer(GL_FLOAT, 6 * sizeof(GLfloat), drawArray);
+  glVertexPointer(3, GL_FLOAT, 6 * sizeof(GLfloat), drawArray + 3);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+  delete[] drawArray;
+
   return;
 }
 
@@ -92,13 +150,37 @@ inline void MeshPolySceneNode::Geometry::drawVN() const
 inline void MeshPolySceneNode::Geometry::drawVTN() const
 {
   const int count = vertices.getSize();
-  glBegin(GL_TRIANGLE_FAN);
+  if(count < 3)
+    return;
+
+  GLfloat *drawArray = new GLfloat[count * 8];
+
   for (int i = 0; i < count; i++) {
-    glTexCoord2fv(texcoords[i]);
-    glNormal3fv(normals[i]);
-    glVertex3fv(vertices[i]);
+    drawArray[i * 8 + 0] = texcoords[i][0];
+    drawArray[i * 8 + 1] = texcoords[i][1];
+
+    drawArray[i * 8 + 2] = normals[i][0];
+    drawArray[i * 8 + 3] = normals[i][1];
+    drawArray[i * 8 + 4] = normals[i][2];
+
+    drawArray[i * 8 + 5] = vertices[i][0];
+    drawArray[i * 8 + 6] = vertices[i][1];
+    drawArray[i * 8 + 7] = vertices[i][2];
   }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glTexCoordPointer(2, GL_FLOAT, 8 * sizeof(GLfloat), drawArray);
+  glNormalPointer(GL_FLOAT, 8 * sizeof(GLfloat), drawArray + 2);
+  glVertexPointer(3, GL_FLOAT, 8 * sizeof(GLfloat), drawArray + 5);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+  delete[] drawArray;
+
   return;
 }
 
@@ -114,7 +196,7 @@ void MeshPolySceneNode::Geometry::render()
       drawVN();
     }
   } else {
-    glNormal3fv(normal);
+    glNormal3f(normal[0], normal[1], normal[2]);
     if (style >= 2) {
       drawVT();
     } else {
