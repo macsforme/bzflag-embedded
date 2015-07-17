@@ -25,6 +25,7 @@
 
 // local implementation headers
 #include "ViewFrustum.h"
+#include "DrawArrays.h"
 
 // FIXME (SceneRenderer.cxx is in src/bzflag)
 #include "SceneRenderer.h"
@@ -105,7 +106,8 @@ QuadWallSceneNode::Geometry::~Geometry()
 
 #define	RENDER(_e)							\
   for (int k = 0, t = 0; t < dt; t++) {					\
-    glBegin(GL_TRIANGLE_STRIP);						\
+    unsigned int drawArrayID = DrawArrays::newArray();			\
+    DrawArrays::beginArray(drawArrayID);				\
     for (int s = 0; s < dsq; k += 4, s++) {				\
       _e(k+ds+1);							\
       _e(k);								\
@@ -138,15 +140,18 @@ QuadWallSceneNode::Geometry::~Geometry()
 	_e(k);								\
 	k++;								\
     }									\
-    glEnd();								\
+    DrawArrays::finishArray();						\
+    DrawArrays::draw(drawArrayID, GL_TRIANGLE_STRIP);			\
+    DrawArrays::deleteArray(drawArrayID);				\
   }
-#define EMITV(_i)	glVertex3fv(vertex[_i])
-#define EMITVT(_i)	glTexCoord2fv(uv[_i]); glVertex3fv(vertex[_i])
+#define EMITV(_i)	DrawArrays::addVertex(vertex[_i][0], vertex[_i][1], vertex[_i][2]);
+#define EMITVT(_i)	DrawArrays::addTexCoord(uv[_i][0], uv[_i][1]) ;	\
+			DrawArrays::addVertex(vertex[_i][0], vertex[_i][1], vertex[_i][2]);
 
 void			QuadWallSceneNode::Geometry::render()
 {
   wall->setColor();
-  glNormal3fv(normal);
+  glNormal3f(normal[0], normal[1], normal[2]);
   if (style >= 2) {
     drawVT();
   } else {
@@ -159,12 +164,33 @@ void			QuadWallSceneNode::Geometry::render()
 void			QuadWallSceneNode::Geometry::renderShadow()
 {
   int last = (ds + 1) * dt;
-  glBegin(GL_TRIANGLE_STRIP);
-  glVertex3fv(vertex[last]);
-  glVertex3fv(vertex[0]);
-  glVertex3fv(vertex[last + ds]);
-  glVertex3fv(vertex[ds]);
-  glEnd();
+  GLfloat drawArray[] = {
+    vertex[last][0],
+    vertex[last][1],
+    vertex[last][2],
+
+    vertex[0][0],
+    vertex[0][1],
+    vertex[0][2],
+
+    vertex[last + ds][0],
+    vertex[last + ds][1],
+    vertex[last + ds][2],
+
+    vertex[ds][0],
+    vertex[ds][1],
+    vertex[ds][2]
+  };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
   addTriangleCount(2);
 }
 
