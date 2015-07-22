@@ -260,6 +260,45 @@ void glTranslatefv (const float v[3] )
 #define GL_RAD_CON 0.017453292519943295769236907684886f
 
 
+// a few replacements for some OpenGL functions we don't have in OpenGL ES
+void bzGLRectf(float x1, float y1, float x2, float y2)
+{
+  GLfloat drawArray[] = {
+    x1, y1,
+    x2, y1,
+    x2, y2,
+    x1, y2
+  };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+void bzGLRecti(short int x1, short int y1, short int x2, short int y2)
+{
+  GLshort drawArray[] = {
+    x1, y1,
+    x2, y1,
+    x2, y2,
+    x1, y2
+  };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_SHORT, 0, drawArray);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
 // Local Variables: ***
 // mode: C++ ***
 // tab-width: 8 ***

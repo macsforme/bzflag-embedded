@@ -55,6 +55,10 @@ typedef enum {
 } eAlignment;
 
 
+void bzGLRectf(float x1, float y1, float x2, float y2);
+void bzGLRecti(short int x1, short int y1, short int x2, short int y2);
+
+
 #endif // __OPENGLUTILS_H__
 
 
