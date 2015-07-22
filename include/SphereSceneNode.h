@@ -95,7 +95,8 @@ class SphereLodSceneNode : public SphereSceneNode {
     bool inside;
 
     static bool initialized;
-    static GLuint lodLists[sphereLods];
+    static GLUquadric *quadric;
+    static unsigned int lodDivisions[sphereLods];
     static float lodPixelsSqr[sphereLods];
     static int listTriangleCount[sphereLods];
 

@@ -24,6 +24,9 @@
 #include "StateDatabase.h"
 #include "BZDBCache.h"
 #include "OpenGLMaterial.h"
+#ifdef HAVE_GLES
+#include "OpenGLUtils.h"
+#endif
 #include "TextureManager.h"
 
 // local implementation headers
@@ -117,42 +120,17 @@ void SphereSceneNode::notifyStyleChange()
 
 
 bool SphereLodSceneNode::initialized = false;
-GLuint SphereLodSceneNode::lodLists[sphereLods];
+GLUquadric* SphereLodSceneNode::quadric = NULL;
+unsigned int SphereLodSceneNode::lodDivisions[sphereLods];
 float SphereLodSceneNode::lodPixelsSqr[sphereLods];
 int SphereLodSceneNode::listTriangleCount[sphereLods];
 
 
-static GLuint buildSphereList(GLdouble radius, GLint slices, GLint stacks)
-{
-  GLuint list;
-
-  GLUquadric* quadric = gluNewQuadric();
-  gluQuadricDrawStyle(quadric, GLU_FILL);
-  gluQuadricTexture(quadric, GL_TRUE);
-  gluQuadricNormals(quadric, GL_SMOOTH);
-  gluQuadricOrientation(quadric, GLU_OUTSIDE);
-
-  list = glGenLists(1);
-  glNewList(list, GL_COMPILE);
-  {
-    gluSphere(quadric, radius, slices, stacks);
-  }
-  glEndList();
-
-  gluDeleteQuadric(quadric);
-
-  return list;
-}
-
-
 void SphereLodSceneNode::freeContext(void *)
 {
-  for (int i = 0; i < sphereLods; i++) {
-    if (lodLists[i] != INVALID_GL_LIST_ID) {
-      glDeleteLists(lodLists[i], 1);
-      lodLists[i] = INVALID_GL_LIST_ID;
-    }
-  }
+  gluDeleteQuadric(quadric);
+  quadric = NULL;
+
   return;
 }
 
@@ -168,23 +146,31 @@ void SphereLodSceneNode::initContext(void *)
 {
   initialized = true;
 
-  lodLists[0] = buildSphereList(1.0, 32, 32);
+  if(quadric == NULL) {
+    quadric = gluNewQuadric();
+    gluQuadricDrawStyle(quadric, GLU_FILL);
+    gluQuadricTexture(quadric, GL_TRUE);
+    gluQuadricNormals(quadric, GL_SMOOTH);
+    gluQuadricOrientation(quadric, GLU_OUTSIDE);
+  }
+
+  lodDivisions[0] = 32;
   lodPixelsSqr[0] = 80.0f * 80.0f;
   listTriangleCount[0] = calcTriCount(32, 32);
 
-  lodLists[1] = buildSphereList(1.0, 16, 16);
+  lodDivisions[1] = 16;
   lodPixelsSqr[1] = 40.0f * 40.0f;
   listTriangleCount[1] = calcTriCount(16, 16);
 
-  lodLists[2] = buildSphereList(1.0,  8, 8);
+  lodDivisions[2] = 8;
   lodPixelsSqr[2] = 20.0f * 20.0f;
   listTriangleCount[2] = calcTriCount(8, 8);
 
-  lodLists[3] = buildSphereList(1.0,  6, 6);
+  lodDivisions[3] = 6;
   lodPixelsSqr[3] = 10.0f * 10.0f;
   listTriangleCount[3] = calcTriCount(6, 6);
 
-  lodLists[4] = buildSphereList(1.0,  4, 4);
+  lodDivisions[4] = 4;
   lodPixelsSqr[4] = 5.0f * 5.0f;
   listTriangleCount[4] = calcTriCount(4, 4);
 
@@ -194,9 +180,8 @@ void SphereLodSceneNode::initContext(void *)
 
 void SphereLodSceneNode::init()
 {
-  initialized = false; // no lists yet
+  initialized = false;
   for (int i = 0; i < sphereLods; i++) {
-    lodLists[i] = INVALID_GL_LIST_ID;
     lodPixelsSqr[i] = 0.0f;
   }
   return;
@@ -339,7 +324,11 @@ static inline void drawFullScreenRect()
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
+#ifdef HAVE_GLES
+  bzGLRectf(-1.0f, -1.0f, +1.0f, +1.0f);
+#else
   glRectf(-1.0f, -1.0f, +1.0f, +1.0f);
+#endif
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
@@ -353,8 +342,15 @@ void SphereLodSceneNode::SphereLodRenderNode::render()
   const GLfloat radius = sceneNode->radius;
   const GLfloat* sphere = sceneNode->getSphere();
 
+#ifdef HAVE_GLES
+  static const GLfloat groundPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
+
+  glClipPlanef(GL_CLIP_PLANE0, groundPlane);
+#else
   static const GLdouble groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
+
   glClipPlane(GL_CLIP_PLANE0, groundPlane);
+#endif
   glEnable(GL_CLIP_PLANE0);
 
 #ifdef GL_VERSION_1_2
@@ -366,7 +362,7 @@ void SphereLodSceneNode::SphereLodRenderNode::render()
   const bool transparent = sceneNode->transparent;
   const bool stippled = transparent && !BZDBCache::blend;
 
-  const GLuint list = SphereLodSceneNode::lodLists[lod];
+  const unsigned int divisions = SphereLodSceneNode::lodDivisions[lod];
 
   glPushMatrix();
   {
@@ -388,11 +384,11 @@ void SphereLodSceneNode::SphereLodRenderNode::render()
       glEnable(GL_COLOR_LOGIC_OP);
       {
 	glCullFace(GL_FRONT);
-	glCallList(list);
+	gluSphere(SphereLodSceneNode::quadric, 1.0, divisions, divisions);
 	addTriangleCount(listTriangleCount[lod]);
 	glCullFace(GL_BACK);
 	if (!sceneNode->inside) {
-	  glCallList(list);
+	  gluSphere(SphereLodSceneNode::quadric, 1.0, divisions, divisions);
 	  addTriangleCount(listTriangleCount[lod]);
 	} else {
 	  drawFullScreenRect();
@@ -418,12 +414,12 @@ void SphereLodSceneNode::SphereLodRenderNode::render()
     }
     if (!stippled) {
       glCullFace(GL_FRONT);
-      glCallList(list);
+      gluSphere(SphereLodSceneNode::quadric, 1.0, divisions, divisions);
       addTriangleCount(listTriangleCount[lod]);
     }
     glCullFace(GL_BACK);
     if (!sceneNode->inside) {
-      glCallList(list);
+      gluSphere(SphereLodSceneNode::quadric, 1.0, divisions, divisions);
       addTriangleCount(listTriangleCount[lod]);
     } else {
       glDisable(GL_LIGHTING);
@@ -593,13 +589,19 @@ void			SphereBspSceneNode::SphereBspRenderNode::
 
 void			SphereBspSceneNode::SphereBspRenderNode::render()
 {
-  static const GLdouble groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
-
   int i, j;
   const GLfloat radius = sceneNode->radius;
   const GLfloat* sphere = sceneNode->getSphere();
 
+#ifdef HAVE_GLES
+  static const GLfloat groundPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
+
+  glClipPlanef(GL_CLIP_PLANE0, groundPlane);
+#else
+  static const GLdouble groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
+
   glClipPlane(GL_CLIP_PLANE0, groundPlane);
+#endif
   glEnable(GL_CLIP_PLANE0);
 
   glPushMatrix();
@@ -609,91 +611,72 @@ void			SphereBspSceneNode::SphereBspRenderNode::render()
     myColor4fv(sceneNode->color);
     if (!BZDBCache::blend && sceneNode->transparent)
       myStipple(sceneNode->color[3]);
-    if (BZDBCache::lighting) {
+    if (BZDBCache::lighting)
 #ifdef GL_VERSION_1_2
       glEnable(GL_RESCALE_NORMAL);
 #else
       glEnable(GL_NORMALIZE);
 #endif
-      // draw with normals (normal is same as vertex!
-      // one of the handy properties of a sphere.)
-      if (highResolution) {
-	for (i = 0; i < SphereRes; i++) {
-	  glBegin(GL_QUAD_STRIP);
-	  for (j = baseIndex; j < NumSlices; j++) {
-	    glNormal3fv(geom[NumSlices * i + j]);
-	    glVertex3fv(geom[NumSlices * i + j]);
-	    glNormal3fv(geom[NumSlices * i + j + NumSlices]);
-	    glVertex3fv(geom[NumSlices * i + j + NumSlices]);
-	  }
-	  for (j = 0; j <= baseIndex; j++) {
-	    glNormal3fv(geom[NumSlices * i + j]);
-	    glVertex3fv(geom[NumSlices * i + j]);
-	    glNormal3fv(geom[NumSlices * i + j + NumSlices]);
-	    glVertex3fv(geom[NumSlices * i + j + NumSlices]);
-	  }
-	  glEnd();
-	}
-	addTriangleCount(SphereRes * NumSlices * 2);
+
+    // set up some variables for drawing info selection
+    const int usingSphereRes = (highResolution ? SphereRes : SphereLowRes);
+    const GLfloat (*geomArray)[3] = (highResolution ? geom : lgeom);
+    const int sectionAdd = (highResolution ? NumSlices : SphereLowRes);
+
+    // normal is same as vertex! one of the handy properties of a sphere.
+    for (i = 0; i < usingSphereRes; i++) {
+      GLfloat *drawArray = new GLfloat[sectionAdd * 18];
+
+      for (j = 0; j < sectionAdd; j++) {
+	drawArray[j * 18 + 0] = geomArray[sectionAdd * i + j][0];
+	drawArray[j * 18 + 1] = geomArray[sectionAdd * i + j][1];
+	drawArray[j * 18 + 2] = geomArray[sectionAdd * i + j][2];
+
+	drawArray[j * 18 + 3] = geomArray[sectionAdd * i + j + sectionAdd][0];
+	drawArray[j * 18 + 4] = geomArray[sectionAdd * i + j + sectionAdd][1];
+	drawArray[j * 18 + 5] = geomArray[sectionAdd * i + j + sectionAdd][2];
+
+	drawArray[j * 18 + 6] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1)][0];
+	drawArray[j * 18 + 7] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1)][1];
+	drawArray[j * 18 + 8] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1)][2];
+
+
+	drawArray[j * 18 + 9] = geomArray[sectionAdd * i + j + sectionAdd][0];
+	drawArray[j * 18 + 10] = geomArray[sectionAdd * i + j + sectionAdd][1];
+	drawArray[j * 18 + 11] = geomArray[sectionAdd * i + j + sectionAdd][2];
+
+	drawArray[j * 18 + 12] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1)][0];
+	drawArray[j * 18 + 13] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1)][1];
+	drawArray[j * 18 + 14] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1)][2];
+
+	drawArray[j * 18 + 15] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1) + sectionAdd][0];
+	drawArray[j * 18 + 16] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1) + sectionAdd][1];
+	drawArray[j * 18 + 17] = geomArray[sectionAdd * i + (j + 1 == sectionAdd ? 0 : j + 1) + sectionAdd][2];
       }
-      else {
-	for (i = 0; i < SphereLowRes; i++) {
-	  glBegin(GL_QUAD_STRIP);
-	  for (j = baseIndex; j < SphereLowRes; j++) {
-	    glNormal3fv(lgeom[SphereLowRes * i + j]);
-	    glVertex3fv(lgeom[SphereLowRes * i + j]);
-	    glNormal3fv(lgeom[SphereLowRes * i + j + SphereLowRes]);
-	    glVertex3fv(lgeom[SphereLowRes * i + j + SphereLowRes]);
-	  }
-	  for (j = 0; j <= baseIndex; j++) {
-	    glNormal3fv(lgeom[SphereLowRes * i + j]);
-	    glVertex3fv(lgeom[SphereLowRes * i + j]);
-	    glNormal3fv(lgeom[SphereLowRes * i + j + SphereLowRes]);
-	    glVertex3fv(lgeom[SphereLowRes * i + j + SphereLowRes]);
-	  }
-	  glEnd();
-	}
-	addTriangleCount(SphereLowRes * SphereLowRes * 2);
-      }
+
+      glDisableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      if(BZDBCache::lighting)
+	glEnableClientState(GL_NORMAL_ARRAY);
+      else
+	glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      glNormalPointer(GL_FLOAT, 0, drawArray);
+      glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+      glDrawArrays(GL_TRIANGLES, 0, sectionAdd * 6);
+
+      delete[] drawArray;
+    }
+    addTriangleCount(usingSphereRes * sectionAdd * 2);
+
+    if (BZDBCache::lighting)
 #ifdef GL_VERSION_1_2
       glDisable(GL_RESCALE_NORMAL);
 #else
       glDisable(GL_NORMALIZE);
 #endif
-    }
-    else {
-      // draw without normals
-      if (highResolution) {
-	for (i = 0; i < SphereRes; i++) {
-	  glBegin(GL_QUAD_STRIP);
-	  for (j = baseIndex; j < NumSlices; j++) {
-	    glVertex3fv(geom[NumSlices * i + j]);
-	    glVertex3fv(geom[NumSlices * i + j + NumSlices]);
-	  }
-	  for (j = 0; j <= baseIndex; j++) {
-	    glVertex3fv(geom[NumSlices * i + j]);
-	    glVertex3fv(geom[NumSlices * i + j + NumSlices]);
-	  }
-	  glEnd();
-	}
-	addTriangleCount(SphereRes * NumSlices * 2);
-      }
-      else {
-	for (i = 0; i < SphereLowRes; i++) {
-	  glBegin(GL_QUAD_STRIP);
-	  for (j = baseIndex; j < SphereLowRes; j++) {
-	    glVertex3fv(lgeom[SphereLowRes * i + j]);
-	    glVertex3fv(lgeom[SphereLowRes * i + j + SphereLowRes]);
-	  }
-	  for (j = 0; j <= baseIndex; j++) {
-	    glVertex3fv(lgeom[SphereLowRes * i + j]);
-	    glVertex3fv(lgeom[SphereLowRes * i + j + SphereLowRes]);
-	  }
-	  glEnd();
-	}
-	addTriangleCount(SphereLowRes * SphereLowRes * 2);
-      }
-    }
 
     if (!BZDBCache::blend && sceneNode->transparent)
       myStipple(0.5f);
@@ -785,7 +768,7 @@ void			SphereFragmentSceneNode::FragmentRenderNode::render()
 {
   const GLfloat pRadius = sceneNode->getRadius();
   const GLfloat* pSphere = sceneNode->getSphere();
-
+  printf("rendering!\n");
   glPushMatrix();
   {
     glTranslatef(pSphere[0], pSphere[1], pSphere[2]);
@@ -794,27 +777,37 @@ void			SphereFragmentSceneNode::FragmentRenderNode::render()
     myColor4fv(sceneNode->color);
     if (!BZDBCache::blend && sceneNode->transparent)
       myStipple(sceneNode->color[3]);
-    glBegin(GL_QUADS);
-    {
-      if (BZDBCache::lighting) {
-	glNormal3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta]);
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta]);
-	glNormal3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta]);
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta]);
-	glNormal3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta2]);
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta2]);
-	glNormal3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta2]);
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta2]);
-	addTriangleCount(2);
-      } else {
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta]);
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta]);
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta2]);
-	glVertex3fv(SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta2]);
-	addTriangleCount(2);
-      }
-    }
-    glEnd(); // 4 verts -> 2 tris
+
+    GLfloat drawArray[] = {
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta][0],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta][1],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta][2],
+
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta][0],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta][1],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta][2],
+
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta2][0],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta2][1],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi2 + theta2][2],
+
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta2][0],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta2][1],
+      SphereBspSceneNode::SphereBspRenderNode::lgeom[SphereLowRes * phi + theta2][2]
+    };
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    if(BZDBCache::lighting)
+      glEnableClientState(GL_NORMAL_ARRAY);
+    else
+      glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glNormalPointer(GL_FLOAT, 0, drawArray);
+    glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
   }
   glPopMatrix();
 
