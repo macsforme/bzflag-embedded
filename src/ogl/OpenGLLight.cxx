@@ -48,7 +48,6 @@ OpenGLLight::OpenGLLight()
   //
   onlyReal = false;
   onlyGround = false;
-  makeLists();
   return;
 }
 
@@ -69,7 +68,6 @@ OpenGLLight::OpenGLLight(const OpenGLLight& l)
   maxDist = l.maxDist;
   onlyReal = l.onlyReal;
   onlyGround = l.onlyGround;
-  makeLists();
   return;
 }
 
@@ -77,7 +75,6 @@ OpenGLLight::OpenGLLight(const OpenGLLight& l)
 OpenGLLight& OpenGLLight::operator=(const OpenGLLight& l)
 {
   if (this != &l) {
-    freeLists();
     pos[0] = l.pos[0];
     pos[1] = l.pos[1];
     pos[2] = l.pos[2];
@@ -97,35 +94,8 @@ OpenGLLight& OpenGLLight::operator=(const OpenGLLight& l)
 }
 
 
-void OpenGLLight::makeLists()
-{
-  const int numLights = getMaxLights();
-
-  // invalidate the lists
-  lists = new GLuint[numLights];
-  for (int i = 0; i < numLights; i++) {
-    lists[i] = INVALID_GL_LIST_ID;
-  }
-
-  OpenGLGState::registerContextInitializer(freeContext,
-					   initContext, (void*)this);
-  return;
-}
-
-
-OpenGLLight::~OpenGLLight()
-{
-  OpenGLGState::unregisterContextInitializer(freeContext,
-					     initContext, (void*)this);
-  freeLists();
-  delete[] lists;
-  return;
-}
-
-
 void OpenGLLight::setDirection(const GLfloat* _pos)
 {
-  freeLists();
   pos[0] = _pos[0];
   pos[1] = _pos[1];
   pos[2] = _pos[2];
@@ -135,7 +105,6 @@ void OpenGLLight::setDirection(const GLfloat* _pos)
 
 void OpenGLLight::setPosition(const GLfloat* _pos)
 {
-  freeLists();
   pos[0] = _pos[0];
   pos[1] = _pos[1];
   pos[2] = _pos[2];
@@ -145,7 +114,6 @@ void OpenGLLight::setPosition(const GLfloat* _pos)
 
 void OpenGLLight::setColor(GLfloat r, GLfloat g, GLfloat b)
 {
-  freeLists();
   color[0] = r;
   color[1] = g;
   color[2] = b;
@@ -154,7 +122,6 @@ void OpenGLLight::setColor(GLfloat r, GLfloat g, GLfloat b)
 
 void OpenGLLight::setColor(const GLfloat* rgb)
 {
-  freeLists();
   color[0] = rgb[0];
   color[1] = rgb[1];
   color[2] = rgb[2];
@@ -163,7 +130,6 @@ void OpenGLLight::setColor(const GLfloat* rgb)
 
 void OpenGLLight::setAttenuation(const GLfloat* _atten)
 {
-  freeLists();
   atten[0] = _atten[0];
   atten[1] = _atten[1];
   atten[2] = _atten[2];
@@ -172,14 +138,12 @@ void OpenGLLight::setAttenuation(const GLfloat* _atten)
 
 void OpenGLLight::setAttenuation(int index, GLfloat value)
 {
-  freeLists();
   atten[index] = value;
 }
 
 
 void OpenGLLight::setOnlyReal(bool value)
 {
-  freeLists();
   onlyReal = value;
   return;
 }
@@ -187,7 +151,6 @@ void OpenGLLight::setOnlyReal(bool value)
 
 void OpenGLLight::setOnlyGround(bool value)
 {
-  freeLists();
   onlyGround = value;
   return;
 }
@@ -267,24 +230,9 @@ void OpenGLLight::enableLight(int index, bool on) // const
 }
 
 
-void OpenGLLight::execute(int index, bool useList) const
+void OpenGLLight::execute(int index) const
 {
-  if (!useList) {
-    genLight((GLenum)(GL_LIGHT0 + index));
-    return;
-  }
-
-  // setup the light parameters (buffered in
-  // a display list), but do not turn it on.
-  if (lists[index] != INVALID_GL_LIST_ID) {
-    glCallList(lists[index]);
-  }
-  else {
-    lists[index] = glGenLists(1);
-    glNewList(lists[index], GL_COMPILE_AND_EXECUTE);
-    genLight((GLenum)(GL_LIGHT0 + index));
-    glEndList();
-  }
+  genLight((GLenum)(GL_LIGHT0 + index));
   return;
 }
 
@@ -294,23 +242,10 @@ void OpenGLLight::genLight(GLenum light) const
   glLightfv(light, GL_POSITION, pos);
   glLightfv(light, GL_DIFFUSE, color);
   glLightfv(light, GL_SPECULAR, color);
-  glLighti(light, GL_SPOT_EXPONENT, 0);
+  glLightf(light, GL_SPOT_EXPONENT, 0.0f);
   glLightf(light, GL_CONSTANT_ATTENUATION, atten[0]);
   glLightf(light, GL_LINEAR_ATTENUATION, atten[1]);
   glLightf(light, GL_QUADRATIC_ATTENUATION, atten[2]);
-  return;
-}
-
-
-void OpenGLLight::freeLists()
-{
-  const int numLights = getMaxLights();
-  for (int i = 0; i < numLights; i++) {
-    if (lists[i] != INVALID_GL_LIST_ID) {
-      glDeleteLists(lists[i], 1);
-      lists[i] = INVALID_GL_LIST_ID;
-    }
-  }
   return;
 }
 
@@ -321,20 +256,6 @@ GLint OpenGLLight::getMaxLights()
     glGetIntegerv(GL_MAX_LIGHTS, &maxLights);
   }
   return maxLights;
-}
-
-
-void OpenGLLight::freeContext(void* self)
-{
-  ((OpenGLLight*)self)->freeLists();
-  return;
-}
-
-
-void OpenGLLight::initContext(void* UNUSED(self))
-{
-  // execute() will rebuild the lists
-  return;
 }
 
 

@@ -32,7 +32,6 @@ class OpenGLLight {
   public:
 			OpenGLLight();
 			OpenGLLight(const OpenGLLight&);
-			~OpenGLLight();
     OpenGLLight&	operator=(const OpenGLLight&);
 
     const GLfloat*	getPosition() const;
@@ -55,19 +54,13 @@ class OpenGLLight {
     void		setOnlyGround(bool value);
     bool		getOnlyGround() const;
 
-    void		execute(int index, bool useList) const;
+    void		execute(int index) const;
 
     static GLint	getMaxLights();
     static void		enableLight(int index, bool on); // const
 
   protected:
-    void		makeLists();
-    void		freeLists();
     void		genLight(GLenum light) const;
-
-  private:
-    static void		freeContext(void*);
-    static void		initContext(void*);
 
   private:
     GLfloat		pos[4];
@@ -77,7 +70,6 @@ class OpenGLLight {
     GLfloat		importance;
     bool		onlyReal;
     bool		onlyGround;
-    GLuint*		lists;
     static GLint	maxLights;
 };
 
