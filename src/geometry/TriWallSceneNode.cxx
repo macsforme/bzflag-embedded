@@ -24,6 +24,9 @@
 #include "Intersect.h"
 #include "StateDatabase.h"
 
+// local implementation headers
+#include "DrawArrays.h"
+
 // FIXME (SceneRenderer.cxx is in src/bzflag)
 #include "SceneRenderer.h"
 
@@ -95,23 +98,27 @@ TriWallSceneNode::Geometry::~Geometry()
 
 #define	RENDER(_e)							\
   for (int k = 0, t = 0; t < de; t++) {					\
+    unsigned int drawArrayID = DrawArrays::newArray();			\
+    DrawArrays::beginArray(drawArrayID);				\
     int e = de - t;							\
-    glBegin(GL_TRIANGLE_STRIP);						\
     for (int s = 0; s < e; k++, s++) {					\
       _e(k+e+1);							\
       _e(k);								\
     }									\
     _e(k);								\
-    glEnd();								\
+    DrawArrays::finishArray();						\
+    DrawArrays::draw(drawArrayID, GL_TRIANGLE_STRIP);			\
+    DrawArrays::deleteArray(drawArrayID);				\
     k++;								\
   }
-#define EMITV(_i)	glVertex3fv(vertex[_i])
-#define EMITVT(_i)	glTexCoord2fv(uv[_i]); glVertex3fv(vertex[_i])
+#define EMITV(_i)	DrawArrays::addVertex(vertex[_i][0], vertex[_i][1], vertex[_i][2]);
+#define EMITVT(_i)	DrawArrays::addTexCoord(uv[_i][0], uv[_i][1]) ;	\
+			DrawArrays::addVertex(vertex[_i][0], vertex[_i][1], vertex[_i][2]);
 
 void			TriWallSceneNode::Geometry::render()
 {
   wall->setColor();
-  glNormal3fv(normal);
+  glNormal3f(normal[0], normal[1], normal[2]);
   if (style >= 2) {
     drawVT();
   } else {
@@ -123,11 +130,29 @@ void			TriWallSceneNode::Geometry::render()
 
 void			TriWallSceneNode::Geometry::renderShadow()
 {
-  glBegin(GL_TRIANGLE_STRIP);
-  glVertex3fv(vertex[(de + 1) * (de + 2) / 2 - 1]);
-  glVertex3fv(vertex[0]);
-  glVertex3fv(vertex[de]);
-  glEnd();
+  GLfloat drawArray[] = {
+    vertex[(de + 1) * (de + 2) / 2 - 1][0],
+    vertex[(de + 1) * (de + 2) / 2 - 1][1],
+    vertex[(de + 1) * (de + 2) / 2 - 1][2],
+
+    vertex[0][0],
+    vertex[0][1],
+    vertex[0][2],
+
+    vertex[de][0],
+    vertex[de][1],
+    vertex[de][2],
+  };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
+
   addTriangleCount(1);
 }
 
