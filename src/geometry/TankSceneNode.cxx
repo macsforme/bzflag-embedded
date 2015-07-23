@@ -759,7 +759,6 @@ void TankIDLSceneNode::IDLRenderNode::render()
     glTranslatef(sphere[0], sphere[1], sphere[2]);
     glRotatef(azimuth, 0.0f, 0.0f, 1.0f);
 
-    glBegin(GL_QUADS);
     const int numFaces = countof(idlFaces);
     for (int i = 0; i < numFaces; i++) {
       // get distances from tankPlane
@@ -803,14 +802,30 @@ void TankIDLSceneNode::IDLRenderNode::render()
       project[1][2] = origin[2] + dist * (cross[1][2] - origin[2]);
 
       // draw it
-      myColor4fv(innerColor);
-      glVertex3fv(cross[0]);
-      glVertex3fv(cross[1]);
-      myColor4fv(outerColor);
-      glVertex3fv(project[1]);
-      glVertex3fv(project[0]);
+      GLfloat drawArray[] = {
+	innerColor[0], innerColor[1], innerColor[2], innerColor[3],
+	cross[0][0], cross[0][1], cross[0][2],
+
+	innerColor[0], innerColor[1], innerColor[2], innerColor[3],
+	cross[1][0], cross[1][1], cross[1][2],
+
+	outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+	project[1][0], project[1][1], project[1][2],
+
+	outerColor[0], outerColor[1], outerColor[2], outerColor[3],
+	project[0][0], project[0][1], project[0][2]
+      };
+
+      glEnableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      glColorPointer(4, GL_FLOAT, 7 * sizeof(GLfloat), drawArray);
+      glVertexPointer(3, GL_FLOAT, 7 * sizeof(GLfloat), drawArray + 4);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
-    glEnd();
 
   glPopMatrix();
   return;
@@ -1403,24 +1418,28 @@ void TankSceneNode::TankRenderNode::renderLights()
   sceneNode->lightsGState.setState();
   glPointSize(2.0f);
 
-  glBegin(GL_POINTS);
-  {
-    const float* scale = TankGeometryMgr::getScaleFactor(sceneNode->tankSize);
+  const float* scale = TankGeometryMgr::getScaleFactor(sceneNode->tankSize);
 
-    myColor3fv(lights[0]);
-    glVertex3f(lights[0][3] * scale[0],
-	       lights[0][4] * scale[1],
-	       lights[0][5] * scale[2]);
-    myColor3fv(lights[1]);
-    glVertex3f(lights[1][3] * scale[0],
-	       lights[1][4] * scale[1],
-	       lights[1][5] * scale[2]);
-    myColor3fv(lights[2]);
-    glVertex3f(lights[2][3] * scale[0],
-	       lights[2][4] * scale[1],
-	       lights[2][5] * scale[2]);
-  }
-  glEnd();
+  GLfloat drawArray[] = {
+    lights[0][0], lights[0][1], lights[0][2], 1.0f,
+    lights[0][3] * scale[0], lights[0][4] * scale[1], lights[0][5] * scale[2],
+
+    lights[1][0], lights[1][1], lights[1][2], 1.0f,
+    lights[1][3] * scale[0], lights[1][4] * scale[1], lights[1][5] * scale[2],
+
+    lights[2][0], lights[2][1], lights[2][2], 1.0f,
+    lights[2][3] * scale[0], lights[2][4] * scale[1], lights[2][5] * scale[2]
+  };
+
+  glEnableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glColorPointer(4, GL_FLOAT, 7 * sizeof(GLfloat), drawArray);
+  glVertexPointer(3, GL_FLOAT, 7 * sizeof(GLfloat), drawArray + 4);
+
+  glDrawArrays(GL_POINTS, 0, 3);
 
   glPointSize(1.0f);
   sceneNode->gstate.setState();
@@ -1457,8 +1476,13 @@ void TankSceneNode::TankRenderNode::renderJumpJets()
   myColor4f(1.0f, 1.0f, 1.0f, 0.5f);
 
   // use a clip plane, because the ground has no depth
+#ifdef HAVE_GLES
+  const GLfloat clip_plane[4] = {0.0f, 0.0f, 1.0f, 0.0f};
+  glClipPlanef(GL_CLIP_PLANE1, clip_plane);
+#else
   const GLdouble clip_plane[4] = {0.0, 0.0, 1.0, 0.0};
   glClipPlane(GL_CLIP_PLANE1, clip_plane);
+#endif
   glEnable(GL_CLIP_PLANE1);
 
   sceneNode->jumpJetsGState.setState();
@@ -1472,14 +1496,26 @@ void TankSceneNode::TankRenderNode::renderJumpJets()
 
       RENDERER.getViewFrustum().executeBillboard();
 
-      glBegin(GL_TRIANGLES);
-      {
-	for (int v = 0; v < 3; v++) {
-	  glTexCoord2fv(jet[v].texcoord);
-	  glVertex3fv(jet[v].vertex);
-	}
-      }
-      glEnd();
+      GLfloat drawArray[] = {
+	jet[0].texcoord[0], jet[0].texcoord[1],
+	jet[0].vertex[0], jet[0].vertex[1], jet[0].vertex[2],
+
+	jet[1].texcoord[0], jet[1].texcoord[1],
+	jet[1].vertex[0], jet[1].vertex[1], jet[1].vertex[2],
+
+	jet[2].texcoord[0], jet[2].texcoord[1],
+	jet[2].vertex[0], jet[2].vertex[1], jet[2].vertex[2],
+      };
+
+      glDisableClientState(GL_COLOR_ARRAY);
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+      glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+      glDrawArrays(GL_TRIANGLES, 0, 3);
     }
     glPopMatrix();
   }
