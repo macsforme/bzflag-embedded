@@ -1243,7 +1243,6 @@ void OpenGLGState::initContext()
 
   // and some more state
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClearDepth(1.0);
   glClearStencil(0);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
