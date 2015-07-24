@@ -30,6 +30,9 @@
 #include "ParseColor.h"
 #include "BZDBCache.h"
 #include "MeshSceneNode.h"
+#ifdef HAVE_GLES
+#include "OpenGLUtils.h"
+#endif
 
 /* FIXME - local implementation dependancies */
 #include "BackgroundRenderer.h"
@@ -831,14 +834,22 @@ void SceneRenderer::render(bool _lastFrame, bool _sameFrame,
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 	glColor4fv(mirrorColor);
+#ifdef HAVE_GLES
+	bzGLRectf(-1.0f, -1.0f, +1.0f, +1.0f);
+#else
 	glRectf(-1.0f, -1.0f, +1.0f, +1.0f);
+#endif
 	glDisable(GL_BLEND);
       } else {
 	float stipple = mirrorColor[3];
 	glColor3fv(mirrorColor);
 	OpenGLGState::setStipple(stipple);
 	glEnable(GL_POLYGON_STIPPLE);
+#ifdef HAVE_GLES
+	bzGLRectf(-1.0f, -1.0f, +1.0f, +1.0f);
+#else
 	glRectf(-1.0f, -1.0f, +1.0f, +1.0f);
+#endif
 	glDisable(GL_POLYGON_STIPPLE);
       }
     } else {
@@ -851,14 +862,22 @@ void SceneRenderer::render(bool _lastFrame, bool _sameFrame,
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 	glColor4fv(mirrorColor);
+#ifdef HAVE_GLES
+	bzGLRectf(-extent, -extent, +extent, +extent);
+#else
 	glRectf(-extent, -extent, +extent, +extent);
+#endif
 	glDisable(GL_BLEND);
       } else {
 	float stipple = mirrorColor[3];
 	glColor3fv(mirrorColor);
 	OpenGLGState::setStipple(stipple);
 	glEnable(GL_POLYGON_STIPPLE);
+#ifdef HAVE_GLES
+	bzGLRectf(-extent, -extent, +extent, +extent);
+#else
 	glRectf(-extent, -extent, +extent, +extent);
+#endif
 	glDisable(GL_POLYGON_STIPPLE);
       }
       glMatrixMode(GL_PROJECTION);
@@ -1189,13 +1208,21 @@ void SceneRenderer::renderDimming()
     // if low quality then use stipple -- it's probably much faster
     if (BZDBCache::blend && (useQualityValue >= 1)) {
       glEnable(GL_BLEND);
+#ifdef HAVE_GLES
+      bzGLRectf(-1.0f, -1.0f, 1.0f, 1.0f);
+#else
       glRectf(-1.0f, -1.0f, 1.0f, 1.0f);
+#endif
       glDisable(GL_BLEND);
     }
     else {
       OpenGLGState::setStipple(density);
       glEnable(GL_POLYGON_STIPPLE);
+#ifdef HAVE_GLES
+      bzGLRectf(-1.0f, -1.0f, 1.0f, 1.0f);
+#else
       glRectf(-1.0f, -1.0f, 1.0f, 1.0f);
+#endif
       glDisable(GL_POLYGON_STIPPLE);
     }
   }
@@ -1224,7 +1251,11 @@ void SceneRenderer::renderDepthComplexity()
   for (int i = 0; i < numColors; i++) {
     glStencilFunc(i == numColors - 1 ? GL_LEQUAL : GL_EQUAL, i, 0xf);
     glColor3fv(depthColors[i]);
+#ifdef HAVE_GLES
+    bzGLRectf(-1.0f, -1.0f, 1.0f, 1.0f);
+#else
     glRectf(-1.0f, -1.0f, 1.0f, 1.0f);
+#endif
   }
   glDisable(GL_STENCIL_TEST);
 
