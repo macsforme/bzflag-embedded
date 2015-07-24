@@ -27,6 +27,9 @@
 #include "BoxBuilding.h"
 #include "PyramidBuilding.h"
 #include "MeshObstacle.h"
+#ifdef HAVE_GLES
+#include "OpenGLUtils.h"
+#endif
 
 // local implementation headers
 #include "LocalPlayer.h"
@@ -188,7 +191,11 @@ void RadarRenderer::drawTank(const float pos[3], const Player* player, bool useS
     setTankColor(player);
     // align to the screen axes
     glRotatef(float(myAngle * 180.0 / M_PI), 0.0f, 0.0f, 1.0f);
+#ifdef HAVE_GLES
+    bzGLRectf(-size, -size, +size, +size);
+#else
     glRectf(-size, -size, +size, +size);
+#endif
   }
   else {
     const float tankAngle = player->getAngle();
@@ -200,7 +207,11 @@ void RadarRenderer::drawTank(const float pos[3], const Player* player, bool useS
     } else {
       setTankColor(player);
       const float* dims = player->getDimensions();
+#ifdef HAVE_GLES
+      bzGLRectf(-dims[0], -dims[1], +dims[0], +dims[1]);
+#else
       glRectf(-dims[0], -dims[1], +dims[0], +dims[1]);
+#endif
     }
     glPopMatrix();
 
@@ -363,7 +374,11 @@ void RadarRenderer::renderFrame(SceneRenderer& renderer)
     if (BZDBCache::blend && opacity < 1.0f)
       glEnable(GL_BLEND);
     glColor4f(0.0f, 0.0f, 0.0f, opacity);
+#ifdef HAVE_GLES
+    bzGLRectf((float) x, (float) y, (float)(x + w), (float)(y + h));
+#else
     glRectf((float) x, (float) y, (float)(x + w), (float)(y + h));
+#endif
     if (BZDBCache::blend && opacity < 1.0f)
       glDisable(GL_BLEND);
   }
@@ -773,7 +788,11 @@ void RadarRenderer::render(SceneRenderer& renderer, bool blank, bool observer)
       // darken the entire radar if we're dimmed
       // we're drawing positively, so dimming is actually an opacity
       glColor4f(0.0f, 0.0f, 0.0f, 1.0f - dimming);
+#ifdef HAVE_GLES
+      bzGLRectf(-radarRange, -radarRange, +radarRange, +radarRange);
+#else
       glRectf(-radarRange, -radarRange, +radarRange, +radarRange);
+#endif
     }
     glDisable(GL_BLEND);
     glDisable(GL_LINE_SMOOTH);
