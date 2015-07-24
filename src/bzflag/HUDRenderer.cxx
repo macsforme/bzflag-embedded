@@ -1050,8 +1050,15 @@ void			HUDRenderer::renderTankLabels(SceneRenderer& renderer)
       const std::string name = pl->getCallSign();
       double x, y, z;
       hudSColor3fv(Team::getRadarColor(pl->getTeam()));
+#ifdef HAVE_GLES
+      float xF, yF, zF;
+      gluProject(pl->getPosition()[0], pl->getPosition()[1],
+		 pl->getPosition()[2]/*+BZDB.eval(StateDatabase::BZDB_MUZZLEHEIGHT)*3.0f*/, model, proj, view, &xF, &yF, &zF);
+      x = xF; y = yF; z = zF;
+#else
       gluProject(pl->getPosition()[0], pl->getPosition()[1],
 		 pl->getPosition()[2]/*+BZDB.eval(StateDatabase::BZDB_MUZZLEHEIGHT)*3.0f*/, model, proj, view, &x, &y, &z);
+#endif
       if (z >= 0.0 && z <= 1.0) {
 	FontManager &fm = FontManager::instance();
 	fm.drawString(float(x) - fm.getStrLength(labelsFontFace, labelsFontSize, name) / 2.0f,
@@ -1180,8 +1187,63 @@ void HUDRenderer::drawWaypointMarker(float* color, float alpha, float* object,
   hudColor3Afv( color, alpha );
 
   glPushMatrix();
+#ifdef HAVE_GLES
+  float mapF[] = { 0.0f, 0.0f, 0.0f };
+  float oF[] = { (float) o[0], (float) o[1], (float) o[2] };
+  float modelMatrixF[] = {
+    (float) modelMatrix[0], (float) modelMatrix[1], (float) modelMatrix[2], (float) modelMatrix[3],
+    (float) modelMatrix[4], (float) modelMatrix[5], (float) modelMatrix[6], (float) modelMatrix[7],
+    (float) modelMatrix[8], (float) modelMatrix[9], (float) modelMatrix[10], (float) modelMatrix[11],
+    (float) modelMatrix[12], (float) modelMatrix[13], (float) modelMatrix[14], (float) modelMatrix[15]
+  };
+  float projMatrixF[] = {
+    (float) projMatrix[0], (float) projMatrix[1], (float) projMatrix[2], (float) projMatrix[3],
+    (float) projMatrix[4], (float) projMatrix[5], (float) projMatrix[6], (float) projMatrix[7],
+    (float) projMatrix[8], (float) projMatrix[9], (float) projMatrix[10], (float) projMatrix[11],
+    (float) projMatrix[12], (float) projMatrix[13], (float) projMatrix[14], (float) projMatrix[15]
+  };
+
+  gluProject(oF[0], oF[1], oF[2], modelMatrixF, projMatrixF,
+    (GLint*)viewport, &mapF[0], &mapF[1], &mapF[2]);
+
+  map[0] = mapF[0]; map[1] = mapF[1]; map[2] = mapF[2];
+  o[0] = oF[0]; o[1] = oF[1]; o[2] = oF[2];
+  modelMatrix[0] = modelMatrixF[0];
+  modelMatrix[1] = modelMatrixF[1];
+  modelMatrix[2] = modelMatrixF[2];
+  modelMatrix[3] = modelMatrixF[3];
+  modelMatrix[4] = modelMatrixF[4];
+  modelMatrix[5] = modelMatrixF[5];
+  modelMatrix[6] = modelMatrixF[6];
+  modelMatrix[7] = modelMatrixF[7];
+  modelMatrix[8] = modelMatrixF[8];
+  modelMatrix[9] = modelMatrixF[9];
+  modelMatrix[10] = modelMatrixF[10];
+  modelMatrix[11] = modelMatrixF[11];
+  modelMatrix[12] = modelMatrixF[12];
+  modelMatrix[13] = modelMatrixF[13];
+  modelMatrix[14] = modelMatrixF[14];
+  modelMatrix[15] = modelMatrixF[15];
+  projMatrix[0] = projMatrixF[0];
+  projMatrix[1] = projMatrixF[1];
+  projMatrix[2] = projMatrixF[2];
+  projMatrix[3] = projMatrixF[3];
+  projMatrix[4] = projMatrixF[4];
+  projMatrix[5] = projMatrixF[5];
+  projMatrix[6] = projMatrixF[6];
+  projMatrix[7] = projMatrixF[7];
+  projMatrix[8] = projMatrixF[8];
+  projMatrix[9] = projMatrixF[9];
+  projMatrix[10] = projMatrixF[10];
+  projMatrix[11] = projMatrixF[11];
+  projMatrix[12] = projMatrixF[12];
+  projMatrix[13] = projMatrixF[13];
+  projMatrix[14] = projMatrixF[14];
+  projMatrix[15] = projMatrixF[15];
+#else
   gluProject(o[0], o[1], o[2], modelMatrix, projMatrix,
     (GLint*)viewport, &map[0], &map[1], &map[2]);
+#endif
   glPopMatrix();
 
   float halfWidth = window.getWidth( )* 0.5f;
@@ -1293,8 +1355,63 @@ void HUDRenderer::drawLockonMarker(float* color ,float alpha, float* object,
   hudColor3Afv( color, alpha );
 
   glPushMatrix();
+#ifdef HAVE_GLES
+  float mapF[] = { 0.0f, 0.0f, 0.0f };
+  float oF[] = { (float) o[0], (float) o[1], (float) o[2] };
+  float modelMatrixF[] = {
+    (float) modelMatrix[0], (float) modelMatrix[1], (float) modelMatrix[2], (float) modelMatrix[3],
+    (float) modelMatrix[4], (float) modelMatrix[5], (float) modelMatrix[6], (float) modelMatrix[7],
+    (float) modelMatrix[8], (float) modelMatrix[9], (float) modelMatrix[10], (float) modelMatrix[11],
+    (float) modelMatrix[12], (float) modelMatrix[13], (float) modelMatrix[14], (float) modelMatrix[15]
+  };
+  float projMatrixF[] = {
+    (float) projMatrix[0], (float) projMatrix[1], (float) projMatrix[2], (float) projMatrix[3],
+    (float) projMatrix[4], (float) projMatrix[5], (float) projMatrix[6], (float) projMatrix[7],
+    (float) projMatrix[8], (float) projMatrix[9], (float) projMatrix[10], (float) projMatrix[11],
+    (float) projMatrix[12], (float) projMatrix[13], (float) projMatrix[14], (float) projMatrix[15]
+  };
+
+  gluProject(oF[0], oF[1], oF[2], modelMatrixF, projMatrixF,
+    (GLint*)viewport, &mapF[0], &mapF[1], &mapF[2]);
+
+  map[0] = mapF[0]; map[1] = mapF[1]; map[2] = mapF[2];
+  o[0] = oF[0]; o[1] = oF[1]; o[2] = oF[2];
+  modelMatrix[0] = modelMatrixF[0];
+  modelMatrix[1] = modelMatrixF[1];
+  modelMatrix[2] = modelMatrixF[2];
+  modelMatrix[3] = modelMatrixF[3];
+  modelMatrix[4] = modelMatrixF[4];
+  modelMatrix[5] = modelMatrixF[5];
+  modelMatrix[6] = modelMatrixF[6];
+  modelMatrix[7] = modelMatrixF[7];
+  modelMatrix[8] = modelMatrixF[8];
+  modelMatrix[9] = modelMatrixF[9];
+  modelMatrix[10] = modelMatrixF[10];
+  modelMatrix[11] = modelMatrixF[11];
+  modelMatrix[12] = modelMatrixF[12];
+  modelMatrix[13] = modelMatrixF[13];
+  modelMatrix[14] = modelMatrixF[14];
+  modelMatrix[15] = modelMatrixF[15];
+  projMatrix[0] = projMatrixF[0];
+  projMatrix[1] = projMatrixF[1];
+  projMatrix[2] = projMatrixF[2];
+  projMatrix[3] = projMatrixF[3];
+  projMatrix[4] = projMatrixF[4];
+  projMatrix[5] = projMatrixF[5];
+  projMatrix[6] = projMatrixF[6];
+  projMatrix[7] = projMatrixF[7];
+  projMatrix[8] = projMatrixF[8];
+  projMatrix[9] = projMatrixF[9];
+  projMatrix[10] = projMatrixF[10];
+  projMatrix[11] = projMatrixF[11];
+  projMatrix[12] = projMatrixF[12];
+  projMatrix[13] = projMatrixF[13];
+  projMatrix[14] = projMatrixF[14];
+  projMatrix[15] = projMatrixF[15];
+#else
   gluProject(o[0], o[1], o[2], modelMatrix,projMatrix,
     (GLint*)viewport, &map[0], &map[1], &map[2]);
+#endif
   glPopMatrix();
 
   float halfWidth = window.getWidth( )* 0.5f;
@@ -1672,7 +1789,11 @@ void			HUDRenderer::renderPlaying(SceneRenderer& renderer)
   const LocalPlayer *myTank = LocalPlayer::getMyTank();
   if (myTank && myTank->getPosition()[2] < 0.0f) {
     glColor4f(0.02f, 0.01f, 0.01f, 1.0);
+#ifdef HAVE_GLES
+    bzGLRectf(0, 0, (float)width, (myTank->getPosition()[2]/(BZDB.eval(StateDatabase::BZDB_BURROWDEPTH)-0.1f)) * ((float)viewHeight/2.0f));
+#else
     glRectf(0, 0, (float)width, (myTank->getPosition()[2]/(BZDB.eval(StateDatabase::BZDB_BURROWDEPTH)-0.1f)) * ((float)viewHeight/2.0f));
+#endif
   }
 
   // draw shot reload status
@@ -1840,7 +1961,11 @@ void			HUDRenderer::renderRoaming(SceneRenderer& renderer)
   LocalPlayer *myTank = LocalPlayer::getMyTank();
   if (myTank && myTank->getPosition()[2] < 0.0f) {
     glColor4f(0.02f, 0.01f, 0.01f, 1.0);
+#ifdef HAVE_GLES
+    bzGLRectf(0, 0, (float)width, (myTank->getPosition()[2]/(BZDB.eval(StateDatabase::BZDB_BURROWDEPTH)-0.1f)) * ((float)viewHeight/2.0f));
+#else
     glRectf(0, 0, (float)width, (myTank->getPosition()[2]/(BZDB.eval(StateDatabase::BZDB_BURROWDEPTH)-0.1f)) * ((float)viewHeight/2.0f));
+#endif
   }
 
   // draw shot reload status
