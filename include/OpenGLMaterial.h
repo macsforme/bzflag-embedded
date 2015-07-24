@@ -45,7 +45,6 @@ class OpenGLMaterial {
 
     bool		operator==(const OpenGLMaterial&) const;
     bool		operator!=(const OpenGLMaterial&) const;
-    bool		operator<(const OpenGLMaterial&) const;
 
     const GLfloat*	getSpecularColor() const;
     const GLfloat*	getEmissiveColor() const;
@@ -68,13 +67,10 @@ class OpenGLMaterial {
 			Rep(const GLfloat* specular,
 				const GLfloat* emissive,
 				GLfloat shininess);
-	static void	freeContext(void*);
-	static void	initContext(void*);
       public:
 	int		refCount;
 	Rep*		prev;
 	Rep*		next;
-	GLuint		list;
 	GLfloat		specular[4];
 	GLfloat		emissive[4];
 	GLfloat		shininess;

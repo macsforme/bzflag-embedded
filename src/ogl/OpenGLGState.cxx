@@ -256,12 +256,9 @@ bool			OpenGLGStateState::Sorted::operator<(
     }
   }
 
-  // this < s if this has no material and s does or material < s.material
+  // this < s if this has no material and s does
   if (hasMaterial != s.hasMaterial) {
     return s.hasMaterial;
-  }
-  else if (hasMaterial) {
-    return (material < s.material);
   }
 
   // states are the same

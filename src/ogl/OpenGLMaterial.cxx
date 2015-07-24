@@ -54,8 +54,6 @@ OpenGLMaterial::Rep::Rep(const GLfloat* _specular,
 			 GLfloat _shininess)
 			 : refCount(1), shininess(_shininess)
 {
-  list = INVALID_GL_LIST_ID;
-
   prev = NULL;
   next = head;
   head = this;
@@ -69,22 +67,10 @@ OpenGLMaterial::Rep::Rep(const GLfloat* _specular,
   emissive[1] = _emissive[1];
   emissive[2] = _emissive[2];
   emissive[3] = 1.0f;
-
-  OpenGLGState::registerContextInitializer(freeContext,
-					   initContext, (void*)this);
 }
 
 OpenGLMaterial::Rep::~Rep()
 {
-  OpenGLGState::unregisterContextInitializer(freeContext,
-					     initContext, (void*)this);
-
-  // free OpenGL display list
-  if (list != INVALID_GL_LIST_ID) {
-    glDeleteLists(list, 1);
-    list = INVALID_GL_LIST_ID;
-  }
-
   // remove me from material list
   if (next != NULL) next->prev = prev;
   if (prev != NULL) prev->next = next;
@@ -103,48 +89,20 @@ void			OpenGLMaterial::Rep::unref()
 
 void			OpenGLMaterial::Rep::execute()
 {
-  if (list != INVALID_GL_LIST_ID) {
-    glCallList(list);
-  }
-  else {
-    list = glGenLists(1);
-    glNewList(list, GL_COMPILE_AND_EXECUTE);
-    {
-      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
-      glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissive);
-      glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
-      if (RENDERER.useQuality() > 0) {
-	if  ((specular[0] > 0.0f) ||
-	     (specular[1] > 0.0f) ||
-	     (specular[2] > 0.0f)) {
-	  // accurate specular highlighting  (more GPU intensive)
-	  glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-	} else {
-	  // speed up the lighting calcs by simplifying
-	  glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);
-	}
-      }
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissive);
+  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
+  if (RENDERER.useQuality() > 0) {
+    if  ((specular[0] > 0.0f) ||
+	 (specular[1] > 0.0f) ||
+	 (specular[2] > 0.0f)) {
+      // accurate specular highlighting  (more GPU intensive)
+      glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+    } else {
+      // speed up the lighting calcs by simplifying
+      glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);
     }
-    glEndList();
   }
-  return;
-}
-
-
-void OpenGLMaterial::Rep::freeContext(void* self)
-{
-  GLuint& list = ((Rep*)self)->list;
-  if (list != INVALID_GL_LIST_ID) {
-    glDeleteLists(list, 1);
-    list = INVALID_GL_LIST_ID;
-  }
-  return;
-}
-
-
-void OpenGLMaterial::Rep::initContext(void* UNUSED(self))
-{
-  // the next execute() call will rebuild the list
   return;
 }
 
@@ -194,14 +152,6 @@ bool			OpenGLMaterial::operator==(const OpenGLMaterial& m) const
 bool			OpenGLMaterial::operator!=(const OpenGLMaterial& m) const
 {
   return rep != m.rep;
-}
-
-bool			OpenGLMaterial::operator<(const OpenGLMaterial& m) const
-{
-  if (rep == m.rep) return false;
-  if (!m.rep) return false;
-  if (!rep) return true;
-  return (rep->list < m.rep->list);
 }
 
 bool			OpenGLMaterial::isValid() const
