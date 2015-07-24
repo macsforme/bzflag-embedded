@@ -25,6 +25,9 @@
 #include "SceneDatabase.h"
 #include "SceneRenderer.h"
 #include "SceneNode.h"
+#ifdef HAVE_GLES
+#include "OpenGLUtils.h"
+#endif
 
 
 using namespace TrackMarks;
@@ -712,10 +715,18 @@ static void drawTreads(const TrackEntry& te)
     const float halfWidth = 0.5f * TreadMarkWidth;
 
     if ((te.sides & LeftTread) != 0) {
+#ifdef HAVE_GLES
+      bzGLRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
+#else
       glRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
+#endif
     }
     if ((te.sides & RightTread) != 0) {
+#ifdef HAVE_GLES
+      bzGLRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
+#else
       glRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
+#endif
     }
   }
   glPopMatrix();
@@ -739,10 +750,18 @@ static void drawSmoke(const TrackEntry& te)
     const float halfWidth = 0.5f * TreadMarkWidth;
 
     if ((te.sides & LeftTread) != 0) {
+#ifdef HAVE_GLES
+      bzGLRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
+#else
       glRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
+#endif
     }
     if ((te.sides & RightTread) != 0) {
+#ifdef HAVE_GLES
+      bzGLRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
+#else
       glRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
+#endif
     }
   }
   glPopMatrix();
