@@ -32,7 +32,7 @@
 TextureFont::TextureFont()
 {
   for (int i = 0; i < MAX_TEXTURE_FONT_CHARS; i++) {
-    listIDs[i] = INVALID_GL_LIST_ID;
+    listIDs[i] = INVALID_DRAW_ARRAY_ID;
   }
 
   textureID = -1;
@@ -41,9 +41,9 @@ TextureFont::TextureFont()
 TextureFont::~TextureFont()
 {
   for (int i = 0; i < MAX_TEXTURE_FONT_CHARS; i++) {
-    if (listIDs[i] != INVALID_GL_LIST_ID) {
-      glDeleteLists(listIDs[i], 1);
-      listIDs[i] = INVALID_GL_LIST_ID;
+    if (listIDs[i] != INVALID_DRAW_ARRAY_ID) {
+      DrawArrays::deleteArray(listIDs[i]);
+      listIDs[i] = INVALID_DRAW_ARRAY_ID;
     }
   }
 }
