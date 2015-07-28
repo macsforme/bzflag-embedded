@@ -357,6 +357,7 @@ int OpenGLTexture::getBestFormat(int _width, int _height, const GLvoid* pixels)
       break;
   const bool useAlpha = (i != size);
 
+#ifndef HAVE_GLES
     bool useIntensity = false;
     if (useLuminance) {
       scan = (const GLubyte*)pixels;
@@ -367,6 +368,7 @@ int OpenGLTexture::getBestFormat(int _width, int _height, const GLvoid* pixels)
     }
     if (useIntensity)
       return GL_INTENSITY;
+#endif
 
   // pick internal format
   return (useLuminance ?
