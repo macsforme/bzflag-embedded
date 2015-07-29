@@ -12,6 +12,8 @@
 #ifndef __DRAWARRAYS_H__
 #define __DRAWARRAYS_H__
 
+#include "common.h"
+
 // system headers
 #include <map>
 #include <vector>

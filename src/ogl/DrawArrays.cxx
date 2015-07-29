@@ -13,7 +13,9 @@
 #include "DrawArrays.h"
 
 // system headers
+#ifdef DEBUG
 #include <cassert>
+#endif
 #include <cstring>
 
 // initialize static class members
@@ -37,9 +39,11 @@ unsigned int DrawArrays::newArray()
 
 void DrawArrays::beginArray(unsigned int index)
 {
+#ifdef DEBUG
   assert(constructingID == 0);
 
   assert(arrayIDs.find(index) != arrayIDs.end());
+#endif
   constructingID = index;
 
   constructingDrawArray.colors.clear();
@@ -50,9 +54,11 @@ void DrawArrays::beginArray(unsigned int index)
 
 void DrawArrays::addColor(float r, float g, float b, float a)
 {
+#ifdef DEBUG
   assert(constructingID > 0);
 
   assert(constructingDrawArray.colors.size() / 4 == constructingDrawArray.vertices.size() / 3);
+#endif
 
   constructingDrawArray.colors.push_back(r);
   constructingDrawArray.colors.push_back(g);
@@ -62,9 +68,11 @@ void DrawArrays::addColor(float r, float g, float b, float a)
 
 void DrawArrays::addTexCoord(float s, float t)
 {
+#ifdef DEBUG
   assert(constructingID > 0);
 
   assert(constructingDrawArray.texCoords.size() / 2 == constructingDrawArray.vertices.size() / 3);
+#endif
 
   constructingDrawArray.texCoords.push_back(s);
   constructingDrawArray.texCoords.push_back(t);
@@ -72,9 +80,11 @@ void DrawArrays::addTexCoord(float s, float t)
 
 void DrawArrays::addNormal(float x, float y, float z)
 {
+#ifdef DEBUG
   assert(constructingID > 0);
 
   assert(constructingDrawArray.normals.size() / 3 == constructingDrawArray.vertices.size() / 3);
+#endif
 
   constructingDrawArray.normals.push_back(x);
   constructingDrawArray.normals.push_back(y);
@@ -83,6 +93,7 @@ void DrawArrays::addNormal(float x, float y, float z)
 
 void DrawArrays::addVertex(float x, float y, float z)
 {
+#ifdef DEBUG
   assert(constructingID > 0);
 
   if(constructingDrawArray.colors.size() > 0)
@@ -93,6 +104,7 @@ void DrawArrays::addVertex(float x, float y, float z)
 
   if(constructingDrawArray.normals.size() > 0)
     assert(constructingDrawArray.normals.size() / 3 == constructingDrawArray.vertices.size() / 3 + 1);
+#endif
 
   constructingDrawArray.vertices.push_back(x);
   constructingDrawArray.vertices.push_back(y);
@@ -101,26 +113,34 @@ void DrawArrays::addVertex(float x, float y, float z)
 
 void DrawArrays::finishArray()
 {
+#ifdef DEBUG
   assert(constructingID > 0);
+#endif
 
   // the number of colors, texcoords, and normals (if used)
   // need to fit the number of vertices specified
   if(constructingDrawArray.colors.size() > 0) {
+#ifdef DEBUG
     assert(constructingDrawArray.colors.size() / 4 == constructingDrawArray.vertices.size() / 3);
+#endif
     arrayIDs[constructingID].useColors = true;
   } else {
     arrayIDs[constructingID].useColors = false;
   }
 
   if(constructingDrawArray.texCoords.size() > 0) {
+#ifdef DEBUG
     assert(constructingDrawArray.texCoords.size() / 2 == constructingDrawArray.vertices.size() / 3);
+#endif
     arrayIDs[constructingID].useTexCoords = true;
   } else {
     arrayIDs[constructingID].useTexCoords = false;
   }
 
   if(constructingDrawArray.normals.size() > 0) {
+#ifdef DEBUG
     assert(constructingDrawArray.normals.size() / 3 == constructingDrawArray.vertices.size() / 3);
+#endif
     arrayIDs[constructingID].useNormals = true;
   } else {
     arrayIDs[constructingID].useNormals = false;
@@ -149,13 +169,16 @@ void DrawArrays::finishArray()
 
 void DrawArrays::draw(unsigned int index, GLenum mode)
 {
+#ifdef DEBUG
   assert(arrayIDs.find(index) != arrayIDs.end());
   assert(arrayIDs[index].buffer != NULL);
+#endif
 
   if(arrayIDs[index].elements == 0)
     // this is allowed, but doesn't do anything
     return;
 
+#ifdef DEBUG
   // GL_TRIANGLES requires vertices be divisible by 3
   unsigned int primitiveCoordinates = 1;
   if(mode == GL_TRIANGLES)
@@ -169,10 +192,7 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
   else if(mode != GL_POINTS)
     minimumCoordinates = 3;
   assert(arrayIDs[index].elements >= minimumCoordinates);
-
-  // quell unused variable warnings (assert() may not be called if it's not a debug build)
-  primitiveCoordinates = primitiveCoordinates;
-  minimumCoordinates = minimumCoordinates;
+#endif
 
   // set required state and draw
   if(arrayIDs[index].useColors)
@@ -202,7 +222,9 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
 
 void DrawArrays::deleteArray(unsigned int index)
 {
+#ifdef DEBUG
   assert(arrayIDs.find(index) != arrayIDs.end());
+#endif
 
   if(arrayIDs[index].buffer != NULL)
     delete[] arrayIDs[index].buffer;
