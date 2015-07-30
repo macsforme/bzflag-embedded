@@ -673,48 +673,49 @@ void HUDRenderer::drawGeometry()
 {
   float lockonSize = 40;
 
-  float segmentation = 360.0f/32.0f;
+  unsigned int segments = 64;
   float rad = lockonSize * 0.25f;
+
+  // geometry
+  GLfloat *drawArray = new GLfloat[(2 + segments) * 3];
+
+  drawArray[0] = -rad;
+  drawArray[1] = rad + rad * 0.25f;
+  drawArray[2] = 0.03f;
+
+  drawArray[3] = rad;
+  drawArray[4] = -rad + rad * 0.25f;
+  drawArray[5] = 0.02f;
+
+  for (unsigned int t = 0; t < segments; ++t) {
+    const float tRads = (float) t * 360.0f / (float) segments * DEG2RADf;
+
+    drawArray[6 + t * 3 + 0] = sinf(tRads) * rad;
+    drawArray[6 + t * 3 + 1] = cosf(tRads) * rad + rad * 0.25f;
+    drawArray[6 + t * 3 + 2] = 0.02f;
+  }
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
 
   // white outline
   hudColor4f( 1,1,1, 0.85f );
   glLineWidth(4.0f);
-  glBegin(GL_LINES);
-  glVertex3f(-rad,rad,0.03f);
-  glVertex3f(rad,-rad,0.02f);
-  // glVertex3f(-lockonSize*xFactor,lockonSize,0.02f);
-  // glVertex3f(lockonSize*xFactor,0,0.02f);
-  glEnd();
+  glDrawArrays(GL_LINES, 0, 2);
+  glDrawArrays(GL_LINE_LOOP, 2, segments);
 
-  glBegin(GL_LINES);
-  for (float t = 0; t < 360; t += segmentation) {
-    const float s = (t - segmentation);
-    const float tRads = t * DEG2RADf;
-    const float sRads = s * DEG2RADf;
-    glVertex3f(sinf(sRads) * rad, cosf(sRads) * rad, 0.02f);
-    glVertex3f(sinf(tRads) * rad, cosf(tRads) * rad, 0.02f);
-  }
-  glEnd();
 
   // red X
   hudColor4f( 1,0,0, 0.85f );
   glLineWidth(2.0f);
-  glBegin(GL_LINES);
-  glVertex3f(-rad,rad,0.03f);
-  glVertex3f(rad,-rad,0.02f);
-  // glVertex3f(-lockonSize*xFactor,lockonSize,0.03f);
-  //  glVertex3f(lockonSize*xFactor,0,0.02f);
-  glEnd();
+  glDrawArrays(GL_LINES, 0, 2);
+  glDrawArrays(GL_LINE_LOOP, 2, segments);
 
-  glBegin(GL_LINES);
-  for (float t = 0; t < 360; t += segmentation) {
-    const float s = (t - segmentation);
-    const float tRads = t * DEG2RADf;
-    const float sRads = s * DEG2RADf;
-    glVertex3f(sinf(sRads) * rad, cosf(sRads) * rad, 0.02f);
-    glVertex3f(sinf(tRads) * rad, cosf(tRads) * rad, 0.02f);
-  }
-  glEnd();
+  delete[] drawArray;
 
   glLineWidth(2.0f);
 }
