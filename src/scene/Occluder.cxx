@@ -409,15 +409,30 @@ void Occluder::draw() const
     outwards[2] = center[2] - (length * planes[0][2]);
 
     // draw the plane normal
-    glBegin (GL_LINES);
-    glColor4fv (colors[0]);
-    glVertex3fv (center);
-    glVertex3fv (outwards);
-    glEnd ();
+    glColor4f(colors[0][0], colors[0][1], colors[0][2], colors[0][3]);
+
+    GLfloat drawArray[] = {
+      center[0], center[1], center[2],
+      outwards[0], outwards[1], outwards[2]
+    };
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+    glDrawArrays(GL_LINES, 0, 2);
   }
 
   // drawn the edges and normals
   if (DrawEdges || DrawNormals) {
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
     for (v = 0; v < vertexCount; v++) {
       float midpoint[3];
       float outwards[3];
@@ -426,27 +441,42 @@ void Occluder::draw() const
 	midpoint[a] = 0.5f * (vertices[v][a] + vertices[vn][a]);
 	outwards[a] = midpoint[a] - (length * planes[vn + 1][a]);
       }
-      glBegin (GL_LINES);
-      glColor4fv (colors[(v % 4) + 1]);
+
+      glColor4f(colors[(v % 4) + 1][0], colors[(v % 4) + 1][1],
+		colors[(v % 4) + 1][2], colors[(v % 4) + 1][3]);
+
+      GLfloat drawArray[] = {
+	vertices[v][0], vertices[v][1], vertices[v][2],
+	vertices[vn][0], vertices[vn][1], vertices[vn][2],
+	midpoint[0], midpoint[1], midpoint[2],
+	outwards[0], outwards[1], outwards[2]
+      };
+
       if (DrawEdges) {
-	glVertex3fv (vertices[v]);
-	glVertex3fv (vertices[vn]);
+	glVertexPointer(3, GL_FLOAT, 0, drawArray);
+	glDrawArrays(GL_LINES, 0, 2);
       }
       if (DrawNormals) {
-	glVertex3fv (midpoint);
-	glVertex3fv (outwards);
+	glVertexPointer(3, GL_FLOAT, 0, drawArray);
+	glDrawArrays(GL_LINES, 2, 2);
       }
-      glEnd();
     }
   }
 
   // draw some nice vertex points
   if (DrawVertices) {
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
     for (v = 0; v < vertexCount; v++) {
-      glBegin (GL_POINTS);
-      glColor4fv (colors[(v % 4) + 1]);
-      glVertex3fv (vertices[v]);
-      glEnd();
+      glColor4f(colors[(v % 4) + 1][0], colors[(v % 4) + 1][1],
+		colors[(v % 4) + 1][2], colors[(v % 4) + 1][3]);
+
+      glVertexPointer(3, GL_FLOAT, 0, vertices[v]);
+
+      glDrawArrays(GL_POINTS, 0, 1);
     }
   }
 
