@@ -832,9 +832,14 @@ void OctreeNode::draw ()
       }
       break;
   }
-  glColor4fv (color);
+  glColor4f(color[0], color[1], color[2], color[3]);
 
   const float* exts[2] = { extents.mins, extents.maxs };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
 
   // draw Z-normal squares
   for (z = 0; z < 2; z++) {
@@ -846,11 +851,10 @@ void OctreeNode::draw ()
       points[c][2] = exts[z][2];
     }
     memcpy (points[4], points[0], sizeof (points[4]));
-    glBegin (GL_LINE_STRIP);
-    for (int i = 0; i < 5; i++) {
-      glVertex3fv (points[i]);
-    }
-    glEnd ();
+
+    glVertexPointer(3, GL_FLOAT, 0, points);
+
+    glDrawArrays(GL_LINE_STRIP, 0, 5);
   }
 
   // draw the corner edges
@@ -862,10 +866,10 @@ void OctreeNode::draw ()
       points[z][1] = exts[y][1];
       points[z][2] = exts[z][2];
     }
-    glBegin (GL_LINE_STRIP);
-    glVertex3fv (points[0]);
-    glVertex3fv (points[1]);
-    glEnd ();
+
+    glVertexPointer(3, GL_FLOAT, 0, points);
+
+    glDrawArrays(GL_LINES, 0, 2);
   }
 
   // draw the kids
