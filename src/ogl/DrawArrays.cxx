@@ -185,9 +185,10 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
     primitiveCoordinates = 3;
   assert(arrayIDs[index].elements % primitiveCoordinates == 0);
 
-  // GL_LINES requires 2+ vertices, and almost everything else requires 3+ vertices
+  // GL_LINES and GL_LINE_STRIP require 2+ vertices, and everything
+  // else except GL_POINTS requires 3+ vertices
   unsigned int minimumCoordinates = 1;
-  if(mode == GL_LINES)
+  if(mode == GL_LINES || mode == GL_LINE_STRIP)
     minimumCoordinates = 2;
   else if(mode != GL_POINTS)
     minimumCoordinates = 3;

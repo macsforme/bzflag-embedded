@@ -30,7 +30,7 @@ public:
 
   static void beginArray(unsigned int index);
 
-  static void addColor(float r, float g, float b, float a);
+  static void addColor(float r, float g, float b, float a = 1.0f);
   static void addTexCoord(float s, float t);
   static void addNormal(float x, float y, float z);
   static void addVertex(float x, float y, float z = 0.0f);
