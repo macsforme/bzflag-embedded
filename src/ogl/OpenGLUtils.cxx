@@ -275,7 +275,7 @@ void bzGLRectf(float x1, float y1, float x2, float y2)
   glDisableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_VERTEX_ARRAY);
 
-  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+  glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
@@ -294,7 +294,7 @@ void bzGLRecti(short int x1, short int y1, short int x2, short int y2)
   glDisableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_VERTEX_ARRAY);
 
-  glVertexPointer(3, GL_SHORT, 0, drawArray);
+  glVertexPointer(2, GL_SHORT, 0, drawArray);
 
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
