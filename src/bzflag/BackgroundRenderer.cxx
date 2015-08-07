@@ -70,7 +70,7 @@ BackgroundRenderer::BackgroundRenderer(const SceneRenderer&) :
 				mountainsAvailable(false),
 				numMountainTextures(0),
 				mountainsGState(NULL),
-				mountainsList(NULL),
+				mountainsDrawArrays(NULL),
 				cloudDriftU(0.0f),
 				cloudDriftV(0.0f)
 {
@@ -81,16 +81,14 @@ BackgroundRenderer::BackgroundRenderer(const SceneRenderer&) :
   OpenGLMaterial defaultMaterial(black, black, 0.0f);
   OpenGLMaterial rainMaterial(white, white, 0.0f);
 
-  sunList = INVALID_GL_LIST_ID;
-  moonList = INVALID_GL_LIST_ID;
-  starList = INVALID_GL_LIST_ID;
-  cloudsList = INVALID_GL_LIST_ID;
-  sunXFormList = INVALID_GL_LIST_ID;
-  starXFormList = INVALID_GL_LIST_ID;
-  simpleGroundList[0] = INVALID_GL_LIST_ID;
-  simpleGroundList[1] = INVALID_GL_LIST_ID;
-  simpleGroundList[2] = INVALID_GL_LIST_ID;
-  simpleGroundList[3] = INVALID_GL_LIST_ID;
+  sunDrawArray = INVALID_DRAW_ARRAY_ID;
+  moonDrawArray = INVALID_DRAW_ARRAY_ID;
+  starDrawArray = INVALID_DRAW_ARRAY_ID;
+  cloudsDrawArray = INVALID_DRAW_ARRAY_ID;
+  simpleGroundDrawArrays[0] = INVALID_DRAW_ARRAY_ID;
+  simpleGroundDrawArrays[1] = INVALID_DRAW_ARRAY_ID;
+  simpleGroundDrawArrays[2] = INVALID_DRAW_ARRAY_ID;
+  simpleGroundDrawArrays[3] = INVALID_DRAW_ARRAY_ID;
 
   // initialize global to class stuff
   if (!init) {
@@ -218,24 +216,24 @@ BackgroundRenderer::BackgroundRenderer(const SceneRenderer&) :
 
       // prepare each texture
       mountainsGState = new OpenGLGState[numMountainTextures];
-      mountainsList = new GLuint[numMountainTextures];
+      mountainsDrawArrays = new GLuint[numMountainTextures];
       for (i = 0; i < numMountainTextures; i++) {
 	char text[256];
 	sprintf (text, "mountain%d", i + 1);
 	gstate.setTexture (tm.getTextureID (text));
 	mountainsGState[i] = gstate.getState ();
-	mountainsList[i] = INVALID_GL_LIST_ID;
+	mountainsDrawArrays[i] = INVALID_DRAW_ARRAY_ID;
       }
     }
   }
 
-  // create display lists
-  doInitDisplayLists();
+  // create draw arrays
+  doInitDrawArrays();
 
   // reset the sky color when it changes
   BZDB.addCallback("_skyColor", bzdbCallback, this);
 
-  // recreate display lists when context is recreated
+  // recreate draw arrays when context is recreated
   OpenGLGState::registerContextInitializer(freeContext, initContext,
 					   (void*)this);
 
@@ -248,7 +246,7 @@ BackgroundRenderer::~BackgroundRenderer()
   OpenGLGState::unregisterContextInitializer(freeContext, initContext,
 					     (void*)this);
   delete[] mountainsGState;
-  delete[] mountainsList;
+  delete[] mountainsDrawArrays;
 }
 
 
@@ -380,13 +378,12 @@ void			BackgroundRenderer::notifyStyleChange()
 
 void		BackgroundRenderer::resize() {
   resizeSky();
-  doFreeDisplayLists();
-  doInitDisplayLists();
+  doFreeDrawArrays();
+  doInitDrawArrays();
 }
 
 
-void BackgroundRenderer::setCelestial(const SceneRenderer& renderer,
-				      const float sunDir[3],
+void BackgroundRenderer::setCelestial(const float sunDir[3],
 				      const float moonDir[3])
 {
   // set sun and moon positions
@@ -397,20 +394,12 @@ void BackgroundRenderer::setCelestial(const SceneRenderer& renderer,
   moonDirection[1] = moonDir[1];
   moonDirection[2] = moonDir[2];
 
-  if (sunXFormList != INVALID_GL_LIST_ID) {
-    glDeleteLists(sunXFormList, 1);
-    sunXFormList = INVALID_GL_LIST_ID;
-  }
-  if (moonList != INVALID_GL_LIST_ID) {
-    glDeleteLists(moonList, 1);
-    moonList = INVALID_GL_LIST_ID;
-  }
-  if (starXFormList != INVALID_GL_LIST_ID) {
-    glDeleteLists(starXFormList, 1);
-    starXFormList = INVALID_GL_LIST_ID;
+  if (moonDrawArray != INVALID_DRAW_ARRAY_ID) {
+    DrawArrays::deleteArray(moonDrawArray);
+    moonDrawArray = INVALID_DRAW_ARRAY_ID;
   }
 
-  makeCelestialLists(renderer);
+  makeCelestialDrawArrays();
 
   return;
 }
@@ -439,7 +428,7 @@ void BackgroundRenderer::setSkyColors()
 }
 
 
-void BackgroundRenderer::makeCelestialLists(const SceneRenderer& renderer)
+void BackgroundRenderer::makeCelestialDrawArrays()
 {
   setSkyColors();
 
@@ -448,20 +437,7 @@ void BackgroundRenderer::makeCelestialLists(const SceneRenderer& renderer)
   doStars = areStarsVisible(sunDirection);
   doSunset = getSunsetTop(sunDirection, sunsetTop);
 
-  // make pretransformed display list for sun
-  sunXFormList = glGenLists(1);
-  glNewList(sunXFormList, GL_COMPILE);
-  {
-    glPushMatrix();
-    glRotatef((GLfloat)(atan2f(sunDirection[1], (sunDirection[0])) * 180.0 / M_PI),
-							0.0f, 0.0f, 1.0f);
-    glRotatef((GLfloat)(asinf(sunDirection[2]) * 180.0 / M_PI), 0.0f, -1.0f, 0.0f);
-    glCallList(sunList);
-    glPopMatrix();
-  }
-  glEndList();
-
-  // compute display list for moon
+  // compute draw array for moon
   float coverage = (moonDirection[0] * sunDirection[0]) +
 		   (moonDirection[1] * sunDirection[1]) +
 		   (moonDirection[2] * sunDirection[2]);
@@ -470,58 +446,26 @@ void BackgroundRenderer::makeCelestialLists(const SceneRenderer& renderer)
   float worldSize = BZDBCache::worldSize;
   const float moonRadius = 2.0f * worldSize *
 				atanf((float)((60.0 * M_PI / 180.0) / 60.0));
-  // limbAngle is dependent on moon position but sun is so much farther
-  // away that the moon's position is negligible.  rotate sun and moon
-  // so that moon is on the horizon in the +x direction, then compute
-  // the angle to the sun position in the yz plane.
-  float sun2[3];
-  const float moonAzimuth = atan2f(moonDirection[1], moonDirection[0]);
-  const float moonAltitude = asinf(moonDirection[2]);
-  sun2[0] = sunDirection[0] * cosf(moonAzimuth) + sunDirection[1] * sinf(moonAzimuth);
-  sun2[1] = sunDirection[1] * cosf(moonAzimuth) - sunDirection[0] * sinf(moonAzimuth);
-  sun2[2] = sunDirection[2] * cosf(moonAltitude) - sun2[0] * sinf(moonAltitude);
-  const float limbAngle = atan2f(sun2[2], sun2[1]);
 
   const int moonSegements = BZDB.evalInt("moonSegments");
-  moonList = glGenLists(1);
-  glNewList(moonList, GL_COMPILE);
-  {
-    glPushMatrix();
-    glRotatef((GLfloat)(atan2f(moonDirection[1], moonDirection[0]) * 180.0 / M_PI),
-							0.0f, 0.0f, 1.0f);
-    glRotatef((GLfloat)(asinf(moonDirection[2]) * 180.0 / M_PI), 0.0f, -1.0f, 0.0f);
-    glRotatef((float)(limbAngle * 180.0 / M_PI), 1.0f, 0.0f, 0.0f);
-    glBegin(GL_TRIANGLE_STRIP);
-    // glTexCoord2f(0,-1);
-    glVertex3f(2.0f * worldSize, 0.0f, -moonRadius);
-      for (int i = 0; i < moonSegements-1; i++) {
-	const float angle = (float)(0.5 * M_PI * double(i-(moonSegements/2)-1) / (moonSegements/2.0));
-	float sinAngle = sinf(angle);
-	float cosAngle = cosf(angle);
-	// glTexCoord2f(coverage*cosAngle,sinAngle);
-	glVertex3f(2.0f * worldSize, coverage * moonRadius * cosAngle,moonRadius * sinAngle);
+  moonDrawArray = DrawArrays::newArray();
+  DrawArrays::beginArray(moonDrawArray);
 
-	// glTexCoord2f(cosAngle,sinAngle);
-	glVertex3f(2.0f * worldSize, moonRadius * cosAngle,moonRadius * sinAngle);
-      }
-    // glTexCoord2f(0,1);
-    glVertex3f(2.0f * worldSize, 0.0f, moonRadius);
-    glEnd();
-    glPopMatrix();
-  }
-  glEndList();
+  DrawArrays::addVertex(2.0f * worldSize, 0.0f, -moonRadius);
+  for (int i = 0; i < moonSegements-1; i++) {
+    const float angle = (float)(0.5 * M_PI * double(i-(moonSegements/2)-1) / (moonSegements/2.0));
+    float sinAngle = sinf(angle);
+    float cosAngle = cosf(angle);
+    // glTexCoord2f(coverage*cosAngle,sinAngle);
+    DrawArrays::addVertex(2.0f * worldSize, coverage * moonRadius * cosAngle, moonRadius * sinAngle);
 
-  // make pretransformed display list for stars
-  starXFormList = glGenLists(1);
-  glNewList(starXFormList, GL_COMPILE);
-  {
-    glPushMatrix();
-    glMultMatrixf(renderer.getCelestialTransform());
-    glScalef(worldSize, worldSize, worldSize);
-    glCallList(starList);
-    glPopMatrix();
+    // glTexCoord2f(cosAngle,sinAngle);
+    DrawArrays::addVertex(2.0f * worldSize, moonRadius * cosAngle,moonRadius * sinAngle);
   }
-  glEndList();
+  // glTexCoord2f(0,1);
+  DrawArrays::addVertex(2.0f * worldSize, 0.0f, moonRadius);
+
+  DrawArrays::finishArray();
 
   return;
 }
@@ -559,7 +503,10 @@ void BackgroundRenderer::renderSky(SceneRenderer& renderer, bool fullWindow,
 
     // draw sky
     glDisable(GL_DITHER);
-    glPushAttrib(GL_SCISSOR_BIT);
+    bool scissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    GLfloat scissorOldParams[4];
+    glGetFloatv(GL_SCISSOR_BOX, scissorOldParams);
+
     glScissor(x, y + height - (viewHeight >> 1), width, (viewHeight >> 1));
     glClearColor(skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -583,7 +530,10 @@ void BackgroundRenderer::renderSky(SceneRenderer& renderer, bool fullWindow,
     glClear(GL_COLOR_BUFFER_BIT);
 
     // back to normal
-    glPopAttrib();
+    if(! scissorWasEnabled)
+      glDisable(GL_SCISSOR_TEST);
+    glScissor(scissorOldParams[0], scissorOldParams[1],
+	      scissorOldParams[2], scissorOldParams[3]);
     if (BZDB.isTrue("dither")) glEnable(GL_DITHER);
   }
 }
@@ -607,7 +557,9 @@ void BackgroundRenderer::renderGround(SceneRenderer& renderer,
 
     // draw sky
     glDisable(GL_DITHER);
-    glPushAttrib(GL_SCISSOR_BIT);
+    bool scissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    GLfloat scissorOldParams[4];
+    glGetFloatv(GL_SCISSOR_BOX, scissorOldParams);
     glScissor(x, y + height - (viewHeight >> 1), width, (viewHeight >> 1));
     glClearColor(skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -631,7 +583,10 @@ void BackgroundRenderer::renderGround(SceneRenderer& renderer,
     glClear(GL_COLOR_BUFFER_BIT);
 
     // back to normal
-    glPopAttrib();
+    if(! scissorWasEnabled)
+      glDisable(GL_SCISSOR_TEST);
+    glScissor(scissorOldParams[0], scissorOldParams[1],
+	      scissorOldParams[2], scissorOldParams[3]);
     if (BZDB.isTrue("dither")) glEnable(GL_DITHER);
   }
 }
@@ -660,7 +615,13 @@ void BackgroundRenderer::renderGroundEffects(SceneRenderer& renderer,
     // kilometers away.
     if (BZDBCache::blend && BZDBCache::lighting &&
 		!drawingMirror && BZDBCache::drawGroundLights) {
+#ifdef HAVE_GLES
+      // no luck yet figuring out how to replicate the automatic
+      // texture coordinate generation below in OpenGL ES
+      if (false) {
+#else
       if (BZDBCache::tesselation && (renderer.useQuality() >= 3)) {
+#endif
 //	  (BZDB.get(StateDatabase::BZDB_FOGMODE) == "none")) {
 	// not really tesselation, but it is tied to the "Best" lighting,
 	// avoid on foggy maps, because the blending function accumulates
@@ -685,7 +646,7 @@ void BackgroundRenderer::renderGroundEffects(SceneRenderer& renderer,
 	glMatrixMode(GL_TEXTURE);
 	glPushMatrix();
 	glTranslatef(cloudDriftU, cloudDriftV, 0.0f);
-	glCallList(cloudsList);
+	DrawArrays::draw(cloudsDrawArray);
 	glLoadIdentity();	// maybe works around bug in some systems
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -774,12 +735,16 @@ void BackgroundRenderer::setupSkybox()
   }
 
   // setup the wrap mode
+#ifdef HAVE_GLES
+  skyboxWrapMode = GL_CLAMP_TO_EDGE;
+#else
   skyboxWrapMode = GL_CLAMP;
 #ifdef GL_VERSION_1_2
   const char* extStr = (const char*) glGetString(GL_EXTENSIONS);
   if (strstr(extStr, "GL_EXT_texture_edge_clamp") != NULL) {
     skyboxWrapMode = GL_CLAMP_TO_EDGE;
   }
+#endif
 #endif
 
   // setup the corner colors
@@ -827,79 +792,187 @@ void BackgroundRenderer::drawSkybox()
   glDisable(GL_CULL_FACE);
   glShadeModel(GL_SMOOTH);
 
+  glEnableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+
   if (!BZDBCache::drawGround) {
     tm.bind(skyboxTexID[5]); // bottom
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, skyboxWrapMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, skyboxWrapMode);
-    glBegin(GL_QUADS);
-    {
-      glTexCoord2fv(txcds[0]); glColor3fv(color[2]); glVertex3fv(verts[2]);
-      glTexCoord2fv(txcds[1]); glColor3fv(color[3]); glVertex3fv(verts[3]);
-      glTexCoord2fv(txcds[2]); glColor3fv(color[0]); glVertex3fv(verts[0]);
-      glTexCoord2fv(txcds[3]); glColor3fv(color[1]); glVertex3fv(verts[1]);
-    }
-    glEnd();
+
+    GLfloat drawArray[] = {
+      txcds[0][0], txcds[0][1],
+      color[2][0], color[2][1], color[2][2], 1.0f,
+      verts[2][0], verts[2][1], verts[2][2],
+
+      txcds[1][0], txcds[1][1],
+      color[3][0], color[3][1], color[3][2], 1.0f,
+      verts[3][0], verts[3][1], verts[3][2],
+
+      txcds[2][0], txcds[2][1],
+      color[0][0], color[0][1], color[0][2], 1.0f,
+      verts[0][0], verts[0][1], verts[0][2],
+
+      txcds[3][0], txcds[3][1],
+      color[1][0], color[1][1], color[1][2], 1.0f,
+      verts[1][0], verts[1][1], verts[1][2]
+    };
+
+    glTexCoordPointer(2, GL_FLOAT, 9 * sizeof(GLfloat), drawArray);
+    glColorPointer(4, GL_FLOAT, 9 * sizeof(GLfloat), drawArray + 2);
+    glVertexPointer(3, GL_FLOAT, 9 * sizeof(GLfloat), drawArray + 6);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
   }
+
 
   tm.bind(skyboxTexID[4]); // top
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, skyboxWrapMode);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, skyboxWrapMode);
-  glBegin(GL_QUADS);
-  {
-    glTexCoord2fv(txcds[0]); glColor3fv(color[5]); glVertex3fv(verts[5]);
-    glTexCoord2fv(txcds[1]); glColor3fv(color[4]); glVertex3fv(verts[4]);
-    glTexCoord2fv(txcds[2]); glColor3fv(color[7]); glVertex3fv(verts[7]);
-    glTexCoord2fv(txcds[3]); glColor3fv(color[6]); glVertex3fv(verts[6]);
-  }
-  glEnd();
+
+  GLfloat drawArray2[] = {
+    txcds[0][0], txcds[0][1],
+    color[5][0], color[5][1], color[5][2], 1.0f,
+    verts[5][0], verts[5][1], verts[5][2],
+
+    txcds[1][0], txcds[1][1],
+    color[4][0], color[4][1], color[4][2], 1.0f,
+    verts[4][0], verts[4][1], verts[4][2],
+
+    txcds[2][0], txcds[2][1],
+    color[7][0], color[7][1], color[7][2], 1.0f,
+    verts[7][0], verts[7][1], verts[7][2],
+
+    txcds[3][0], txcds[3][1],
+    color[6][0], color[6][1], color[6][2], 1.0f,
+    verts[6][0], verts[6][1], verts[6][2]
+  };
+
+  glTexCoordPointer(2, GL_FLOAT, 9 * sizeof(GLfloat), drawArray2);
+  glColorPointer(4, GL_FLOAT, 9 * sizeof(GLfloat), drawArray2 + 2);
+  glVertexPointer(3, GL_FLOAT, 9 * sizeof(GLfloat), drawArray2 + 6);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 
   tm.bind(skyboxTexID[0]); // left
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, skyboxWrapMode);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, skyboxWrapMode);
-  glBegin(GL_QUADS);
-  {
-    glTexCoord2fv(txcds[0]); glColor3fv(color[0]); glVertex3fv(verts[0]);
-    glTexCoord2fv(txcds[1]); glColor3fv(color[3]); glVertex3fv(verts[3]);
-    glTexCoord2fv(txcds[2]); glColor3fv(color[7]); glVertex3fv(verts[7]);
-    glTexCoord2fv(txcds[3]); glColor3fv(color[4]); glVertex3fv(verts[4]);
-  }
-  glEnd();
+
+  GLfloat drawArray3[] = {
+    txcds[0][0], txcds[0][1],
+    color[0][0], color[0][1], color[0][2], 1.0f,
+    verts[0][0], verts[0][1], verts[0][2],
+
+    txcds[1][0], txcds[1][1],
+    color[3][0], color[3][1], color[3][2], 1.0f,
+    verts[3][0], verts[3][1], verts[3][2],
+
+    txcds[2][0], txcds[2][1],
+    color[7][0], color[7][1], color[7][2], 1.0f,
+    verts[7][0], verts[7][1], verts[7][2],
+
+    txcds[3][0], txcds[3][1],
+    color[4][0], color[4][1], color[4][2], 1.0f,
+    verts[4][0], verts[4][1], verts[4][2]
+  };
+
+  glTexCoordPointer(2, GL_FLOAT, 9 * sizeof(GLfloat), drawArray3);
+  glColorPointer(4, GL_FLOAT, 9 * sizeof(GLfloat), drawArray3 + 2);
+  glVertexPointer(3, GL_FLOAT, 9 * sizeof(GLfloat), drawArray3 + 6);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 
   tm.bind(skyboxTexID[1]); // front
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, skyboxWrapMode);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, skyboxWrapMode);
-  glBegin(GL_QUADS);
-  {
-    glTexCoord2fv(txcds[0]); glColor3fv(color[1]); glVertex3fv(verts[1]);
-    glTexCoord2fv(txcds[1]); glColor3fv(color[0]); glVertex3fv(verts[0]);
-    glTexCoord2fv(txcds[2]); glColor3fv(color[4]); glVertex3fv(verts[4]);
-    glTexCoord2fv(txcds[3]); glColor3fv(color[5]); glVertex3fv(verts[5]);
-  }
-  glEnd();
+
+  GLfloat drawArray4[] = {
+    txcds[0][0], txcds[0][1],
+    color[1][0], color[1][1], color[1][2], 1.0f,
+    verts[1][0], verts[1][1], verts[1][2],
+
+    txcds[1][0], txcds[1][1],
+    color[0][0], color[0][1], color[0][2], 1.0f,
+    verts[0][0], verts[0][1], verts[0][2],
+
+    txcds[2][0], txcds[2][1],
+    color[4][0], color[4][1], color[4][2], 1.0f,
+    verts[4][0], verts[4][1], verts[4][2],
+
+    txcds[3][0], txcds[3][1],
+    color[5][0], color[5][1], color[5][2], 1.0f,
+    verts[5][0], verts[5][1], verts[5][2]
+  };
+
+  glTexCoordPointer(2, GL_FLOAT, 9 * sizeof(GLfloat), drawArray4);
+  glColorPointer(4, GL_FLOAT, 9 * sizeof(GLfloat), drawArray4 + 2);
+  glVertexPointer(3, GL_FLOAT, 9 * sizeof(GLfloat), drawArray4 + 6);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 
   tm.bind(skyboxTexID[2]); // right
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, skyboxWrapMode);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, skyboxWrapMode);
-  glBegin(GL_QUADS);
-  {
-    glTexCoord2fv(txcds[0]); glColor3fv(color[2]); glVertex3fv(verts[2]);
-    glTexCoord2fv(txcds[1]); glColor3fv(color[1]); glVertex3fv(verts[1]);
-    glTexCoord2fv(txcds[2]); glColor3fv(color[5]); glVertex3fv(verts[5]);
-    glTexCoord2fv(txcds[3]); glColor3fv(color[6]); glVertex3fv(verts[6]);
-  }
-  glEnd();
+
+  GLfloat drawArray5[] = {
+    txcds[0][0], txcds[0][1],
+    color[2][0], color[2][1], color[2][2], 1.0f,
+    verts[2][0], verts[2][1], verts[2][2],
+
+    txcds[1][0], txcds[1][1],
+    color[1][0], color[1][1], color[1][2], 1.0f,
+    verts[1][0], verts[1][1], verts[1][2],
+
+    txcds[2][0], txcds[2][1],
+    color[5][0], color[5][1], color[5][2], 1.0f,
+    verts[5][0], verts[5][1], verts[5][2],
+
+    txcds[3][0], txcds[3][1],
+    color[6][0], color[6][1], color[6][2], 1.0f,
+    verts[6][0], verts[6][1], verts[6][2]
+  };
+
+  glTexCoordPointer(2, GL_FLOAT, 9 * sizeof(GLfloat), drawArray5);
+  glColorPointer(4, GL_FLOAT, 9 * sizeof(GLfloat), drawArray5 + 2);
+  glVertexPointer(3, GL_FLOAT, 9 * sizeof(GLfloat), drawArray5 + 6);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 
   tm.bind(skyboxTexID[3]); // back
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, skyboxWrapMode);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, skyboxWrapMode);
-  glBegin(GL_QUADS);
-  {
-    glTexCoord2fv(txcds[0]); glColor3fv(color[3]); glVertex3fv(verts[3]);
-    glTexCoord2fv(txcds[1]); glColor3fv(color[2]); glVertex3fv(verts[2]);
-    glTexCoord2fv(txcds[2]); glColor3fv(color[6]); glVertex3fv(verts[6]);
-    glTexCoord2fv(txcds[3]); glColor3fv(color[7]); glVertex3fv(verts[7]);
-  }
-  glEnd();
+
+  GLfloat drawArray6[] = {
+    txcds[0][0], txcds[0][1],
+    color[3][0], color[3][1], color[3][2], 1.0f,
+    verts[3][0], verts[3][1], verts[3][2],
+
+    txcds[1][0], txcds[1][1],
+    color[2][0], color[2][1], color[2][2], 1.0f,
+    verts[2][0], verts[2][1], verts[2][2],
+
+    txcds[2][0], txcds[2][1],
+    color[6][0], color[6][1], color[6][2], 1.0f,
+    verts[6][0], verts[6][1], verts[6][2],
+
+    txcds[3][0], txcds[3][1],
+    color[7][0], color[7][1], color[7][2], 1.0f,
+    verts[7][0], verts[7][1], verts[7][2]
+  };
+
+  glTexCoordPointer(2, GL_FLOAT, 9 * sizeof(GLfloat), drawArray6);
+  glColorPointer(4, GL_FLOAT, 9 * sizeof(GLfloat), drawArray6 + 2);
+  glVertexPointer(3, GL_FLOAT, 9 * sizeof(GLfloat), drawArray6 + 6);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 
   glShadeModel(GL_FLAT);
   glEnable(GL_CULL_FACE);
@@ -923,64 +996,98 @@ void BackgroundRenderer::drawSky(SceneRenderer& renderer, bool mirror)
     skyGState.setState();
     if (!doSunset) {
       // just a pyramid
-      glBegin(GL_TRIANGLE_FAN);
-	glColor3fv(skyZenithColor);
-	glVertex3fv(skyPyramid[4]);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[0]);
-	glColor3fv(skySunDirColor);
-	glVertex3fv(skyPyramid[3]);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[2]);
-	glColor3fv(skyAntiSunDirColor);
-	glVertex3fv(skyPyramid[1]);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[0]);
-      glEnd();
+      GLfloat drawArray[] = {
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	skyPyramid[4][0], skyPyramid[4][1], skyPyramid[4][2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[0][0], skyPyramid[0][1], skyPyramid[0][2],
+	skySunDirColor[0], skySunDirColor[1], skySunDirColor[2], 1.0f,
+	skyPyramid[3][0], skyPyramid[3][1], skyPyramid[3][2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[2][0], skyPyramid[2][1], skyPyramid[2][2],
+	skyAntiSunDirColor[0], skyAntiSunDirColor[1], skyAntiSunDirColor[2], 1.0f,
+	skyPyramid[1][0], skyPyramid[1][1], skyPyramid[1][2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[0][0], skyPyramid[0][1], skyPyramid[0][2]
+      };
+
+      glEnableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      glColorPointer(4, GL_FLOAT, 7 * sizeof(GLfloat), drawArray);
+      glVertexPointer(3, GL_FLOAT, 7 * sizeof(GLfloat), drawArray + 4);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
     }
     else {
       // overall shape is a pyramid, but the solar sides are two
       // triangles each.  the top triangle is all zenith color,
       // the bottom goes from zenith to sun-dir color.
-      glBegin(GL_TRIANGLE_FAN);
-	glColor3fv(skyZenithColor);
-	glVertex3fv(skyPyramid[4]);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[2]);
-	glColor3fv(skyAntiSunDirColor);
-	glVertex3fv(skyPyramid[1]);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[0]);
-      glEnd();
+      GLfloat drawArray[] = {
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	skyPyramid[4][0], skyPyramid[4][1], skyPyramid[4][2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[2][0], skyPyramid[2][1], skyPyramid[2][2],
+	skyAntiSunDirColor[0], skyAntiSunDirColor[1], skyAntiSunDirColor[2], 1.0f,
+	skyPyramid[1][0], skyPyramid[1][1], skyPyramid[1][2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[0][0], skyPyramid[0][1], skyPyramid[0][2]
+      };
+
+      glEnableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      glColorPointer(4, GL_FLOAT, 7 * sizeof(GLfloat), drawArray);
+      glVertexPointer(3, GL_FLOAT, 7 * sizeof(GLfloat), drawArray + 4);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 
       GLfloat sunsetTopPoint[3];
       sunsetTopPoint[0] = skyPyramid[3][0] * (1.0f - sunsetTop);
       sunsetTopPoint[1] = skyPyramid[3][1] * (1.0f - sunsetTop);
       sunsetTopPoint[2] = skyPyramid[4][2] * sunsetTop;
-      glBegin(GL_TRIANGLES);
-	glColor3fv(skyZenithColor);
-	glVertex3fv(skyPyramid[4]);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[0]);
-	glColor3fv(skyZenithColor);
-	glVertex3fv(sunsetTopPoint);
-	glVertex3fv(skyPyramid[4]);
-	glVertex3fv(sunsetTopPoint);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[2]);
-	glColor3fv(skyZenithColor);
-	glVertex3fv(sunsetTopPoint);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[0]);
-	glColor3fv(skySunDirColor);
-	glVertex3fv(skyPyramid[3]);
-	glColor3fv(skyCrossSunDirColor);
-	glVertex3fv(skyPyramid[2]);
-	glColor3fv(skyZenithColor);
-	glVertex3fv(sunsetTopPoint);
-	glColor3fv(skySunDirColor);
-	glVertex3fv(skyPyramid[3]);
-      glEnd();
+
+      GLfloat drawArray2[] = {
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	skyPyramid[4][0], skyPyramid[4][1], skyPyramid[4][2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[0][0], skyPyramid[0][1], skyPyramid[0][2],
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	sunsetTopPoint[0], sunsetTopPoint[1], sunsetTopPoint[2],
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	skyPyramid[4][0], skyPyramid[4][1], skyPyramid[4][2],
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	sunsetTopPoint[0], sunsetTopPoint[1], sunsetTopPoint[2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[2][0], skyPyramid[2][1], skyPyramid[2][2],
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	sunsetTopPoint[0], sunsetTopPoint[1], sunsetTopPoint[2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[0][0], skyPyramid[0][1], skyPyramid[0][2],
+	skySunDirColor[0], skySunDirColor[1], skySunDirColor[2], 1.0f,
+	skyPyramid[3][0], skyPyramid[3][1], skyPyramid[3][2],
+	skyCrossSunDirColor[0], skyCrossSunDirColor[1], skyCrossSunDirColor[2], 1.0f,
+	skyPyramid[2][0], skyPyramid[2][1], skyPyramid[2][2],
+	skyZenithColor[0], skyZenithColor[1], skyZenithColor[2], 1.0f,
+	sunsetTopPoint[0], sunsetTopPoint[1], sunsetTopPoint[2],
+	skySunDirColor[0], skySunDirColor[1], skySunDirColor[2], 1.0f,
+	skyPyramid[3][0], skyPyramid[3][1], skyPyramid[3][2]
+      };
+
+      glEnableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      glColorPointer(4, GL_FLOAT, 7 * sizeof(GLfloat), drawArray2);
+      glVertexPointer(3, GL_FLOAT, 7 * sizeof(GLfloat), drawArray2 + 4);
+
+      glDrawArrays(GL_TRIANGLES, 0, 12);
     }
   }
 
@@ -991,8 +1098,13 @@ void BackgroundRenderer::drawSky(SceneRenderer& renderer, bool mirror)
 
   if (useClipPlane) {
     glEnable(GL_CLIP_PLANE0);
+#ifdef HAVE_GLES
+    const GLfloat plane[4] = {0.0f, 0.0f, 1.0f, 0.0f};
+    glClipPlanef(GL_CLIP_PLANE0, plane);
+#else
     const GLdouble plane[4] = {0.0, 0.0, +1.0, 0.0};
     glClipPlane(GL_CLIP_PLANE0, plane);
+#endif
   }
 
   if (doSkybox) {
@@ -1002,23 +1114,62 @@ void BackgroundRenderer::drawSky(SceneRenderer& renderer, bool mirror)
   if (BZDBCache::drawCelestial) {
     if (sunDirection[2] > -0.009f) {
       sunGState.setState();
-      glColor3fv(renderer.getSunScaledColor());
-      glCallList(sunXFormList);
+      const GLfloat* sunScaledColor = renderer.getSunScaledColor();
+      glColor4f(sunScaledColor[0], sunScaledColor[1],
+		sunScaledColor[2], 1.0f);
+
+      glPushMatrix();
+
+      glRotatef((GLfloat)(atan2f(sunDirection[1], (sunDirection[0])) * 180.0 / M_PI),
+		0.0f, 0.0f, 1.0f);
+      glRotatef((GLfloat)(asinf(sunDirection[2]) * 180.0 / M_PI), 0.0f, -1.0f, 0.0f);
+
+      DrawArrays::draw(sunDrawArray, GL_TRIANGLE_FAN);
+
+      glPopMatrix();
     }
 
     if (doStars) {
+      float worldSize = BZDBCache::worldSize;
+
       starGState[starGStateIndex].setState();
-      glCallList(starXFormList);
+
+      glPushMatrix();
+
+      glMultMatrixf(renderer.getCelestialTransform());
+      glScalef(worldSize, worldSize, worldSize);
+
+      DrawArrays::draw(starDrawArray, GL_POINTS);
+
+      glPopMatrix();
     }
 
     if (moonDirection[2] > -0.009f) {
       moonGState[doStars ? 1 : 0].setState();
-      glColor3f(1.0f, 1.0f, 1.0f);
-   //   if (useMoonTexture)
-   //     glEnable(GL_TEXTURE_2D);
-      glCallList(moonList);
-    }
+      glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
+      // limbAngle is dependent on moon position but sun is so much farther
+      // away that the moon's position is negligible.  rotate sun and moon
+      // so that moon is on the horizon in the +x direction, then compute
+      // the angle to the sun position in the yz plane.
+      float sun2[3];
+      const float moonAzimuth = atan2f(moonDirection[1], moonDirection[0]);
+      const float moonAltitude = asinf(moonDirection[2]);
+      sun2[0] = sunDirection[0] * cosf(moonAzimuth) + sunDirection[1] * sinf(moonAzimuth);
+      sun2[1] = sunDirection[1] * cosf(moonAzimuth) - sunDirection[0] * sinf(moonAzimuth);
+      sun2[2] = sunDirection[2] * cosf(moonAltitude) - sun2[0] * sinf(moonAltitude);
+      const float limbAngle = atan2f(sun2[2], sun2[1]);
+
+      glPushMatrix();
+      glRotatef((GLfloat)(atan2f(moonDirection[1], moonDirection[0]) * 180.0 / M_PI),
+							0.0f, 0.0f, 1.0f);
+      glRotatef((GLfloat)(asinf(moonDirection[2]) * 180.0 / M_PI), 0.0f, -1.0f, 0.0f);
+      glRotatef((float)(limbAngle * 180.0 / M_PI), 1.0f, 0.0f, 0.0f);
+
+      DrawArrays::draw(moonDrawArray, GL_TRIANGLE_STRIP);
+
+      glPopMatrix();
+    }
   }
 
   if (useClipPlane) {
@@ -1038,15 +1189,17 @@ void BackgroundRenderer::drawGround()
     // draw ground
     glNormal3f(0.0f, 0.0f, 1.0f);
     if (invert) {
-      glColor4fv(groundColorInv[styleIndex]);
+      glColor4f(groundColorInv[styleIndex][0], groundColorInv[styleIndex][1],
+		groundColorInv[styleIndex][2], groundColorInv[styleIndex][3]);
       invGroundGState[styleIndex].setState();
     } else {
       float color[4];
       if (BZDB.isSet("GroundOverideColor") &&
 	  parseColorString(BZDB.get("GroundOverideColor"), color)) {
-	glColor4fv(color);
+	glColor4f(color[0], color[1], color[2], color[3]);
       } else {
-	glColor4fv(groundColor[styleIndex]);
+	glColor4f(groundColor[styleIndex][0], groundColor[styleIndex][1],
+		  groundColor[styleIndex][2], groundColor[styleIndex][3]);
       }
       groundGState[styleIndex].setState();
     }
@@ -1054,7 +1207,7 @@ void BackgroundRenderer::drawGround()
     if (RENDERER.useQuality() >= 2) {
       drawGroundCentered();
     } else {
-      glCallList(simpleGroundList[styleIndex]);
+      DrawArrays::draw(simpleGroundDrawArrays[styleIndex]);
     }
   }
 }
@@ -1093,19 +1246,87 @@ void BackgroundRenderer::drawGroundCentered()
     { 3, 0, 4, 7 },
   };
 
-  glNormal3f(0.0f, 0.0f, 1.0f);
-  glBegin(GL_QUADS);
-  {
-    for (int q = 0; q < 5; q++) {
-      for (int c = 0; c < 4; c++) {
-	const int index = indices[q][c];
-	glTexCoord2f(vertices[index][0] * repeat,
-		     vertices[index][1] * repeat);
-	glVertex2fv(vertices[index]);
-      }
-    }
+  GLfloat *drawArray = new GLfloat[210];
+
+  for (int q = 0; q < 5; q++) {
+    drawArray[q * 42 + 0] = 0.0f;
+    drawArray[q * 42 + 1] = 0.0f;
+    drawArray[q * 42 + 2] = 1.0f;
+
+    drawArray[q * 42 + 3] = vertices[indices[q][0]][0] * repeat;
+    drawArray[q * 42 + 4] = vertices[indices[q][0]][1] * repeat;
+
+    drawArray[q * 42 + 5] = vertices[indices[q][0]][0];
+    drawArray[q * 42 + 6] = vertices[indices[q][0]][1];
+
+
+    drawArray[q * 42 + 7] = 0.0f;
+    drawArray[q * 42 + 8] = 0.0f;
+    drawArray[q * 42 + 9] = 1.0f;
+
+    drawArray[q * 42 + 10] = vertices[indices[q][1]][0] * repeat;
+    drawArray[q * 42 + 11] = vertices[indices[q][1]][1] * repeat;
+
+    drawArray[q * 42 + 12] = vertices[indices[q][1]][0];
+    drawArray[q * 42 + 13] = vertices[indices[q][1]][1];
+
+
+    drawArray[q * 42 + 14] = 0.0f;
+    drawArray[q * 42 + 15] = 0.0f;
+    drawArray[q * 42 + 16] = 1.0f;
+
+    drawArray[q * 42 + 17] = vertices[indices[q][2]][0] * repeat;
+    drawArray[q * 42 + 18] = vertices[indices[q][2]][1] * repeat;
+
+    drawArray[q * 42 + 19] = vertices[indices[q][2]][0];
+    drawArray[q * 42 + 20] = vertices[indices[q][2]][1];
+
+
+    drawArray[q * 42 + 21] = 0.0f;
+    drawArray[q * 42 + 22] = 0.0f;
+    drawArray[q * 42 + 23] = 1.0f;
+
+    drawArray[q * 42 + 24] = vertices[indices[q][2]][0] * repeat;
+    drawArray[q * 42 + 25] = vertices[indices[q][2]][1] * repeat;
+
+    drawArray[q * 42 + 26] = vertices[indices[q][2]][0];
+    drawArray[q * 42 + 27] = vertices[indices[q][2]][1];
+
+
+    drawArray[q * 42 + 28] = 0.0f;
+    drawArray[q * 42 + 29] = 0.0f;
+    drawArray[q * 42 + 30] = 1.0f;
+
+    drawArray[q * 42 + 31] = vertices[indices[q][3]][0] * repeat;
+    drawArray[q * 42 + 32] = vertices[indices[q][3]][1] * repeat;
+
+    drawArray[q * 42 + 33] = vertices[indices[q][3]][0];
+    drawArray[q * 42 + 34] = vertices[indices[q][3]][1];
+
+
+    drawArray[q * 42 + 35] = 0.0f;
+    drawArray[q * 42 + 36] = 0.0f;
+    drawArray[q * 42 + 37] = 1.0f;
+
+    drawArray[q * 42 + 38] = vertices[indices[q][0]][0] * repeat;
+    drawArray[q * 42 + 39] = vertices[indices[q][0]][1] * repeat;
+
+    drawArray[q * 42 + 40] = vertices[indices[q][0]][0];
+    drawArray[q * 42 + 41] = vertices[indices[q][0]][1];
   }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glNormalPointer(GL_FLOAT, 7 * sizeof(GLfloat), drawArray);
+  glTexCoordPointer(2, GL_FLOAT, 7 * sizeof(GLfloat), drawArray + 3);
+  glVertexPointer(2, GL_FLOAT, 7 * sizeof(GLfloat), drawArray + 5);
+
+  glDrawArrays(GL_TRIANGLES, 0, 30);
+
+  delete[] drawArray;
 
   return;
 }
@@ -1123,25 +1344,38 @@ void			BackgroundRenderer::drawGroundGrid(
 
   gridGState.setState();
 
-  // x lines
-  if (doShadows) glColor3f(0.0f, 0.75f, 0.5f);
-  else glColor3f(0.0f, 0.4f, 0.3f);
-  glBegin(GL_LINES);
-    for (i = -xhalf; i <= xhalf; i += gridSpacing) {
-      glVertex2f(x0 + i, y0 - yhalf);
-      glVertex2f(x0 + i, y0 + yhalf);
-    }
-  glEnd();
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
 
-  /* z lines */
-  if (doShadows) glColor3f(0.5f, 0.75f, 0.0f);
-  else glColor3f(0.3f, 0.4f, 0.0f);
-  glBegin(GL_LINES);
-    for (i = -yhalf; i <= yhalf; i += gridSpacing) {
-      glVertex2f(x0 - xhalf, y0 + i);
-      glVertex2f(x0 + xhalf, y0 + i);
-    }
-  glEnd();
+  // x lines
+  if (doShadows) glColor4f(0.0f, 0.75f, 0.5f, 1.0f);
+  else glColor4f(0.0f, 0.4f, 0.3f, 1.0f);
+  for (i = -xhalf; i <= xhalf; i += gridSpacing) {
+    GLfloat drawArray[] = {
+      x0 + i, y0 - yhalf,
+      x0 + i, y0 + yhalf
+    };
+
+    glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+    glDrawArrays(GL_LINES, 0, 2);
+  }
+
+  // z lines
+  if (doShadows) glColor4f(0.5f, 0.75f, 0.0f, 1.0f);
+  else glColor4f(0.3f, 0.4f, 0.0f, 1.0f);
+  for (i = -yhalf; i <= yhalf; i += gridSpacing) {
+    GLfloat drawArray[] = {
+      x0 - xhalf, y0 + i,
+      x0 + xhalf, y0 + i
+    };
+
+    glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+    glDrawArrays(GL_LINES, 0, 2);
+  }
 }
 
 void			BackgroundRenderer::drawGroundShadows(
@@ -1189,7 +1423,7 @@ void			BackgroundRenderer::drawGroundShadows(
   } else {
     // use stippling to avoid overlapping shadows
     sunShadowsGState.setState();
-    glColor3f(0.0f, 0.0f, 0.0f);
+    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
   }
 
   // render those nodes
@@ -1294,23 +1528,43 @@ void BackgroundRenderer::drawGroundReceivers(SceneRenderer& renderer)
     color[3] = I;
 
     // draw ground receiver, computing lighting at each vertex ourselves
-    glBegin(GL_TRIANGLE_FAN);
-    {
-      glColor4fv(color);
-      glVertex2f(0.0f, 0.0f);
+    GLfloat *drawArray = new GLfloat[(receiverSlices + 2) * 6];
 
-      // inner ring
-      d = hypotf(receiverRingSize, pos[2]);
-      I = B / (atten[0] + d * (atten[1] + d * atten[2]));
-      I *= pos[2] / d;
-      color[3] = I;
-      glColor4fv(color);
-      for (j = 0; j <= receiverSlices; j++) {
-	glVertex2f(receiverRingSize * angle[j][0],
-		   receiverRingSize * angle[j][1]);
-      }
+    drawArray[0] = color[0];
+    drawArray[1] = color[1];
+    drawArray[2] = color[2];
+    drawArray[3] = color[3];
+
+    drawArray[4] = 0.0f;
+    drawArray[5] = 0.0f;
+
+    // inner ring
+    d = hypotf(receiverRingSize, pos[2]);
+    I = B / (atten[0] + d * (atten[1] + d * atten[2]));
+    I *= pos[2] / d;
+    color[3] = I;
+    for (j = 0; j <= receiverSlices; j++) {
+      drawArray[(j + 1) * 6 + 0] = color[0];
+      drawArray[(j + 1) * 6 + 1] = color[1];
+      drawArray[(j + 1) * 6 + 2] = color[2];
+      drawArray[(j + 1) * 6 + 3] = color[3];
+
+      drawArray[(j + 1) * 6 + 4] = receiverRingSize * angle[j][0];
+      drawArray[(j + 1) * 6 + 5] = receiverRingSize * angle[j][1];
     }
-    glEnd();
+
+    glEnableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawArray);
+    glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawArray + 4);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, receiverSlices + 2);
+
+    delete[] drawArray;
+
     triangleCount += receiverSlices;
 
     for (i = 1; i < receiverRings; i++) {
@@ -1332,19 +1586,71 @@ void BackgroundRenderer::drawGroundReceivers(SceneRenderer& renderer)
       }
       float outerAlpha = I;
 
-      glBegin(GL_QUAD_STRIP);
-      {
-	for (j = 0; j <= receiverSlices; j++) {
-	  color[3] = innerAlpha;
-	  glColor4fv(color);
-	  glVertex2f(angle[j][0] * innerSize, angle[j][1] * innerSize);
-	  color[3] = outerAlpha;
-	  glColor4fv(color);
-	  glVertex2f(angle[j][0] * outerSize, angle[j][1] * outerSize);
-	}
+      drawArray = new GLfloat[receiverSlices * 36];
+
+      for (j = 0; j < receiverSlices; j++) {
+	drawArray[j * 36 + 0] = color[0];
+	drawArray[j * 36 + 1] = color[1];
+	drawArray[j * 36 + 2] = color[2];
+	drawArray[j * 36 + 3] = innerAlpha;
+
+	drawArray[j * 36 + 4] = angle[j][0] * innerSize;
+	drawArray[j * 36 + 5] = angle[j][1] * innerSize;
+
+
+	drawArray[j * 36 + 6] = color[0];
+	drawArray[j * 36 + 7] = color[1];
+	drawArray[j * 36 + 8] = color[2];
+	drawArray[j * 36 + 9] = outerAlpha;
+
+	drawArray[j * 36 + 10] = angle[j][0] * outerSize;
+	drawArray[j * 36 + 11] = angle[j][1] * outerSize;
+
+
+	drawArray[j * 36 + 12] = color[0];
+	drawArray[j * 36 + 13] = color[1];
+	drawArray[j * 36 + 14] = color[2];
+	drawArray[j * 36 + 15] = innerAlpha;
+
+	drawArray[j * 36 + 16] = angle[j + 1][0] * innerSize;
+	drawArray[j * 36 + 17] = angle[j + 1][1] * innerSize;
+
+
+	drawArray[j * 36 + 18] = color[0];
+	drawArray[j * 36 + 19] = color[1];
+	drawArray[j * 36 + 20] = color[2];
+	drawArray[j * 36 + 21] = innerAlpha;
+
+	drawArray[j * 36 + 22] = angle[j + 1][0] * innerSize;
+	drawArray[j * 36 + 23] = angle[j + 1][1] * innerSize;
+
+
+	drawArray[j * 36 + 24] = color[0];
+	drawArray[j * 36 + 25] = color[1];
+	drawArray[j * 36 + 26] = color[2];
+	drawArray[j * 36 + 27] = outerAlpha;
+
+	drawArray[j * 36 + 28] = angle[j][0] * outerSize;
+	drawArray[j * 36 + 29] = angle[j][1] * outerSize;
+
+
+	drawArray[j * 36 + 30] = color[0];
+	drawArray[j * 36 + 31] = color[1];
+	drawArray[j * 36 + 32] = color[2];
+	drawArray[j * 36 + 33] = outerAlpha;
+
+	drawArray[j * 36 + 34] = angle[j + 1][0] * outerSize;
+	drawArray[j * 36 + 35] = angle[j + 1][1] * outerSize;
       }
-      glEnd();
+
+      glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawArray);
+      glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawArray + 4);
+
+      glDrawArrays(GL_TRIANGLES, 0, receiverSlices * 6);
+
+      delete[] drawArray;
     }
+
     triangleCount += (receiverSlices * receiverRings * 2);
 
     glTranslatef(-pos[0], -pos[1], 0.0f);
@@ -1357,6 +1663,11 @@ void BackgroundRenderer::drawGroundReceivers(SceneRenderer& renderer)
 
 void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
 {
+#ifdef HAVE_GLES
+  // no luck yet figuring out how to replicate the automatic
+  // texture coordinate generation below in OpenGL ES
+  renderer.getNumAllLights(); // quell warning
+#else
   const float minLuminance = 0.02f;
   static const int receiverSlices = 32;
   static const float receiverRingSize = 0.5f;	// meters
@@ -1531,20 +1842,21 @@ void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
   }
 
   glFogfv(GL_FOG_COLOR, fogColor);
+#endif
 }
 
 
 void BackgroundRenderer::drawMountains(void)
 {
-  glColor3f(1.0f, 1.0f, 1.0f);
+  glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
   for (int i = 0; i < numMountainTextures; i++) {
     mountainsGState[i].setState();
-    glCallList(mountainsList[i]);
+    DrawArrays::draw(mountainsDrawArrays[i]);
   }
 }
 
 
-void BackgroundRenderer::doFreeDisplayLists()
+void BackgroundRenderer::doFreeDrawArrays()
 {
   int i;
 
@@ -1552,30 +1864,30 @@ void BackgroundRenderer::doFreeDisplayLists()
   weather.freeContext();
   EFFECTS.freeContext();
 
-  // simpleGroundList[1] && simpleGroundList[3] are copies of [0] & [2]
-  simpleGroundList[1] = INVALID_GL_LIST_ID;
-  simpleGroundList[3] = INVALID_GL_LIST_ID;
+  // simpleGroundDrawArrays[1] && simpleGroundDrawArrays[3] are copies of [0] & [2]
+  simpleGroundDrawArrays[1] = INVALID_DRAW_ARRAY_ID;
+  simpleGroundDrawArrays[3] = INVALID_DRAW_ARRAY_ID;
 
-  // delete the single lists
-  GLuint* const lists[] = {
-    &simpleGroundList[0], &simpleGroundList[2],
-    &cloudsList, &sunList, &sunXFormList,
-    &moonList, &starList, &starXFormList
+  // delete the single draw arrays
+  unsigned* const drawArrays[] = {
+    &simpleGroundDrawArrays[0], &simpleGroundDrawArrays[2],
+    &cloudsDrawArray, &sunDrawArray, &moonDrawArray,
+    &starDrawArray
   };
-  const int count = countof(lists);
+  const int count = countof(drawArrays);
   for (i = 0; i < count; i++) {
-    if (*lists[i] != INVALID_GL_LIST_ID) {
-      glDeleteLists(*lists[i], 1);
-      *lists[i] = INVALID_GL_LIST_ID;
+    if (*drawArrays[i] != INVALID_DRAW_ARRAY_ID) {
+      DrawArrays::deleteArray(*drawArrays[i]);
+      *drawArrays[i] = INVALID_DRAW_ARRAY_ID;
     }
   }
 
-  // delete the array of lists
-  if (mountainsList != NULL) {
+  // delete the array of draw arrays
+  if (mountainsDrawArrays != NULL) {
     for (i = 0; i < numMountainTextures; i++) {
-      if (mountainsList[i] != INVALID_GL_LIST_ID) {
-	glDeleteLists(mountainsList[i], 1);
-	mountainsList[i] = INVALID_GL_LIST_ID;
+      if (mountainsDrawArrays[i] != INVALID_DRAW_ARRAY_ID) {
+	DrawArrays::deleteArray(mountainsDrawArrays[i]);
+	mountainsDrawArrays[i] = INVALID_DRAW_ARRAY_ID;
       }
     }
   }
@@ -1584,7 +1896,7 @@ void BackgroundRenderer::doFreeDisplayLists()
 }
 
 
-void BackgroundRenderer::doInitDisplayLists()
+void BackgroundRenderer::doInitDrawArrays()
 {
   int i, j;
   SceneRenderer& renderer = RENDERER;
@@ -1601,34 +1913,24 @@ void BackgroundRenderer::doInitDisplayLists()
   // with a normal (60 degree) perspective.
   const float worldSize = BZDBCache::worldSize;
   const float sunRadius = (float)(2.0 * worldSize * atanf((float)(60.0*M_PI/180.0)) / 60.0);
-  sunList = glGenLists(1);
-  glNewList(sunList, GL_COMPILE);
-  {
-    glBegin(GL_TRIANGLE_FAN);
-    {
-      glVertex3f(2.0f * worldSize, 0.0f, 0.0f);
-      for (i = 0; i < 20; i++) {
-	const float angle = (float)(2.0 * M_PI * double(i) / 19.0);
-	glVertex3f(2.0f * worldSize, sunRadius * sinf(angle),
-					sunRadius * cosf(angle));
-      }
-    }
-    glEnd();
+  sunDrawArray = DrawArrays::newArray();
+  DrawArrays::beginArray(sunDrawArray);
+  DrawArrays::addVertex(2.0f * worldSize, 0.0f, 0.0f);
+  for (i = 0; i < 20; i++) {
+    const float angle = (float)(2.0 * M_PI * double(i) / 19.0);
+    DrawArrays::addVertex(2.0f * worldSize, sunRadius * sinf(angle),
+			  sunRadius * cosf(angle));
   }
-  glEndList();
+  DrawArrays::finishArray();
 
-  // make stars list
-  starList = glGenLists(1);
-  glNewList(starList, GL_COMPILE);
-  {
-    glBegin(GL_POINTS);
-    for (i = 0; i < (int)NumStars; i++) {
-      glColor3fv(stars[i]);
-      glVertex3fv(stars[i] + 3);
-    }
-    glEnd();
+  // make stars draw array
+  starDrawArray = DrawArrays::newArray();
+  DrawArrays::beginArray(starDrawArray);
+  for (i = 0; i < (int)NumStars; i++) {
+    DrawArrays::addColor(stars[i][0], stars[i][1], stars[i][2]);
+    DrawArrays::addVertex((stars[i] + 3)[0], (stars[i] + 3)[1], (stars[i] + 3)[2]);
   }
-  glEndList();
+  DrawArrays::finishArray();
 
   //
   // ground
@@ -1669,8 +1971,8 @@ void BackgroundRenderer::doInitDisplayLists()
     xtexdist = (xtexmax - xtexmin) / (float)GROUND_DIVS;
     ytexdist = (ytexmax - ytexmin) / (float)GROUND_DIVS;
 
-    simpleGroundList[2] = glGenLists(1);
-    glNewList(simpleGroundList[2], GL_COMPILE);
+    simpleGroundDrawArrays[2] = DrawArrays::newArray();
+    DrawArrays::beginArray(simpleGroundDrawArrays[2]); // GL_TRIANGLES
     {
       for (i = 0; i < GROUND_DIVS; i++) {
 	GLfloat yoff, ytexoff;
@@ -1678,12 +1980,10 @@ void BackgroundRenderer::doInitDisplayLists()
 	yoff = ymin + ydist * (GLfloat)i;
 	ytexoff = ytexmin + ytexdist * (GLfloat)i;
 
-	glBegin(GL_TRIANGLE_STRIP);
-
-	glTexCoord2f(xtexmin, ytexoff + ytexdist);
-	glVertex2f(xmin, yoff + ydist);
-	glTexCoord2f(xtexmin, ytexoff);
-	glVertex2f(xmin, yoff);
+	float firstTexCoord[] = { xtexmin, ytexoff + ytexdist };
+	float firstVertex[] = { xmin, yoff + ydist };
+	float secondTexCoord[] = { xtexmin, ytexoff };
+	float secondVertex[] = { xmin, yoff };
 
 	for (j = 0; j < GROUND_DIVS; j++) {
 	  GLfloat xoff, xtexoff;
@@ -1691,31 +1991,50 @@ void BackgroundRenderer::doInitDisplayLists()
 	  xoff = xmin + xdist * (GLfloat)(j + 1);
 	  xtexoff = xtexmin + xtexdist * (GLfloat)(j + 1);
 
-	  glTexCoord2f(xtexoff, ytexoff + ytexdist);
-	  glVertex2f(xoff, yoff + ydist);
-	  glTexCoord2f(xtexoff, ytexoff);
-	  glVertex2f(xoff, yoff);
+	  DrawArrays::addTexCoord(firstTexCoord[0], firstTexCoord[1]);
+	  DrawArrays::addVertex(firstVertex[0], firstVertex[1]);
+
+	  DrawArrays::addTexCoord(secondTexCoord[0], secondTexCoord[1]);
+	  DrawArrays::addVertex(secondVertex[0], secondVertex[1]);
+
+	  DrawArrays::addTexCoord(xtexoff, ytexoff + ytexdist);
+	  DrawArrays::addVertex(xoff, yoff + ydist);
+
+
+	  DrawArrays::addTexCoord(xtexoff, ytexoff + ytexdist);
+	  DrawArrays::addVertex(xoff, yoff + ydist);
+
+	  DrawArrays::addTexCoord(secondTexCoord[0], secondTexCoord[1]);
+	  DrawArrays::addVertex(secondVertex[0], secondVertex[1]);
+
+	  DrawArrays::addTexCoord(xtexoff, ytexoff);
+	  DrawArrays::addVertex(xoff, yoff);
+
+	  firstTexCoord[0] = xtexoff; firstTexCoord[1] = ytexoff + ytexdist;
+	  firstVertex[0] = xoff; firstVertex[1] = yoff + ydist;
+	  secondTexCoord[0] = xtexoff; secondTexCoord[1] = ytexoff;
+	  secondVertex[0] = xoff; secondVertex[1] = yoff;
 	}
-	glEnd();
       }
     }
-    glEndList();
+    DrawArrays::finishArray();
   }
 
-  simpleGroundList[0] = glGenLists(1);
-  glNewList(simpleGroundList[0], GL_COMPILE);
-  {
-    glBegin(GL_TRIANGLE_STRIP);
-      glVertex2fv(groundPlane[0]);
-      glVertex2fv(groundPlane[1]);
-      glVertex2fv(groundPlane[3]);
-      glVertex2fv(groundPlane[2]);
-    glEnd();
-  }
-  glEndList();
+  simpleGroundDrawArrays[0] = DrawArrays::newArray();
+  DrawArrays::beginArray(simpleGroundDrawArrays[0]);
 
-  simpleGroundList[1] = simpleGroundList[0];
-  simpleGroundList[3] = simpleGroundList[2];
+  DrawArrays::addVertex(groundPlane[0][0], groundPlane[0][1]);
+  DrawArrays::addVertex(groundPlane[1][0], groundPlane[1][1]);
+  DrawArrays::addVertex(groundPlane[2][0], groundPlane[2][1]);
+
+  DrawArrays::addVertex(groundPlane[2][0], groundPlane[2][1]);
+  DrawArrays::addVertex(groundPlane[3][0], groundPlane[3][1]);
+  DrawArrays::addVertex(groundPlane[0][0], groundPlane[0][1]);
+
+  DrawArrays::finishArray();
+
+  simpleGroundDrawArrays[1] = simpleGroundDrawArrays[0];
+  simpleGroundDrawArrays[3] = simpleGroundDrawArrays[2];
 
   //
   // clouds
@@ -1734,76 +2053,201 @@ void BackgroundRenderer::doInitDisplayLists()
       cloudsInner[i][2] = cloudsOuter[i][2];
     }
 
-    cloudsList = glGenLists(1);
-    glNewList(cloudsList, GL_COMPILE);
-    {
-      glNormal3f(0.0f, 0.0f, 1.0f);
-      // inner clouds -- full opacity
-      glBegin(GL_QUADS);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[3][0],
-		     uvScale * cloudRepeats * squareShape[3][1]);
-	glVertex3fv(cloudsInner[3]);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[2][0],
-		     uvScale * cloudRepeats * squareShape[2][1]);
-	glVertex3fv(cloudsInner[2]);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[1][0],
-		     uvScale * cloudRepeats * squareShape[1][1]);
-	glVertex3fv(cloudsInner[1]);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[0][0],
-		     uvScale * cloudRepeats * squareShape[0][1]);
-	glVertex3fv(cloudsInner[0]);
-      glEnd();
+    cloudsDrawArray = DrawArrays::newArray();
+    DrawArrays::beginArray(cloudsDrawArray);
 
-      // outer clouds -- fade to zero opacity at outer edge
-      glBegin(GL_TRIANGLE_STRIP);
-	glColor4f(1.0f, 1.0f, 1.0f, 0.0f);
-	glTexCoord2f(cloudRepeats * squareShape[1][0],
-		     cloudRepeats * squareShape[1][1]);
-	glVertex3fv(cloudsOuter[1]);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[1][0],
-		     uvScale * cloudRepeats * squareShape[1][1]);
-	glVertex3fv(cloudsInner[1]);
+    // inner clouds -- full opacity
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[3][0],
+			    uvScale * cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsInner[3][0], cloudsInner[3][1], cloudsInner[3][2]);
 
-	glColor4f(1.0f, 1.0f, 1.0f, 0.0f);
-	glTexCoord2f(cloudRepeats * squareShape[2][0],
-		     cloudRepeats * squareShape[2][1]);
-	glVertex3fv(cloudsOuter[2]);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[2][0],
-		     uvScale * cloudRepeats * squareShape[2][1]);
-	glVertex3fv(cloudsInner[2]);
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[2][0],
+			    uvScale * cloudRepeats * squareShape[2][1]);
+    DrawArrays::addVertex(cloudsInner[2][0], cloudsInner[2][1], cloudsInner[2][2]);
 
-	glColor4f(1.0f, 1.0f, 1.0f, 0.0f);
-	glTexCoord2f(cloudRepeats * squareShape[3][0],
-		     cloudRepeats * squareShape[3][1]);
-	glVertex3fv(cloudsOuter[3]);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[3][0],
-		     uvScale * cloudRepeats * squareShape[3][1]);
-	glVertex3fv(cloudsInner[3]);
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[1][0],
+			    uvScale * cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsInner[1][0], cloudsInner[1][1], cloudsInner[1][2]);
 
-	glColor4f(1.0f, 1.0f, 1.0f, 0.0f);
-	glTexCoord2f(cloudRepeats * squareShape[0][0],
-		     cloudRepeats * squareShape[0][1]);
-	glVertex3fv(cloudsOuter[0]);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[0][0],
-		     uvScale * cloudRepeats * squareShape[0][1]);
-	glVertex3fv(cloudsInner[0]);
 
-	glColor4f(1.0f, 1.0f, 1.0f, 0.0f);
-	glTexCoord2f(cloudRepeats * squareShape[1][0],
-		     cloudRepeats * squareShape[1][1]);
-	glVertex3fv(cloudsOuter[1]);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glTexCoord2f(uvScale * cloudRepeats * squareShape[1][0],
-		     uvScale * cloudRepeats * squareShape[1][1]);
-	glVertex3fv(cloudsInner[1]);
-      glEnd();
-    }
-    glEndList();
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[1][0],
+			    uvScale * cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsInner[1][0], cloudsInner[1][1], cloudsInner[1][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[0][0],
+			    uvScale * cloudRepeats * squareShape[0][1]);
+    DrawArrays::addVertex(cloudsInner[0][0], cloudsInner[0][1], cloudsInner[0][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[3][0],
+			    uvScale * cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsInner[3][0], cloudsInner[3][1], cloudsInner[3][2]);
+
+
+    // outer clouds -- fade to zero opacity at outer edge
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[1][0],
+			    cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsOuter[1][0], cloudsOuter[1][1], cloudsOuter[1][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[1][0],
+			    uvScale * cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsInner[1][0], cloudsInner[1][1], cloudsInner[1][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[2][0],
+			    cloudRepeats * squareShape[2][1]);
+    DrawArrays::addVertex(cloudsOuter[2][0], cloudsOuter[2][1], cloudsOuter[2][2]);
+
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[1][0],
+			    uvScale * cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsInner[1][0], cloudsInner[1][1], cloudsInner[1][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[2][0],
+			    uvScale * cloudRepeats * squareShape[2][1]);
+    DrawArrays::addVertex(cloudsInner[2][0], cloudsInner[2][1], cloudsInner[2][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[2][0],
+			    cloudRepeats * squareShape[2][1]);
+    DrawArrays::addVertex(cloudsOuter[2][0], cloudsOuter[2][1], cloudsOuter[2][2]);
+
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[2][0],
+			    cloudRepeats * squareShape[2][1]);
+    DrawArrays::addVertex(cloudsOuter[2][0], cloudsOuter[2][1], cloudsOuter[2][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[2][0],
+			    uvScale * cloudRepeats * squareShape[2][1]);
+    DrawArrays::addVertex(cloudsInner[2][0], cloudsInner[2][1], cloudsInner[2][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[3][0],
+			    cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsOuter[3][0], cloudsOuter[3][1], cloudsOuter[3][2]);
+
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[2][0],
+			    uvScale * cloudRepeats * squareShape[2][1]);
+    DrawArrays::addVertex(cloudsInner[2][0], cloudsInner[2][1], cloudsInner[2][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[3][0],
+			    uvScale * cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsInner[3][0], cloudsInner[3][1], cloudsInner[3][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[3][0],
+			    cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsOuter[3][0], cloudsOuter[3][1], cloudsOuter[3][2]);
+
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[3][0],
+			    cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsOuter[3][0], cloudsOuter[3][1], cloudsOuter[3][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[3][0],
+			    uvScale * cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsInner[3][0], cloudsInner[3][1], cloudsInner[3][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[0][0],
+			    cloudRepeats * squareShape[0][1]);
+    DrawArrays::addVertex(cloudsOuter[0][0], cloudsOuter[0][1], cloudsOuter[0][2]);
+
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[3][0],
+			    uvScale * cloudRepeats * squareShape[3][1]);
+    DrawArrays::addVertex(cloudsInner[3][0], cloudsInner[3][1], cloudsInner[3][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[0][0],
+			    uvScale * cloudRepeats * squareShape[0][1]);
+    DrawArrays::addVertex(cloudsInner[0][0], cloudsInner[0][1], cloudsInner[0][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[0][0],
+			    cloudRepeats * squareShape[0][1]);
+    DrawArrays::addVertex(cloudsOuter[0][0], cloudsOuter[0][1], cloudsOuter[0][2]);
+
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[0][0],
+			    cloudRepeats * squareShape[0][1]);
+    DrawArrays::addVertex(cloudsOuter[0][0], cloudsOuter[0][1], cloudsOuter[0][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[0][0],
+			    uvScale * cloudRepeats * squareShape[0][1]);
+    DrawArrays::addVertex(cloudsInner[0][0], cloudsInner[0][1], cloudsInner[0][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[1][0],
+			    cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsOuter[1][0], cloudsOuter[1][1], cloudsOuter[1][2]);
+
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[0][0],
+			    uvScale * cloudRepeats * squareShape[0][1]);
+    DrawArrays::addVertex(cloudsInner[0][0], cloudsInner[0][1], cloudsInner[0][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 1.0f);
+    DrawArrays::addTexCoord(uvScale * cloudRepeats * squareShape[1][0],
+			    uvScale * cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsInner[1][0], cloudsInner[1][1], cloudsInner[1][2]);
+
+    DrawArrays::addNormal(0.0f, 0.0f, 1.0f);
+    DrawArrays::addColor(1.0f, 1.0f, 1.0f, 0.0f);
+    DrawArrays::addTexCoord(cloudRepeats * squareShape[1][0],
+			    cloudRepeats * squareShape[1][1]);
+    DrawArrays::addVertex(cloudsOuter[1][0], cloudsOuter[1][1], cloudsOuter[1][2]);
+
+    DrawArrays::finishArray();
   }
 
   //
@@ -1811,9 +2255,9 @@ void BackgroundRenderer::doInitDisplayLists()
   //
 
   if (numMountainTextures > 0) {
-    // prepare display lists.  need at least NumMountainFaces, but
+    // prepare draw arrays.  need at least NumMountainFaces, but
     // we also need a multiple of the number of subtextures.  put
-    // all the faces using a given texture into the same list.
+    // all the faces using a given texture into the same draw array.
     const int numFacesPerTexture = (NumMountainFaces +
 				numMountainTextures - 1) / numMountainTextures;
     const float angleScale = (float)(M_PI / (numMountainTextures * numFacesPerTexture));
@@ -1821,51 +2265,83 @@ void BackgroundRenderer::doInitDisplayLists()
     float hightScale = mountainsMinWidth / 256.0f;
 
     for (j = 0; j < numMountainTextures; n += numFacesPerTexture, j++) {
-      mountainsList[j] = glGenLists(1);
-      glNewList(mountainsList[j], GL_COMPILE);
-      {
-	glBegin(GL_TRIANGLE_STRIP);
-	  for (i = 0; i <= numFacesPerTexture; i++) {
-	    const float angle = angleScale * (float)(i + n);
-	    float frac = (float)i / (float)numFacesPerTexture;
-	    if (numMountainTextures != 1)
-	      frac = (frac * (float)(mountainsMinWidth - 2) + 1.0f) /
-			     (float)mountainsMinWidth;
-	    glNormal3f((float)(-M_SQRT1_2 * cosf(angle)),
-			 (float)(-M_SQRT1_2 * sinf(angle)),
-			  (float)M_SQRT1_2);
-	    glTexCoord2f(frac, 0.02f);
-	    glVertex3f(2.25f * worldSize * cosf(angle),
-			 2.25f * worldSize * sinf(angle),
-			 0.0f);
-	    glTexCoord2f(frac, 0.99f);
-	    glVertex3f(2.25f * worldSize * cosf(angle),
-			 2.25f * worldSize * sinf(angle),
-			 0.45f * worldSize * hightScale);
+      mountainsDrawArrays[j] = DrawArrays::newArray();
+      DrawArrays::beginArray(mountainsDrawArrays[j]);
+
+      for (i = 0; i <= numFacesPerTexture; i++) {
+	if(i == 0)
+	  continue;
+
+	float angles[] = {
+	  angleScale * (float)(i + n),
+	  (float)(M_PI + angleScale * (double)(i + n))
+	};
+	float lastAngles[] = {
+	  angleScale * (float)(i - 1 + n),
+	  (float)(M_PI + angleScale * (double)(i - 1 + n))
+	};
+
+	// each texture gets shown twice
+	for(int side = 0; side < 2; ++side) {
+	  float frac = (float) i / (float) numFacesPerTexture;
+	  float lastFrac = (float) (i - 1) / (float) numFacesPerTexture;
+	  if (numMountainTextures != 1) {
+	    frac = (frac * (float)(mountainsMinWidth - 2) + 1.0f) / (float)mountainsMinWidth;
+	    lastFrac = (lastFrac * (float)(mountainsMinWidth - 2) + 1.0f) / (float)mountainsMinWidth;
 	  }
-	glEnd();
-	glBegin(GL_TRIANGLE_STRIP);
-	  for (i = 0; i <= numFacesPerTexture; i++) {
-	    const float angle = (float)(M_PI + angleScale * (double)(i + n));
-	    float frac = (float)i / (float)numFacesPerTexture;
-	    if (numMountainTextures != 1)
-	      frac = (frac * (float)(mountainsMinWidth - 2) + 1.0f) /
-						(float)mountainsMinWidth;
-	    glNormal3f((float)(-M_SQRT1_2 * cosf(angle)),
-			 (float)(-M_SQRT1_2 * sinf(angle)),
-			  (float)M_SQRT1_2);
-	    glTexCoord2f(frac, 0.02f);
-	    glVertex3f(2.25f * worldSize * cosf(angle),
-			 2.25f * worldSize * sinf(angle),
-			 0.0f);
-	    glTexCoord2f(frac, 0.99f);
-	    glVertex3f(2.25f * worldSize * cosf(angle),
-			 2.25f * worldSize * sinf(angle),
-			 0.45f * worldSize*hightScale);
-	  }
-	glEnd();
+
+	  DrawArrays::addNormal((float)(-M_SQRT1_2 * cosf(lastAngles[side])),
+				(float)(-M_SQRT1_2 * sinf(lastAngles[side])),
+				(float)M_SQRT1_2);
+	  DrawArrays::addTexCoord(lastFrac, 0.02f);
+	  DrawArrays::addVertex(2.25f * worldSize * cosf(lastAngles[side]),
+				2.25f * worldSize * sinf(lastAngles[side]),
+				0.0f);
+
+	  DrawArrays::addNormal((float)(-M_SQRT1_2 * cosf(lastAngles[side])),
+				(float)(-M_SQRT1_2 * sinf(lastAngles[side])),
+				(float)M_SQRT1_2);
+	  DrawArrays::addTexCoord(lastFrac, 0.99f);
+	  DrawArrays::addVertex(2.25f * worldSize * cosf(lastAngles[side]),
+				2.25f * worldSize * sinf(lastAngles[side]),
+				0.45f * worldSize * hightScale);
+
+	  DrawArrays::addNormal((float)(-M_SQRT1_2 * cosf(angles[side])),
+				(float)(-M_SQRT1_2 * sinf(angles[side])),
+				(float)M_SQRT1_2);
+	  DrawArrays::addTexCoord(frac, 0.02f);
+	  DrawArrays::addVertex(2.25f * worldSize * cosf(angles[side]),
+				2.25f * worldSize * sinf(angles[side]),
+				0.0f);
+
+
+	  DrawArrays::addNormal((float)(-M_SQRT1_2 * cosf(angles[side])),
+				(float)(-M_SQRT1_2 * sinf(angles[side])),
+				(float)M_SQRT1_2);
+	  DrawArrays::addTexCoord(frac, 0.02f);
+	  DrawArrays::addVertex(2.25f * worldSize * cosf(angles[side]),
+				2.25f * worldSize * sinf(angles[side]),
+				0.0f);
+
+	  DrawArrays::addNormal((float)(-M_SQRT1_2 * cosf(lastAngles[side])),
+				(float)(-M_SQRT1_2 * sinf(lastAngles[side])),
+				(float)M_SQRT1_2);
+	  DrawArrays::addTexCoord(lastFrac, 0.99f);
+	  DrawArrays::addVertex(2.25f * worldSize * cosf(lastAngles[side]),
+				2.25f * worldSize * sinf(lastAngles[side]),
+				0.45f * worldSize * hightScale);
+
+	  DrawArrays::addNormal((float)(-M_SQRT1_2 * cosf(angles[side])),
+				(float)(-M_SQRT1_2 * sinf(angles[side])),
+				(float)M_SQRT1_2);
+	  DrawArrays::addTexCoord(frac, 0.99f);
+	  DrawArrays::addVertex(2.25f * worldSize * cosf(angles[side]),
+				2.25f * worldSize * sinf(angles[side]),
+				0.45f * worldSize * hightScale);
+	}
       }
-      glEndList();
+
+      DrawArrays::finishArray();
     }
   }
 
@@ -1874,19 +2350,19 @@ void BackgroundRenderer::doInitDisplayLists()
   // be wrong until setCelestial is called with the appropriate
   // arguments.
   //
-  makeCelestialLists(renderer);
+  makeCelestialDrawArrays();
 }
 
 
 void BackgroundRenderer::freeContext(void* self)
 {
-  ((BackgroundRenderer*)self)->doFreeDisplayLists();
+  ((BackgroundRenderer*)self)->doFreeDrawArrays();
 }
 
 
 void BackgroundRenderer::initContext(void* self)
 {
-  ((BackgroundRenderer*)self)->doInitDisplayLists();
+  ((BackgroundRenderer*)self)->doInitDrawArrays();
 }
 
 

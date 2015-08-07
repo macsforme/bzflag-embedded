@@ -662,7 +662,7 @@ void SceneRenderer::setTimeOfDay(double julianDay)
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
 
   if (background)
-    background->setCelestial(*this, sunDir, moonDir);
+    background->setCelestial(sunDir, moonDir);
 }
 
 

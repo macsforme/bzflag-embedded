@@ -30,6 +30,7 @@
 #include "OpenGLGState.h"
 #include "SceneRenderer.h"
 #include "WeatherRenderer.h"
+#include "DrawArrays.h"
 
 class BackgroundRenderer {
   public:
@@ -53,8 +54,7 @@ class BackgroundRenderer {
     void		setBlank(bool blank = true);
     void		setInvert(bool invert = true);
     void		setSimpleGround(bool simple = true);
-    void		setCelestial(const SceneRenderer&,
-				     const float sunDirection[3],
+    void		setCelestial(const float sunDirection[3],
 				     const float moonDirection[3]);
     void		addCloudDrift(GLfloat uDrift, GLfloat vDrift);
     void		notifyStyleChange();
@@ -81,10 +81,10 @@ class BackgroundRenderer {
 
     void		resizeSky();
 
-    void		doFreeDisplayLists();
-    void		doInitDisplayLists();
+    void		doFreeDrawArrays();
+    void		doInitDrawArrays();
     void		setSkyColors();
-    void		makeCelestialLists(const SceneRenderer&);
+    void		makeCelestialDrawArrays();
     static void		freeContext(void*);
     static void		initContext(void*);
     static void		bzdbCallback(const std::string&, void*);
@@ -100,7 +100,7 @@ class BackgroundRenderer {
     // stuff for ground
     OpenGLGState	groundGState[4];
     OpenGLGState	invGroundGState[4];
-    GLuint		simpleGroundList[4];
+    unsigned int	simpleGroundDrawArrays[4];
     int			groundTextureID;
     const GLfloat*	groundTextureMatrix;
 
@@ -118,14 +118,14 @@ class BackgroundRenderer {
     int			numMountainTextures;
     int			mountainsMinWidth;
     OpenGLGState*	mountainsGState;
-    GLuint*		mountainsList;
+    unsigned int*	mountainsDrawArrays;
 
     // stuff for clouds
     GLfloat		cloudDriftU, cloudDriftV;
     bool		cloudsAvailable;
     bool		cloudsVisible;
     OpenGLGState	cloudsGState;
-    GLuint		cloudsList;
+    unsigned int	cloudsDrawArray;
 
     // weather
     WeatherRenderer	weather;
@@ -155,11 +155,9 @@ class BackgroundRenderer {
     OpenGLGState	sunGState;
     OpenGLGState	moonGState[2];
     OpenGLGState	starGState[2];
-    GLuint		sunList;
-    GLuint		sunXFormList;
-    GLuint		moonList;
-    GLuint		starList;
-    GLuint		starXFormList;
+    unsigned int	sunDrawArray;
+    unsigned int	moonDrawArray;
+    unsigned int	starDrawArray;
 
     static GLfloat		skyPyramid[5][3];
     static const GLfloat	cloudRepeats;
