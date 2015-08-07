@@ -147,6 +147,7 @@ void EighthDimShellNode::ShellRenderNode::render()
     renderNode->render();
   }
 
+#ifndef HAVE_GLES
   glPolygonMode(GL_BACK, GL_LINE);
   glLineWidth(3.0f);
 
@@ -154,6 +155,7 @@ void EighthDimShellNode::ShellRenderNode::render()
 
   glLineWidth(1.0f);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
 
 //  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 //  glDisable(GL_COLOR_LOGIC_OP);

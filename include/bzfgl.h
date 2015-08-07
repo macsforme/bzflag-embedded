@@ -51,31 +51,6 @@
 #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 #endif
 
-/* These will track glBegin/End pairs to make sure that they match */
-#ifdef DEBUG
-#include <assert.h>
-extern int __beginendCount;
-#define glBegin(_value) {\
-  if (__beginendCount==0) { \
-    __beginendCount++;\
-  } else {\
-    std::cerr << "ERROR: glBegin called on " << __FILE__ << ':' << __LINE__ << " without calling glEnd before\n"; \
-    assert(__beginendCount==0 && "glBegin called without glEnd"); \
-  } \
-  glBegin(_value);\
-}
-#define glEnd() {\
-  if (__beginendCount==0) { \
-    std::cerr << "ERROR: glEnd called on " << __FILE__ << ':' << __LINE__ << " without calling glBegin before\n"; \
-    assert(__beginendCount!=0 && "glEnd called without glBegin"); \
-  } else {\
-    __beginendCount--;\
-  } \
-  glEnd();\
-}
-#endif
-
-
 // glGenTextures() should never return 0
 #define INVALID_GL_TEXTURE_ID ((GLuint) 0)
 
@@ -89,8 +64,6 @@ extern int __beginendCount;
  */
 //#define DEBUG_GL_MATRIX_STACKS
 #ifdef DEBUG
-#  define glNewList(list,mode)			bzNewList((list), (mode))
-#  define glGenLists(count)			bzGenLists((count))
 #  define glGenTextures(count, textures)	bzGenTextures((count), (textures))
 #  ifdef DEBUG_GL_MATRIX_STACKS
 #    define glPushMatrix()			bzPushMatrix()
@@ -99,14 +72,10 @@ extern int __beginendCount;
 #  endif // DEBUG_GL_MATRIX_STACKS
 #endif
 // always swap these calls (context protection)
-#define glDeleteLists(base, count)		bzDeleteLists((base), (count))
 #define glDeleteTextures(count, textures)	bzDeleteTextures((count), (textures))
 
 // these are housed at the end of OpenGLGState.cxx, for now
-extern void   bzNewList(GLuint list, GLenum mode);
-extern GLuint bzGenLists(GLsizei count);
 extern void   bzGenTextures(GLsizei count, GLuint *textures);
-extern void   bzDeleteLists(GLuint base, GLsizei count);
 extern void   bzDeleteTextures(GLsizei count, const GLuint *textures);
 extern void   bzPushMatrix();
 extern void   bzPopMatrix();

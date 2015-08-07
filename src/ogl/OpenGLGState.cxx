@@ -434,8 +434,10 @@ void			OpenGLGStateState::resetOpenGLState() const
     glMatrixMode(GL_MODELVIEW);
   }
   if (sorted.hasSphereMap) {
+#ifndef HAVE_GLES
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
+#endif
   }
   if (sorted.hasMaterial) {
     glDisable(GL_LIGHTING);
@@ -450,8 +452,10 @@ void			OpenGLGStateState::resetOpenGLState() const
     glDisable(GL_POINT_SMOOTH);
   }
   if (unsorted.hasStipple) {
+#ifndef HAVE_GLES
     glDisable(GL_LINE_STIPPLE);
     glDisable(GL_POLYGON_STIPPLE);
+#endif
   }
   if (!unsorted.hasCulling || unsorted.culling != GL_BACK) {
     glCullFace(GL_BACK);
@@ -515,6 +519,7 @@ void			OpenGLGStateState::setOpenGLState(
     }
 
     // spherical texture mapping
+#ifndef HAVE_GLES
     if (sorted.hasSphereMap) {
       if (!oldState->sorted.hasSphereMap) {
 	glTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
@@ -529,6 +534,7 @@ void			OpenGLGStateState::setOpenGLState(
 	glDisable(GL_TEXTURE_GEN_T);
       }
     }
+#endif
 
     // lighting and material
     if (sorted.hasMaterial) {
@@ -581,6 +587,7 @@ void			OpenGLGStateState::setOpenGLState(
     }
 
     // stippling
+#ifndef HAVE_GLES
     if (unsorted.hasStipple) {
       if (oldState->unsorted.hasStipple) {
 	if (unsorted.stippleIndex != oldState->unsorted.stippleIndex)
@@ -598,6 +605,7 @@ void			OpenGLGStateState::setOpenGLState(
 	glDisable(GL_POLYGON_STIPPLE);
       }
     }
+#endif
 
     // culling
     if (unsorted.hasCulling) {
@@ -667,6 +675,7 @@ void			OpenGLGStateState::setOpenGLState(
     }
 
     // spherical texture mapping
+#ifndef HAVE_GLES
     if (sorted.hasSphereMap) {
       glTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
       glTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
@@ -677,6 +686,7 @@ void			OpenGLGStateState::setOpenGLState(
       glDisable(GL_TEXTURE_GEN_S);
       glDisable(GL_TEXTURE_GEN_T);
     }
+#endif
 
     // lighting and material
     if (sorted.hasMaterial) {
@@ -709,6 +719,7 @@ void			OpenGLGStateState::setOpenGLState(
     }
 
     // stippling
+#ifndef HAVE_GLES
     if (unsorted.hasStipple) {
       OpenGLGState::setStippleIndex(unsorted.stippleIndex);
       glEnable(GL_LINE_STIPPLE);
@@ -718,6 +729,7 @@ void			OpenGLGStateState::setOpenGLState(
       glDisable(GL_LINE_STIPPLE);
       glDisable(GL_POLYGON_STIPPLE);
     }
+#endif
 
     // texture mapping
     if (unsorted.hasCulling) {
@@ -1104,7 +1116,12 @@ void			OpenGLGState::setStipple(GLfloat alpha)
 
 void OpenGLGState::setStippleIndex(int index)
 {
+#ifndef HAVE_GLES
   glCallList(stipples + index);
+#else
+  // quell warning
+  index = index;
+#endif
 }
 
 
@@ -1122,6 +1139,7 @@ int OpenGLGState::getOpaqueStippleIndex()
 
 void OpenGLGState::initStipple(void*)
 {
+#ifndef HAVE_GLES
   stipples = glGenLists(NumStipples);
   for (int i = 0; i < NumStipples; i++) {
     GLubyte stipple[132];
@@ -1152,15 +1170,18 @@ void OpenGLGState::initStipple(void*)
       glLineStipple(1, lineStipple);
     glEndList();
   }
+#endif
 }
 
 
 void OpenGLGState::freeStipple(void*)
 {
+#ifndef HAVE_GLES
   if (stipples != INVALID_GL_LIST_ID) {
     glDeleteLists(stipples, NumStipples);
     stipples = INVALID_GL_LIST_ID;
   }
+#endif
 
   return;
 }
@@ -1263,8 +1284,10 @@ void OpenGLGState::initGLState()
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_LINE_SMOOTH);
   glDisable(GL_POINT_SMOOTH);
+#ifndef HAVE_GLES
   glDisable(GL_LINE_STIPPLE);
   glDisable(GL_POLYGON_STIPPLE);
+#endif
   glEnable(GL_CULL_FACE);
   glShadeModel(GL_FLAT);
   glDisable(GL_ALPHA_TEST);
@@ -1459,38 +1482,6 @@ static void contextInitError(const char* message)
   printf ("contextInitError(): %s\n", message);
 }
 
-
-#undef glNewList
-void bzNewList(GLuint list, GLenum mode)
-{
-  glNewList(list, mode);
-  return;
-}
-
-#undef glGenLists
-GLuint bzGenLists(GLsizei count)
-{
-  if (OpenGLGState::getExecutingFreeFuncs()) {
-    contextFreeError ("bzGenLists() is having issues");
-  }
-  GLuint base = glGenLists(count);
-  //logDebugMessage(4,"genList = %i (%i)\n", (int)base, (int)count);
-  return base;
-}
-
-#undef glDeleteLists
-void bzDeleteLists(GLuint base, GLsizei count)
-{
-  if (OpenGLGState::getExecutingInitFuncs()) {
-    contextInitError ("bzDeleteLists() is having issues");
-  }
-  if (OpenGLGState::haveGLContext()) {
-    glDeleteLists(base, count);
-  } else {
-    logDebugMessage(4,"bzDeleteLists(), no context\n");
-  }
-  return;
-}
 
 #undef glGenTextures
 void bzGenTextures(GLsizei count, GLuint *textures)
