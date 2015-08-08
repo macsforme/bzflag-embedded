@@ -30,6 +30,8 @@
 #include "TextUtils.h"
 #include "ErrorHandler.h"
 #include "global.h"
+#include "OpenGLUtils.h"
+#include "DrawArrays.h"
 
 /* local implementation headers */
 #include "SceneRenderer.h"
@@ -289,7 +291,11 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(0.0, (double)w, 0.0, window.getHeight(), -1.0, 1.0);
+#ifdef HAVE_GLES
+  glOrthof(0.0f, (float)w, 0.0f, (float) window.getHeight(), -1.0f, 1.0f);
+#else
+  glOrtho(0.0, (double)w, 0.0, (double) window.getHeight(), -1.0, 1.0);
+#endif
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
@@ -319,10 +325,17 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
     // clear the background
     glColor4f(0.0f, 0.0f, 0.0f, _renderer.getPanelOpacity());
+#ifdef HAVE_GLES
+    bzGLRecti(messageAreaPixels[0] - 1, // clear an extra pixel column to simplify fuzzy float stuff later
+	    messageAreaPixels[1],
+	    messageAreaPixels[0] + messageAreaPixels[2],
+	    messageAreaPixels[1] + messageAreaPixels[3]);
+#else
     glRecti(messageAreaPixels[0] - 1, // clear an extra pixel column to simplify fuzzy float stuff later
 	    messageAreaPixels[1],
 	    messageAreaPixels[0] + messageAreaPixels[2],
 	    messageAreaPixels[1] + messageAreaPixels[3]);
+#endif
 
     // display tabs for chat sections
     if (showTabs) {
@@ -338,16 +351,30 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
 	if (tabsOnRight) {
 	  // draw the tabs on the right side
+#ifdef HAVE_GLES
+	  bzGLRecti(messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth,
+		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
+		  messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth + int(tabTextWidth[tab]), //+ drawnTabWidth + int(tabTextWidth[tab]),
+		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
+#else
 	  glRecti(messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth,
 		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
 		  messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth + int(tabTextWidth[tab]), //+ drawnTabWidth + int(tabTextWidth[tab]),
 		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
+#endif
 	} else {
 	  // draw the tabs on the left side
+#ifdef HAVE_GLES
+	  bzGLRecti(messageAreaPixels[0] + drawnTabWidth,
+		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
+		  messageAreaPixels[0] + drawnTabWidth + int(tabTextWidth[tab]),
+		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
+#else
 	  glRecti(messageAreaPixels[0] + drawnTabWidth,
 		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
 		  messageAreaPixels[0] + drawnTabWidth + int(tabTextWidth[tab]),
 		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
+#endif
 	}
 	drawnTabWidth += long(tabTextWidth[tab]);
       } // end iteration over tabs
@@ -370,10 +397,16 @@ void			ControlPanel::render(SceneRenderer& _renderer)
       if (top > maxTop) {
 	top = maxTop;
       }
-      glColor3f(0.7f, 0.7f, 0.7f);
+      glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
+#ifdef HAVE_GLES
+      bzGLRecti(messageAreaPixels[0],
+	      messageAreaPixels[1] + int(offset * (float)messageAreaPixels[3]),
+	      messageAreaPixels[0] + 2, top);
+#else
       glRecti(messageAreaPixels[0],
 	      messageAreaPixels[1] + int(offset * (float)messageAreaPixels[3]),
 	      messageAreaPixels[0] + 2, top);
+#endif
 
     }
   }
@@ -471,7 +504,7 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
     // default to drawing text in white
     GLfloat whiteColor[4] = {1.0f, 1.0f, 1.0f, dimming};
-    glColor4fv(whiteColor);
+    glColor4f(whiteColor[0], whiteColor[1], whiteColor[2], whiteColor[3]);
 
     bool isTab = false;
 
@@ -535,86 +568,60 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
   // nice border
   glColor4f(teamColor[0], teamColor[1], teamColor[2],outlineOpacity );
-  glBegin(GL_LINE_LOOP);
-  {
-    long xpos;
-    long ypos;
 
-    // bottom left
-    xpos = x + messageAreaPixels[0] - 1;
-    ypos = y + messageAreaPixels[1] - 1;
-    glVertex2f((float) xpos, (float) ypos);
+  unsigned int drawArrayID = DrawArrays::newArray();
+  DrawArrays::beginArray(drawArrayID);
 
-    // bottom right
-    xpos += messageAreaPixels[2] + 1;
-    glVertex2f((float) xpos, (float) ypos);
+  long xpos;
+  long ypos;
 
-    // top right
-    ypos += messageAreaPixels[3] + 1;
-    glVertex2f((float) xpos, (float) ypos);
+  // bottom left
+  xpos = x + messageAreaPixels[0] - 1;
+  ypos = y + messageAreaPixels[1] - 1;
+  DrawArrays::addVertex((float) xpos, (float) ypos);
 
-    // over to panel on left
-    if (!tabsOnRight) {
-      xpos = x + messageAreaPixels[0] + totalTabWidth;
-      glVertex2f((float) xpos, (float) ypos);
-    }
+  // bottom right
+  xpos += messageAreaPixels[2] + 1;
+  DrawArrays::addVertex((float) xpos, (float) ypos);
 
-    // across the top from right to left
-    for (int tab = (int)tabs->size() - 1; tab >= 0; tab--) {
+  // top right
+  ypos += messageAreaPixels[3] + 1;
+  DrawArrays::addVertex((float) xpos, (float) ypos);
 
-      if (messageMode == MessageModes(tab)) {
-	ypos += ay;
-	glVertex2f((float) xpos, (float) ypos);
-
-	xpos -= long(tabTextWidth[tab]) + 1;
-	glVertex2f((float) xpos, (float) ypos);
-
-	ypos -= ay;
-	glVertex2f((float) xpos, (float) ypos);
-      } else {
-	xpos -= long(tabTextWidth[tab]);
-	glVertex2f((float) xpos, (float) ypos);
-      }
-    }
-
-    // over from panel on right
-    //    if (tabsOnRight) {
-      xpos = x + messageAreaPixels[0] - 1;
-      glVertex2f((float) xpos, (float) ypos);
-      //    }
-
-  } glEnd();
-
-  if (0){
-    // some engines miss the corners
-    glBegin(GL_POINTS); {
-      glVertex2f((float) (x + messageAreaPixels[0] - 1),
-		 (float) (y + messageAreaPixels[1] - 1));
-      glVertex2f((float) (x + messageAreaPixels[0] + messageAreaPixels[2]),
-		 (float) (y + messageAreaPixels[1] - 1));
-      glVertex2f((float) (x + messageAreaPixels[0] + messageAreaPixels[2]),
-		 (float) (y + messageAreaPixels[1] + messageAreaPixels[3]));
-      glVertex2f((float) (x + messageAreaPixels[0] - 1),
-		 (float) (y + messageAreaPixels[1] + messageAreaPixels[3]));
-      long int tabPosition = 0;
-      for (int tab = 0; tab < (int)tabs->size(); tab++) {
-	if (messageMode == MessageModes(tab)) {
-	  if (tabsOnRight) {
-	    glVertex2f((float) (x + messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + tabPosition),
-		       (float) (y + messageAreaPixels[1] + messageAreaPixels[3] + ay));
-	    glVertex2f((float) (x + messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + tabPosition + long(tabTextWidth[tab])),
-		       (float) (y + messageAreaPixels[1] + messageAreaPixels[3] + ay));
-	  } else {
-	    glVertex2f((float) (x + messageAreaPixels[0] + tabPosition),
-		       (float) (y + messageAreaPixels[1] + messageAreaPixels[3] + ay));
-	    glVertex2f((float) (x + messageAreaPixels[0] + tabPosition + long(tabTextWidth[tab])),
-		       (float) (y + messageAreaPixels[1] + messageAreaPixels[3] + ay));
-	  }
-	}
-	tabPosition += long(tabTextWidth[tab]);
-      }
-    } glEnd();
+  // over to panel on left
+  if (!tabsOnRight) {
+    xpos = x + messageAreaPixels[0] + totalTabWidth;
+    DrawArrays::addVertex((float) xpos, (float) ypos);
   }
+
+  // across the top from right to left
+  for (int tab = (int)tabs->size() - 1; tab >= 0; tab--) {
+    if (messageMode == MessageModes(tab)) {
+      ypos += ay;
+      DrawArrays::addVertex((float) xpos, (float) ypos);
+
+      xpos -= long(tabTextWidth[tab]) + 1;
+      DrawArrays::addVertex((float) xpos, (float) ypos);
+
+      ypos -= ay;
+      DrawArrays::addVertex((float) xpos, (float) ypos);
+    } else {
+      xpos -= long(tabTextWidth[tab]);
+      DrawArrays::addVertex((float) xpos, (float) ypos);
+    }
+  }
+
+  // over from panel on right
+  if (tabsOnRight) {
+    xpos = x + messageAreaPixels[0] - 1;
+    DrawArrays::addVertex((float) xpos, (float) ypos);
+  }
+
+  DrawArrays::finishArray();
+  DrawArrays::draw(drawArrayID, GL_LINE_LOOP);
+  DrawArrays::draw(drawArrayID, GL_POINTS); // hit the corners again in case they were missed
+
+  DrawArrays::deleteArray(drawArrayID);
 
   if (BZDBCache::blend)
 	  glDisable(GL_BLEND);
