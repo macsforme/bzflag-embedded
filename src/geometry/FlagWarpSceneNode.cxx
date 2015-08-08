@@ -156,7 +156,7 @@ void			FlagWarpSceneNode::FlagWarpRenderNode::render()
 
 	glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 28);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 14);
 
 	addTriangleCount(12);
 	glTranslatef(0.0f, 0.0f, -0.01f);
@@ -192,7 +192,7 @@ void			FlagWarpSceneNode::FlagWarpRenderNode::render()
 
 	glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 28);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 14);
 
 	addTriangleCount(12);
 	glTranslatef(0.0f, 0.0f, 0.01f);
