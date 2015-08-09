@@ -147,7 +147,10 @@ void			HUDuiList::doRender()
 {
   Bundle *bdl = BundleMgr::getCurrentBundle();
   if (index != -1 && getFontFace() >= 0) {
-    glColor3fv(hasFocus() ? textColor : dimTextColor);
+    if(hasFocus())
+      glColor4f(textColor[0], textColor[1], textColor[2], 1.0f);
+    else
+      glColor4f(dimTextColor[0], dimTextColor[1], dimTextColor[2], 1.0f);
     FontManager &fm = FontManager::instance();
     fm.drawString(getX(), getY(), 0, getFontFace(), getFontSize(), bdl->getLocalString(list[index]));
   }
