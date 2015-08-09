@@ -619,7 +619,6 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
   DrawArrays::finishArray();
   DrawArrays::draw(drawArrayID, GL_LINE_LOOP);
-  DrawArrays::draw(drawArrayID, GL_POINTS); // hit the corners again in case they were missed
 
   DrawArrays::deleteArray(drawArrayID);
 

@@ -1581,7 +1581,6 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 
   DrawArrays::finishArray();
   DrawArrays::draw(drawArrayID, GL_LINES);
-  DrawArrays::draw(drawArrayID, GL_POINTS); // hit the corners in case they were missed
   DrawArrays::deleteArray(drawArrayID);
 
   // draw heading strip
