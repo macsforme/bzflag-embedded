@@ -453,46 +453,55 @@ void GuidedMissileStrategy::radarRender() const
     dir[0] = vel[0] * d * shotTailLength * length;
     dir[1] = vel[1] * d * shotTailLength * length;
     dir[2] = vel[2] * d * shotTailLength * length;
-    glBegin(GL_LINES);
-    glVertex2fv(orig);
+    GLfloat drawArray[] = {
+      orig[0] - dir[0], orig[1] - dir[1],
+      orig[0], orig[1],
+      orig[0] + dir[0], orig[1] + dir[1]
+    };
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
     if (BZDB.eval("leadingShotLine") == 1) { //leading
-      glVertex2f(orig[0] + dir[0], orig[1] + dir[1]);
-      glEnd();
+      glVertexPointer(2, GL_FLOAT, 0, drawArray + 2);
     } else if (BZDB.eval("leadingShotLine") == 0) { //lagging
-      glVertex2f(orig[0] - dir[0], orig[1] - dir[1]);
-      glEnd();
+      glVertexPointer(2, GL_FLOAT, 0, drawArray);
     } else if (BZDB.eval("leadingShotLine") == 2) { //both
-      glVertex2f(orig[0] + dir[0], orig[1] + dir[1]);
-      glEnd();
-      glBegin(GL_LINES);
-      glVertex2fv(orig);
-      glVertex2f(orig[0] - dir[0], orig[1] - dir[1]);
-      glEnd();
+      glVertexPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray); // skip over center vertex
     }
+
+    glDrawArrays(GL_LINES, 0, 2);
 
     // draw a "bright reddish" missle tip
     if (size > 0) {
-      glColor3f(1.0f, 0.75f, 0.75f);
+      glColor4f(1.0f, 0.75f, 0.75f, 1.0f);
       glPointSize((float)size);
-      glBegin(GL_POINTS);
-      glVertex2f(orig[0], orig[1]);
-      glEnd();
+
+      glVertexPointer(2, GL_FLOAT, 0, drawArray + 2);
+
+      glDrawArrays(GL_POINTS, 0, 1);
+
       glPointSize(1.0f);
     }
   } else {
-    if (size > 0) {
-      // draw a sized missle
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    GLfloat drawArray[] = { orig[0], orig[1] };
+
+    glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+    if (size > 0)
       glPointSize((float)size);
-      glBegin(GL_POINTS);
-      glVertex2fv(orig);
-      glEnd();
+
+    glDrawArrays(GL_POINTS, 0, 1);
+
+    if (size > 0)
       glPointSize(1.0f);
-    } else {
-      // draw the tiny missle
-      glBegin(GL_POINTS);
-      glVertex2fv(orig);
-      glEnd();
-    }
   }
 }
 
