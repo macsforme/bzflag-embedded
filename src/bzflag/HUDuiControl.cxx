@@ -229,20 +229,31 @@ void			HUDuiControl::renderFocus()
     float v = (float)(arrowFrame / uFrames) / (float)vFrames;
     fh2 = floorf(1.5f * fontHeight) - 1.0f; // this really should not scale the image based on the font,
     gstate->setState();			    // best would be to load an image for each size
-    glColor3f(1.0f, 1.0f, 1.0f);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     float imageXShift = 0.5f;
     float imageYShift = -fh2 * 0.2f;
     float outputSize = fh2;
-    glBegin(GL_QUADS);
-      glTexCoord2f(u, v);
-      glVertex2f(x + imageXShift - outputSize, y + imageYShift);
-      glTexCoord2f(u + du, v);
-      glVertex2f(x + imageXShift , y + imageYShift);
-      glTexCoord2f(u + du, v + dv);
-      glVertex2f(x + imageXShift , y + outputSize + imageYShift);
-      glTexCoord2f(u, v + dv);
-      glVertex2f(x + imageXShift - outputSize, y + outputSize + imageYShift);
-    glEnd();
+
+    GLfloat drawArray[] = {
+      u, v,
+      x + imageXShift - outputSize, y + imageYShift,
+      u + du, v,
+      x + imageXShift , y + imageYShift,
+      u + du, v + dv,
+      x + imageXShift , y + outputSize + imageYShift,
+      u, v + dv,
+      x + imageXShift - outputSize, y + outputSize + imageYShift,
+    };
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray);
+    glVertexPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray + 2);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     TimeKeeper nowTime = TimeKeeper::getCurrent();
     if (nowTime - lastTime > 0.07f) {
@@ -252,19 +263,35 @@ void			HUDuiControl::renderFocus()
   } else {
     fh2 = floorf(0.5f * fontHeight);
     gstate->setState();
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glBegin(GL_TRIANGLES);
-      glVertex2f(x - fh2 - fontHeight, y + fontHeight - 1.0f);
-      glVertex2f(x - fh2 - fontHeight, y);
-      glVertex2f(x - fh2 - 1.0f, y + 0.5f * (fontHeight - 1.0f));
-    glEnd();
 
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glBegin(GL_LINE_LOOP);
-      glVertex2f(x - fh2 - fontHeight, y + fontHeight - 1.0f);
-      glVertex2f(x - fh2 - fontHeight, y);
-      glVertex2f(x - fh2 - 1.0f, y + 0.5f * (fontHeight - 1.0f));
-    glEnd();
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+    GLfloat drawArray[] = {
+      x - fh2 - fontHeight, y + fontHeight - 1.0f,
+      x - fh2 - fontHeight, y,
+      x - fh2 - 1.0f, y + 0.5f * (fontHeight - 1.0f)
+    };
+
+    glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+
+    GLfloat drawArray2[] = {
+      x - fh2 - fontHeight, y + fontHeight - 1.0f,
+      x - fh2 - fontHeight, y,
+      x - fh2 - 1.0f, y + 0.5f * (fontHeight - 1.0f)
+    };
+
+    glVertexPointer(2, GL_FLOAT, 0, drawArray2);
+
+    glDrawArrays(GL_LINE_LOOP, 0, 3);
   }
 }
 
@@ -282,7 +309,10 @@ void			HUDuiControl::renderLabel()
 void			HUDuiControl::render()
 {
   if (hasFocus() && showingFocus) renderFocus();
-  glColor3fv(hasFocus() ? textColor : dimTextColor);
+  if(hasFocus())
+    glColor4f(textColor[0], textColor[1], textColor[2], 1.0f);
+  else
+    glColor4f(dimTextColor[0], dimTextColor[1], dimTextColor[2], 1.0f);
   renderLabel();
   doRender();
 }
