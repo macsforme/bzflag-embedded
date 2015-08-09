@@ -21,6 +21,7 @@
 #include "Bundle.h"
 #include "FontManager.h"
 #include "BZDBCache.h"
+#include "DrawArrays.h"
 
 /* local implementation headers */
 #include "LocalPlayer.h"
@@ -622,9 +623,9 @@ static const float dimFactor = 0.2f;
 void			HUDRenderer::hudColor3f(GLfloat r, GLfloat g, GLfloat b)
 {
   if (dim)
-    glColor3f(dimFactor * r, dimFactor * g, dimFactor * b);
+    glColor4f(dimFactor * r, dimFactor * g, dimFactor * b, 1.0f);
   else
-    glColor3f(r, g, b);
+    glColor4f(r, g, b, 1.0f);
 }
 
 void			HUDRenderer::hudColor4f(
@@ -639,9 +640,9 @@ void			HUDRenderer::hudColor4f(
 void			HUDRenderer::hudColor3fv(const GLfloat* c)
 {
   if (dim)
-    glColor3f(dimFactor * c[0], dimFactor * c[1], dimFactor * c[2]);
+    glColor4f(dimFactor * c[0], dimFactor * c[1], dimFactor * c[2], 1.0f);
   else
-    glColor3fv(c);
+    glColor4f(c[0], c[1], c[2], 1.0f);
 }
 
 void HUDRenderer::hudColor3Afv(const float * c, const float a)
@@ -655,9 +656,9 @@ void HUDRenderer::hudColor3Afv(const float * c, const float a)
 void			HUDRenderer::hudSColor3fv(const GLfloat* c)
 {
   if (dim)
-    glColor3f(dimFactor * c[0], dimFactor * c[1], dimFactor * c[2]);
+    glColor4f(dimFactor * c[0], dimFactor * c[1], dimFactor * c[2], 1.0f);
   else
-    glColor3fv(c);
+    glColor4f(c[0], c[1], c[2], 1.0f);
 }
 
 void			HUDRenderer::hudColor4fv(const GLfloat* c)
@@ -665,7 +666,7 @@ void			HUDRenderer::hudColor4fv(const GLfloat* c)
   if (dim)
     glColor4f(dimFactor * c[0], dimFactor * c[1], dimFactor * c[2], c[3]);
   else
-    glColor4fv(c);
+    glColor4f(c[0], c[1], c[2], 1.0f);
 }
 
 
@@ -756,7 +757,11 @@ void			HUDRenderer::render(SceneRenderer& renderer)
       glScissor(ox, oy + height - viewHeight, width, viewHeight);
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
+#ifdef HAVE_GLES
+      glOrthof(0.0f, (float) width, (float) (viewHeight - height), (float) viewHeight, -1.0f, 1.0f);
+#else
       glOrtho(0.0, width, viewHeight - height, viewHeight, -1.0, 1.0);
+#endif
       glMatrixMode(GL_MODELVIEW);
       glPushMatrix();
       glLoadIdentity();
@@ -1038,12 +1043,14 @@ void			HUDRenderer::renderTankLabels(SceneRenderer& renderer)
   const GLfloat *projf = renderer.getViewFrustum().getProjectionMatrix();
   const GLfloat *modelf = renderer.getViewFrustum().getViewMatrix();
 
+#ifndef HAVE_GLES
   // convert to doubles
   GLdouble proj[16], model[16];
   for (int j = 0; j < 16; j++) {
     proj[j] = projf[j];
     model[j] = modelf[j];
   }
+#endif
 
   for (int i = 0; i < curMaxPlayers; i++) {
     RemotePlayer *pl = World::getWorld()->getPlayer(i);
@@ -1054,7 +1061,7 @@ void			HUDRenderer::renderTankLabels(SceneRenderer& renderer)
 #ifdef HAVE_GLES
       float xF, yF, zF;
       gluProject(pl->getPosition()[0], pl->getPosition()[1],
-		 pl->getPosition()[2]/*+BZDB.eval(StateDatabase::BZDB_MUZZLEHEIGHT)*3.0f*/, model, proj, view, &xF, &yF, &zF);
+		 pl->getPosition()[2]/*+BZDB.eval(StateDatabase::BZDB_MUZZLEHEIGHT)*3.0f*/, modelf, projf, view, &xF, &yF, &zF);
       x = xF; y = yF; z = zF;
 #else
       gluProject(pl->getPosition()[0], pl->getPosition()[1],
@@ -1103,21 +1110,28 @@ void			HUDRenderer::renderCracks()
 	       GLfloat(window.getViewHeight() >> 1), 0.0f);
   glLineWidth(3.0);
   hudColor3f(1.0f, 1.0f, 1.0f);
-  glBegin(GL_LINES);
-    for (int i = 0; i < HUDNumCracks; i++) {
-      glVertex2fv(cracks[i][0]);
-      glVertex2fv(cracks[i][1]);
-      for (int j = 0; j < maxLevels-1; j++) {
-	const int num = 1 << j;
-	for (int k = 0; k < num; k++) {
-	  glVertex2fv(cracks[i][num + k]);
-	  glVertex2fv(cracks[i][2 * (num + k)]);
-	  glVertex2fv(cracks[i][num + k]);
-	  glVertex2fv(cracks[i][2 * (num + k) + 1]);
-	}
+
+  unsigned int drawArrayID = DrawArrays::newArray();
+  DrawArrays::beginArray(drawArrayID);
+
+  for (int i = 0; i < HUDNumCracks; i++) {
+    DrawArrays::addVertex(cracks[i][0][0], cracks[i][0][1]);
+    DrawArrays::addVertex(cracks[i][1][0], cracks[i][1][1]);
+    for (int j = 0; j < maxLevels-1; j++) {
+      const int num = 1 << j;
+      for (int k = 0; k < num; k++) {
+	DrawArrays::addVertex(cracks[i][num + k][0], cracks[i][num + k][1]);
+	DrawArrays::addVertex(cracks[i][2 * (num + k)][0], cracks[i][2 * (num + k)][1]);
+	DrawArrays::addVertex(cracks[i][num + k][0], cracks[i][num + k][1]);
+	DrawArrays::addVertex(cracks[i][2 * (num + k) + 1][0], cracks[i][2 * (num + k) + 1][1]);
       }
     }
-  glEnd();
+  }
+
+  DrawArrays::finishArray();
+  DrawArrays::draw(drawArrayID, GL_LINES);
+  DrawArrays::deleteArray(drawArrayID);
+
   glLineWidth(1.0);
   glPopMatrix();
 }
@@ -1308,17 +1322,30 @@ void HUDRenderer::drawWaypointMarker(float* color, float alpha, float* object,
   if (map[0] == -halfWidth && map[1] == halfHeight)	// upper left
     glRotatef(180+45,0,0,1);
 
-  glBegin(GL_TRIANGLES);
-  glVertex2f(0,0);
-  glVertex2f(triangleSize,triangleSize);
-  glVertex2f(-triangleSize,triangleSize);
-  glEnd();
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
 
-  glBegin(GL_LINE_STRIP);
-  glVertex3f(0,0,0.01f);
-  glVertex3f(triangleSize,triangleSize,0.01f);
-  glVertex3f(-triangleSize,triangleSize,0.01f);
-  glEnd();
+  GLfloat drawArray[] = {
+    0.0f, 0.0f,
+    triangleSize, triangleSize,
+    -triangleSize, triangleSize
+  };
+
+  glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+
+  GLfloat drawArray2[] = {
+    0.0f, 0.0f, 0.01f,
+    triangleSize, triangleSize, 0.01f,
+    -triangleSize, triangleSize, 0.01f
+  };
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray2);
+
+  glDrawArrays(GL_LINE_STRIP, 0, 3);
 
   if (friendly)
     drawGeometry();
@@ -1458,19 +1485,29 @@ void HUDRenderer::drawLockonMarker(float* color ,float alpha, float* object,
 
   glLineWidth(3.0f);
 
-  glBegin(GL_LINE_STRIP);
-  glVertex2f(-lockonInset,lockonSize-lockonDeclination);
-  glVertex2f(-lockonSize,lockonSize);
-  glVertex2f(-lockonSize,-lockonSize);
-  glVertex2f(-lockonInset,-lockonSize+lockonDeclination);
-  glEnd();
+  GLfloat drawArray[] = {
+    // left
+    -lockonInset,lockonSize-lockonDeclination,
+    -lockonSize,lockonSize,
+    -lockonSize,-lockonSize,
+    -lockonInset,-lockonSize+lockonDeclination,
 
-  glBegin(GL_LINE_STRIP);
-  glVertex2f(lockonInset,lockonSize-lockonDeclination);
-  glVertex2f(lockonSize,lockonSize);
-  glVertex2f(lockonSize,-lockonSize);
-  glVertex2f(lockonInset,-lockonSize+lockonDeclination);
-  glEnd();
+    // right
+    lockonInset,lockonSize-lockonDeclination,
+    lockonSize,lockonSize,
+    lockonSize,-lockonSize,
+    lockonInset,-lockonSize+lockonDeclination
+  };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_LINE_STRIP, 0, 4);
+  glDrawArrays(GL_LINE_STRIP, 4, 4);
 
   if (friendly)
     drawGeometry();
@@ -1512,34 +1549,40 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 
   // draw targeting box
   hudColor3fv(hudColor);
-  glBegin(GL_LINE_LOOP); {
-    glVertex2i(centerx - noMotionSize, centery - noMotionSize);
-    glVertex2i(centerx + noMotionSize, centery - noMotionSize);
-    glVertex2i(centerx + noMotionSize, centery + noMotionSize);
-    glVertex2i(centerx - noMotionSize, centery + noMotionSize);
-  } glEnd();
-  if (0){
-      glBegin(GL_POINTS); {
-      glVertex2i(centerx - noMotionSize, centery - noMotionSize);
-      glVertex2i(centerx + noMotionSize, centery - noMotionSize);
-      glVertex2i(centerx + noMotionSize, centery + noMotionSize);
-      glVertex2i(centerx - noMotionSize, centery + noMotionSize);
-    } glEnd();
-  }
-  glBegin(GL_LINE_LOOP); {
-    glVertex2i(centerx - maxMotionSize, centery - maxMotionSize);
-    glVertex2i(centerx + maxMotionSize, centery - maxMotionSize);
-    glVertex2i(centerx + maxMotionSize, centery + maxMotionSize);
-    glVertex2i(centerx - maxMotionSize, centery + maxMotionSize);
-  } glEnd();
-  if (0){
-      glBegin(GL_POINTS); {
-      glVertex2i(centerx - maxMotionSize, centery - maxMotionSize);
-      glVertex2i(centerx + maxMotionSize, centery - maxMotionSize);
-      glVertex2i(centerx + maxMotionSize, centery + maxMotionSize);
-      glVertex2i(centerx - maxMotionSize, centery + maxMotionSize);
-    } glEnd();
-  }
+
+  unsigned int drawArrayID = DrawArrays::newArray();
+  DrawArrays::beginArray(drawArrayID);
+
+  // inner box
+  DrawArrays::addVertex((float) (centerx - noMotionSize), (float) (centery - noMotionSize));
+  DrawArrays::addVertex((float) (centerx + noMotionSize), (float) (centery - noMotionSize));
+
+  DrawArrays::addVertex((float) (centerx + noMotionSize), (float) (centery - noMotionSize));
+  DrawArrays::addVertex((float) (centerx + noMotionSize), (float) (centery + noMotionSize));
+
+  DrawArrays::addVertex((float) (centerx + noMotionSize), (float) (centery + noMotionSize));
+  DrawArrays::addVertex((float) (centerx - noMotionSize), (float) (centery + noMotionSize));
+
+  DrawArrays::addVertex((float) (centerx - noMotionSize), (float) (centery + noMotionSize));
+  DrawArrays::addVertex((float) (centerx - noMotionSize), (float) (centery - noMotionSize));
+
+  // outer box
+  DrawArrays::addVertex((float) (centerx - maxMotionSize), (float) (centery - maxMotionSize));
+  DrawArrays::addVertex((float) (centerx + maxMotionSize), (float) (centery - maxMotionSize));
+
+  DrawArrays::addVertex((float) (centerx + maxMotionSize), (float) (centery - maxMotionSize));
+  DrawArrays::addVertex((float) (centerx + maxMotionSize), (float) (centery + maxMotionSize));
+
+  DrawArrays::addVertex((float) (centerx + maxMotionSize), (float) (centery + maxMotionSize));
+  DrawArrays::addVertex((float) (centerx - maxMotionSize), (float) (centery + maxMotionSize));
+
+  DrawArrays::addVertex((float) (centerx - maxMotionSize), (float) (centery + maxMotionSize));
+  DrawArrays::addVertex((float) (centerx - maxMotionSize), (float) (centery - maxMotionSize));
+
+  DrawArrays::finishArray();
+  DrawArrays::draw(drawArrayID, GL_LINES);
+  DrawArrays::draw(drawArrayID, GL_POINTS); // hit the corners in case they were missed
+  DrawArrays::deleteArray(drawArrayID);
 
   // draw heading strip
   if (true /* always draw heading strip */) {
@@ -1548,10 +1591,13 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 		2 * maxMotionSize, 25 + (int)(headingFontSize + 0.5f));
 
     // draw heading mark
-    glBegin(GL_LINES);
-      glVertex2i(centerx, centery + maxMotionSize);
-      glVertex2i(centerx, centery + maxMotionSize - 5);
-    glEnd();
+    drawArrayID = DrawArrays::newArray();
+    DrawArrays::beginArray(drawArrayID);
+    DrawArrays::addVertex((float) centerx, (float) (centery + maxMotionSize));
+    DrawArrays::addVertex((float) centerx, (float) (centery + maxMotionSize - 5));
+    DrawArrays::finishArray();
+    DrawArrays::draw(drawArrayID, GL_LINES);
+    DrawArrays::deleteArray(drawArrayID);
 
     // figure out which marker is closest to center
     int baseMark = int(heading) / 10;
@@ -1571,16 +1617,19 @@ void			HUDRenderer::renderBox(SceneRenderer&)
     if (!smooth) basex = floorf(basex);
     glTranslatef((float)centerx - basex, (float)(centery + maxMotionSize), 0.0f);
     x = smooth ? 0.0f : -0.5f;
-    glBegin(GL_LINES);
+    drawArrayID = DrawArrays::newArray();
+    DrawArrays::beginArray(drawArrayID);
     for (i = minMark; i <= maxMark; i++) {
-      glVertex2i((int)x, 0);
-      glVertex2i((int)x, 8);
+      DrawArrays::addVertex((int)x, 0);
+      DrawArrays::addVertex((int)x, 8);
       x += headingMarkSpacing;
-      glVertex2i((int)x, 0);
-      glVertex2i((int)x, 4);
+      DrawArrays::addVertex((int)x, 0);
+      DrawArrays::addVertex((int)x, 4);
       x += headingMarkSpacing;
     }
-    glEnd();
+    DrawArrays::finishArray();
+    DrawArrays::draw(drawArrayID, GL_LINES);
+    DrawArrays::deleteArray(drawArrayID);
 
     // back to our regular rendering mode
     if (smooth) {
@@ -1626,26 +1675,44 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 	// on the visible part of tape
 	GLfloat mx = maxMotionSize / headingOffset *
 			((relAngle < 180.0f) ? relAngle : relAngle - 360.0f);
-	glBegin(GL_QUADS);
-	  glVertex2f(mx, 0.0f);
-	  glVertex2f(mx + 4.0f, 4.0f);
-	  glVertex2f(mx, 8.0f);
-	  glVertex2f(mx - 4.0f, 4.0f);
-	glEnd();
+	drawArrayID = DrawArrays::newArray();
+	DrawArrays::beginArray(drawArrayID);
+
+	DrawArrays::addVertex(mx, 0.0f);
+	DrawArrays::addVertex(mx + 4.0f, 4.0f);
+	DrawArrays::addVertex(mx, 8.0f);
+
+	DrawArrays::addVertex(mx, 8.0f);
+	DrawArrays::addVertex(mx - 4.0f, 4.0f);
+	DrawArrays::addVertex(mx, 0.0f);
+
+	DrawArrays::finishArray();
+	DrawArrays::draw(drawArrayID, GL_TRIANGLES);
+	DrawArrays::deleteArray(drawArrayID);
       } else if (relAngle <= 180.0) {
 	// off to the right
-	glBegin(GL_TRIANGLES);
-	  glVertex2f((float)maxMotionSize, 0.0f);
-	  glVertex2f((float)maxMotionSize + 4.0f, 4.0f);
-	  glVertex2f((float)maxMotionSize, 8.0f);
-	glEnd();
+	drawArrayID = DrawArrays::newArray();
+	DrawArrays::beginArray(drawArrayID);
+
+	DrawArrays::addVertex((float)maxMotionSize, 0.0f);
+	DrawArrays::addVertex((float)maxMotionSize + 4.0f, 4.0f);
+	DrawArrays::addVertex((float)maxMotionSize, 8.0f);
+
+	DrawArrays::finishArray();
+	DrawArrays::draw(drawArrayID, GL_TRIANGLES);
+	DrawArrays::deleteArray(drawArrayID);
       } else {
 	// off to the left
-	glBegin(GL_TRIANGLES);
-	  glVertex2f(-(float)maxMotionSize, 0.0f);
-	  glVertex2f(-(float)maxMotionSize, 8.0f);
-	  glVertex2f(-(float)maxMotionSize - 4.0f, 4.0f);
-	glEnd();
+	drawArrayID = DrawArrays::newArray();
+	DrawArrays::beginArray(drawArrayID);
+
+	DrawArrays::addVertex(-(float)maxMotionSize, 0.0f);
+	DrawArrays::addVertex(-(float)maxMotionSize, 8.0f);
+	DrawArrays::addVertex(-(float)maxMotionSize - 4.0f, 4.0f);
+
+	DrawArrays::finishArray();
+	DrawArrays::draw(drawArrayID, GL_TRIANGLES);
+	DrawArrays::deleteArray(drawArrayID);
       }
     }
     markers.clear();
@@ -1660,10 +1727,16 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 
     // draw altitude mark
     hudColor3fv(hudColor);
-    glBegin(GL_LINES);
-      glVertex2i(centerx + maxMotionSize, centery);
-      glVertex2i(centerx + maxMotionSize - 5, centery);
-    glEnd();
+
+    drawArrayID = DrawArrays::newArray();
+    DrawArrays::beginArray(drawArrayID);
+
+    DrawArrays::addVertex((float) (centerx + maxMotionSize), (float) centery);
+    DrawArrays::addVertex((float) (centerx + maxMotionSize - 5), (float) centery);
+
+    DrawArrays::finishArray();
+    DrawArrays::draw(drawArrayID, GL_LINES);
+    DrawArrays::deleteArray(drawArrayID);
 
     // figure out which marker is closest to center
     int baseMark = int(altitude) / 5;
@@ -1688,13 +1761,19 @@ void			HUDRenderer::renderBox(SceneRenderer&)
     glTranslatef((float)(centerx + maxMotionSize),
 				(float)centery - basey, 0.0f);
     y = smooth ? 0.0f : -0.5f;
-    glBegin(GL_LINES);
+
+    drawArrayID = DrawArrays::newArray();
+    DrawArrays::beginArray(drawArrayID);
+
     for (i = minMark; i <= maxMark; i++) {
-      glVertex2i(0, (int)y);
-      glVertex2i(8, (int)y);
+      DrawArrays::addVertex(0.0f, y);
+      DrawArrays::addVertex(8.0f, y);
       y += altitudeMarkSpacing;
     }
-    glEnd();
+
+    DrawArrays::finishArray();
+    DrawArrays::draw(drawArrayID, GL_LINES);
+    DrawArrays::deleteArray(drawArrayID);
 
     // back to our regular rendering mode
     if (smooth) {
@@ -1781,7 +1860,11 @@ void			HUDRenderer::renderPlaying(SceneRenderer& renderer)
   glScissor(ox, oy + height - viewHeight, width, viewHeight);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
+#ifdef HAVE_GLES
+  glOrthof(0.0f, (float) width, (float) (viewHeight - height), (float) viewHeight, -1.0f, 1.0f);
+#else
   glOrtho(0.0, width, viewHeight - height, viewHeight, -1.0, 1.0);
+#endif
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
@@ -1885,7 +1968,11 @@ void			HUDRenderer::renderNotPlaying(SceneRenderer& renderer)
   glScissor(ox, oy + height - viewHeight, width, viewHeight);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
+#ifdef HAVE_GLES
+  glOrthof(0.0f, (float) width, (float) (viewHeight - height), (float) viewHeight, -1.0f, 1.0f);
+#else
   glOrtho(0.0, width, viewHeight - height, viewHeight, -1.0, 1.0);
+#endif
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
@@ -1953,7 +2040,11 @@ void			HUDRenderer::renderRoaming(SceneRenderer& renderer)
   glScissor(ox, oy + height - viewHeight, width, viewHeight);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
+#ifdef HAVE_GLES
+  glOrthof(0.0f, (float) width, (float) (viewHeight - height), (float) viewHeight, -1.0f, 1.0f);
+#else
   glOrtho(0.0, width, viewHeight - height, viewHeight, -1.0, 1.0);
+#endif
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
@@ -2069,13 +2160,26 @@ void			HUDRenderer::renderShots(const Player* target)
     const int myTop = indicatorTop + i * (indicatorHeight + indicatorSpace);
     if (factors[i] < 1.0f) {
       hudColor4f(0.0f, 1.0f, 0.0f, 0.5f); // green
+#ifdef HAVE_GLES
+      bzGLRecti(indicatorLeft, myTop, indicatorLeft + myWidth, myTop + indicatorHeight);
+#else
       glRecti(indicatorLeft, myTop, indicatorLeft + myWidth, myTop + indicatorHeight);
+#endif
       hudColor4f(1.0f, 0.0f, 0.0f, 0.5f); // red
+#ifdef HAVE_GLES
+      bzGLRecti(indicatorLeft + myWidth + 1, myTop, indicatorLeft + indicatorWidth,
+	      myTop + indicatorHeight);
+#else
       glRecti(indicatorLeft + myWidth + 1, myTop, indicatorLeft + indicatorWidth,
 	      myTop + indicatorHeight);
+#endif
     } else {
       hudColor4f(1.0f, 1.0f, 1.0f, 0.5f); // white
+#ifdef HAVE_GLES
+      bzGLRecti(indicatorLeft, myTop, indicatorLeft + myWidth, myTop + indicatorHeight);
+#else
       glRecti(indicatorLeft, myTop, indicatorLeft + myWidth, myTop + indicatorHeight);
+#endif
     }
   }
   glDisable(GL_BLEND);
