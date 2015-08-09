@@ -59,17 +59,28 @@ void			HUDuiTextureLabel::doRender()
     const float xx = getX();
     const float yy = getY();
     gstate.setState();
-    glColor3fv(textColor);
-    glBegin(GL_QUADS);
-      glTexCoord2f(0.0f, 0.0f);
-      glVertex2f(xx, yy - descent);
-      glTexCoord2f(1.0f, 0.0f);
-      glVertex2f(xx + _width, yy - descent);
-      glTexCoord2f(1.0f, 1.0f);
-      glVertex2f(xx + _width, yy - descent + _height);
-      glTexCoord2f(0.0f, 1.0f);
-      glVertex2f(xx, yy - descent + _height);
-    glEnd();
+    glColor4f(textColor[0], textColor[1], textColor[2], 1.0f);
+
+    GLfloat drawArray[] = {
+      0.0f, 0.0f,
+      xx, yy - descent,
+      1.0f, 0.0f,
+      xx + _width, yy - descent,
+      1.0f, 1.0f,
+      xx + _width, yy - descent + _height,
+      0.0f, 1.0f,
+      xx, yy - descent + _height
+    };
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray);
+    glVertexPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray + 2);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
   }
 }
 
