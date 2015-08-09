@@ -5131,7 +5131,11 @@ static void		renderDialog()
     glScissor(ox, oy, width, height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+#ifdef HAVE_GLES
+    glOrthof(0.0f, (float) width, 0.0f, (float) height, -1.0f, 1.0f);
+#else
     glOrtho(0.0, width, 0.0, height, -1.0, 1.0);
+#endif
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
@@ -5176,7 +5180,11 @@ static void renderRoamMouse()
 
   glScissor(ox, oy, sx, sy);
   glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
+#ifdef HAVE_GLES
+  glOrthof(0.0f, (float) sx, 0.0f, (float) sy, -1.0f, 1.0f);
+#else
   glOrtho(0.0, sx, 0.0, sy, -1.0, 1.0);
+#endif
   glMatrixMode(GL_MODELVIEW);  glPushMatrix(); glLoadIdentity();
 
   glShadeModel(GL_SMOOTH);
@@ -5946,7 +5954,11 @@ void drawFrame(const float dt)
       glScissor(ox, oy, width, height);
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
+#ifdef HAVE_GLES
+      glOrthof(0.0f, (float) width, 0.0f, (float) height, -1.0f, 1.0f);
+#else
       glOrtho(0.0, width, 0.0, height, -1.0, 1.0);
+#endif
       glMatrixMode(GL_MODELVIEW);
       glPushMatrix();
       glLoadIdentity();

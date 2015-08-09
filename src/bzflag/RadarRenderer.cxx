@@ -318,8 +318,12 @@ void RadarRenderer::renderFrame(SceneRenderer& renderer)
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
+#ifdef HAVE_GLES
+  glOrthof(0.0f, (float) window.getWidth(), 0.0f, (float) window.getHeight(), -1.0f, 1.0f);
+#else
   glOrtho(0.0, window.getWidth(), 0.0, window.getHeight(), -1.0, 1.0);
-
+#endif
+  
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
@@ -461,9 +465,15 @@ void RadarRenderer::render(SceneRenderer& renderer, bool blank, bool observer)
   if (visExts) {
     maxHeight = (double)visExts->maxs[2];
   }
+#ifdef HAVE_GLES
+  glOrthof((float) (-xCenter * xUnit), (float) ((xSize - xCenter) * xUnit),
+	   (float) (-yCenter * yUnit), (float) ((ySize - yCenter) * yUnit),
+	   (float) -(maxHeight + 10.0), (float) (maxHeight + 10.0));
+#else
   glOrtho(-xCenter * xUnit, (xSize - xCenter) * xUnit,
 	  -yCenter * yUnit, (ySize - yCenter) * yUnit,
 	  -(maxHeight + 10.0), (maxHeight + 10.0));
+#endif
 
   // prepare modelview matrix
   glMatrixMode(GL_MODELVIEW);
