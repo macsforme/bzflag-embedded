@@ -177,7 +177,7 @@ void SceneRenderer::setWindow(MainWindow* _window) {
   canUseHiddenLine = true;
 
   // prepare context with stuff that'll never change
-  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+  glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0.0f);
   glGetIntegerv(GL_MAX_LIGHTS, &maxLights);
   reservedLights = 1;			// only one light between sun and moon
   maxLights -= reservedLights;		// can't use the reserved lights
@@ -227,7 +227,11 @@ void SceneRenderer::setZBufferSplit(bool on)
     if (numDepthRanges != 1) {
       numDepthRanges = 1;
       depthRangeSize = 1.0;
+#ifdef HAVE_GLES
+      glDepthRangef(0.0f, 1.0f);
+#else
       glDepthRange(0.0, 1.0);
+#endif
     }
   }
   else {
@@ -272,11 +276,15 @@ void SceneRenderer::setQuality(int value)
     glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
     // GL_NICEST for polygon smoothing seems to make some drivers
     // cause massive slowdowns and "spikes" when drawing the radar
+#ifndef HAVE_GLES
     glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+#endif
   } else {
     glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
     glHint(GL_POINT_SMOOTH_HINT, GL_FASTEST);
+#ifndef HAVE_GLES
     glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+#endif
   }
 
   if (useQualityValue >= 2)
@@ -300,6 +308,7 @@ void SceneRenderer::setQuality(int value)
   else
     BZDB.set("moonSegments","12");
 
+#ifndef HAVE_GLES
   if (useQualityValue > 0) {
     // this can be modified by OpenGLMaterial
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
@@ -307,6 +316,7 @@ void SceneRenderer::setQuality(int value)
     // OpenGLMaterial will not modify if (quality <= 0)
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);
   }
+#endif
 
   // this setting helps keep those specular highlights
   // highlighting when applied to a dark textured surface.
@@ -833,24 +843,22 @@ void SceneRenderer::render(bool _lastFrame, bool _sameFrame,
       if (BZDBCache::blend && (useQualityValue >= 1)) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
-	glColor4fv(mirrorColor);
+	glColor4f(mirrorColor[0], mirrorColor[1], mirrorColor[2], mirrorColor[3]);
 #ifdef HAVE_GLES
 	bzGLRectf(-1.0f, -1.0f, +1.0f, +1.0f);
 #else
 	glRectf(-1.0f, -1.0f, +1.0f, +1.0f);
 #endif
 	glDisable(GL_BLEND);
+#ifndef HAVE_GLES
       } else {
 	float stipple = mirrorColor[3];
 	glColor3fv(mirrorColor);
 	OpenGLGState::setStipple(stipple);
 	glEnable(GL_POLYGON_STIPPLE);
-#ifdef HAVE_GLES
-	bzGLRectf(-1.0f, -1.0f, +1.0f, +1.0f);
-#else
 	glRectf(-1.0f, -1.0f, +1.0f, +1.0f);
-#endif
 	glDisable(GL_POLYGON_STIPPLE);
+#endif
       }
     } else {
       // need the proper matrices for fog generation
@@ -861,24 +869,22 @@ void SceneRenderer::render(bool _lastFrame, bool _sameFrame,
       if (BZDBCache::blend && (useQualityValue >= 1)) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
-	glColor4fv(mirrorColor);
+	glColor4f(mirrorColor[0], mirrorColor[1], mirrorColor[2], mirrorColor[3]);
 #ifdef HAVE_GLES
 	bzGLRectf(-extent, -extent, +extent, +extent);
 #else
 	glRectf(-extent, -extent, +extent, +extent);
 #endif
 	glDisable(GL_BLEND);
+#ifndef HAVE_GLES
       } else {
 	float stipple = mirrorColor[3];
 	glColor3fv(mirrorColor);
 	OpenGLGState::setStipple(stipple);
 	glEnable(GL_POLYGON_STIPPLE);
-#ifdef HAVE_GLES
-	bzGLRectf(-extent, -extent, +extent, +extent);
-#else
 	glRectf(-extent, -extent, +extent, +extent);
-#endif
 	glDisable(GL_POLYGON_STIPPLE);
+#endif
       }
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
@@ -949,6 +955,7 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
     glStencilFunc(GL_ALWAYS, 0, 0xf);
     glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
   }
+#ifndef HAVE_GLES
   if (useHiddenLineOn) {
     if (!mirror || (clearZbuffer)) {
       glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -963,6 +970,7 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
     }
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   }
+#endif
 
   // prepare z buffer
   if (BZDBCache::zbuffer) {
@@ -978,11 +986,20 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
     }
     if (!sameFrame && numDepthRanges != 1) {
       if (useHiddenLineOn) {
+#ifdef HAVE_GLES
+	glDepthRangef(0.0f, 1.0f);
+#else
 	glDepthRange(0.0, 1.0);
+#endif
       }
       else {
+#ifdef HAVE_GLES
+	GLfloat x_near = (float)depthRange * (float)depthRangeSize;
+	glDepthRangef(x_near, x_near + (float)depthRangeSize);
+#else
 	GLclampd x_near = (GLclampd)depthRange * depthRangeSize;
 	glDepthRange(x_near, x_near + depthRangeSize);
+#endif
       }
     }
   }
@@ -1035,9 +1052,11 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
       glEnable(GL_DEPTH_TEST);
     }
 
+#ifndef HAVE_GLES
     if (useHiddenLineOn) {
       glEnable(GL_POLYGON_OFFSET_FILL);
     }
+#endif
 
 
     ///////////////////////
@@ -1055,6 +1074,7 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
       world->drawCollisionGrid();
     }
 
+#ifndef HAVE_GLES
     if (useHiddenLineOn) {
       glDisable(GL_POLYGON_OFFSET_FILL);
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -1062,6 +1082,7 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
       doRender();
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+#endif
 
     OpenGLGState::resetState();
 
@@ -1085,9 +1106,11 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
   }
 
   // back to original state
+#ifndef HAVE_GLES
   if (!useHiddenLineOn && useWireframeOn) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   }
+#endif
   glPopMatrix();
 
   // do depth complexity
@@ -1143,7 +1166,7 @@ static bool setupMapFog()
     return false;
   }
   RENDERER.setFogActive(true);
-  GLenum fogMode = GL_EXP;
+  GLfloat fogMode = GL_EXP;
   GLfloat fogDensity = 0.001f;
   GLfloat fogStart = 0.5f * BZDBCache::worldSize;
   GLfloat fogEnd = BZDBCache::worldSize;
@@ -1174,7 +1197,7 @@ static bool setupMapFog()
   }
 
   // setup GL fog
-  glFogi(GL_FOG_MODE, fogMode);
+  glFogf(GL_FOG_MODE, fogMode);
   glFogf(GL_FOG_DENSITY, fogDensity);
   glFogf(GL_FOG_START, fogStart);
   glFogf(GL_FOG_END, fogEnd);
@@ -1214,16 +1237,14 @@ void SceneRenderer::renderDimming()
       glRectf(-1.0f, -1.0f, 1.0f, 1.0f);
 #endif
       glDisable(GL_BLEND);
+#ifndef HAVE_GLES
     }
     else {
       OpenGLGState::setStipple(density);
       glEnable(GL_POLYGON_STIPPLE);
-#ifdef HAVE_GLES
-      bzGLRectf(-1.0f, -1.0f, 1.0f, 1.0f);
-#else
       glRectf(-1.0f, -1.0f, 1.0f, 1.0f);
-#endif
       glDisable(GL_POLYGON_STIPPLE);
+#endif
     }
   }
   return;
@@ -1250,7 +1271,7 @@ void SceneRenderer::renderDepthComplexity()
   glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
   for (int i = 0; i < numColors; i++) {
     glStencilFunc(i == numColors - 1 ? GL_LEQUAL : GL_EQUAL, i, 0xf);
-    glColor3fv(depthColors[i]);
+    glColor4f(depthColors[i][0], depthColors[i][1], depthColors[i][2], 1.0f);
 #ifdef HAVE_GLES
     bzGLRectf(-1.0f, -1.0f, 1.0f, 1.0f);
 #else
