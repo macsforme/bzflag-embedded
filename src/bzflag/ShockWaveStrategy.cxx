@@ -135,13 +135,23 @@ void ShockWaveStrategy::radarRender() const
   // draw circle of current radius
   static const int sides = 20;
   const float* shotPos = getPath().getPosition();
-  glBegin(GL_LINE_LOOP);
+
+  GLfloat *drawArray = new GLfloat[sides * 2];
+
   for (int i = 0; i < sides; i++) {
     const float angle = (float)(2.0 * M_PI * double(i) / double(sides));
-    glVertex2f(shotPos[0] + radius * cosf(angle),
-	       shotPos[1] + radius * sinf(angle));
+    drawArray[i * 2 + 0] = shotPos[0] + radius * cosf(angle);
+    drawArray[i * 2 + 1] = shotPos[1] + radius * sinf(angle);
   }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_LINE_LOOP, 0, sides);
 }
 
 
