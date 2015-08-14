@@ -650,24 +650,33 @@ static void drawPuddle(const TrackEntry& te)
 
   glColor4f(1.0f, 1.0f, 1.0f, 1.0f - ratio);
 
+  glDisableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
   glPushMatrix();
   {
     glTranslatef(te.pos[0], te.pos[1], te.pos[2]);
     glRotatef(te.angle, 0.0f, 0.0f, 1.0f);
     glTranslatef(0.0f, +offset, 0.0f);
     glScalef(scale, scale, 1.0f);
-    glBegin(GL_QUADS);
-    {
-      glTexCoord2f(0.0f, 0.0f);
-      glVertex3f(-1.0f, -1.0f, 0.0f);
-      glTexCoord2f(1.0f, 0.0f);
-      glVertex3f(+1.0f, -1.0f, 0.0f);
-      glTexCoord2f(1.0f, 1.0f);
-      glVertex3f(+1.0f, +1.0f, 0.0f);
-      glTexCoord2f(0.0f, 1.0f);
-      glVertex3f(-1.0f, +1.0f, 0.0f);
-    }
-    glEnd();
+
+    GLfloat drawArray[] = {
+      0.0f, 0.0f,
+      -1.0f, -1.0f, 0.0f,
+      1.0f, 0.0f,
+      +1.0f, -1.0f, 0.0f,
+      1.0f, 1.0f,
+      +1.0f, +1.0f, 0.0f,
+      0.0f, 1.0f,
+      -1.0f, +1.0f, 0.0f
+    };
+
+    glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+    glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
   }
   glPopMatrix();
 
@@ -680,18 +689,21 @@ static void drawPuddle(const TrackEntry& te)
       glTranslatef(0.0f, -offset, 0.0f);
       glScalef(scale, scale, 1.0f);
 
-      glBegin(GL_QUADS);
-      {
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-1.0f, -1.0f, 0.0f);
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f(+1.0f, -1.0f, 0.0f);
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f(+1.0f, +1.0f, 0.0f);
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-1.0f, +1.0f, 0.0f);
-      }
-      glEnd();
+      GLfloat drawArray[] = {
+	0.0f, 0.0f,
+	-1.0f, -1.0f, 0.0f,
+	1.0f, 0.0f,
+	+1.0f, -1.0f, 0.0f,
+	1.0f, 1.0f,
+	+1.0f, +1.0f, 0.0f,
+	0.0f, 1.0f,
+	-1.0f, +1.0f, 0.0f
+      };
+
+      glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+      glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
     glPopMatrix();
   }
