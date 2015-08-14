@@ -324,49 +324,56 @@ void			SegmentedShotStrategy::radarRender() const
     dir[0] = vel[0] * d * shotTailLength * length;
     dir[1] = vel[1] * d * shotTailLength * length;
     dir[2] = vel[2] * d * shotTailLength * length;
-    glBegin(GL_LINES);
-    glVertex2fv(orig);
+    GLfloat drawArray[] = {
+      orig[0] - dir[0], orig[1] - dir[1],
+      orig[0], orig[1],
+      orig[0] + dir[0], orig[1] + dir[1]
+    };
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
     if (BZDB.eval("leadingShotLine") == 1) { //leading
-      glVertex2f(orig[0] + dir[0], orig[1] + dir[1]);
-      glEnd();
-    } else if(BZDB.eval("leadingShotLine") == 0) { //lagging
-      glVertex2f(orig[0] - dir[0], orig[1] - dir[1]);
-      glEnd();
-    } else if(BZDB.eval("leadingShotLine") == 2) { //both
-      glVertex2f(orig[0] + dir[0], orig[1] + dir[1]);
-      glEnd();
-      glBegin(GL_LINES);
-      glVertex2fv(orig);
-      glVertex2f(orig[0] - dir[0], orig[1] - dir[1]);
-      glEnd();
+      glVertexPointer(2, GL_FLOAT, 0, drawArray + 2);
+    } else if (BZDB.eval("leadingShotLine") == 0) { //lagging
+      glVertexPointer(2, GL_FLOAT, 0, drawArray);
+    } else if (BZDB.eval("leadingShotLine") == 2) { //both
+      glVertexPointer(2, GL_FLOAT, 4 * sizeof(GLfloat), drawArray); // skip over center vertex
     }
+
+    glDrawArrays(GL_LINES, 0, 2);
 
     // draw a "bright" bullet tip
     if (size > 0) {
-      glColor3f(0.75, 0.75, 0.75);
+      glColor4f(0.75, 0.75, 0.75, 1.0f);
       glPointSize((float)size);
-      glBegin(GL_POINTS);
-      glVertex2f(orig[0], orig[1]);
-      glEnd();
+
+      glVertexPointer(2, GL_FLOAT, 0, drawArray + 2);
+
+      glDrawArrays(GL_POINTS, 0, 1);
+
       glPointSize(1.0f);
     }
   } else {
-    if (size > 0) {
-      // draw a sized bullet
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    GLfloat drawArray[] = { orig[0], orig[1] };
+
+    glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+    if (size > 0)
       glPointSize((float)size);
-      glBegin(GL_POINTS);
-      glVertex2fv(orig);
-      glEnd();
+
+    glDrawArrays(GL_POINTS, 0, 1);
+
+    if (size > 0)
       glPointSize(1.0f);
-
-    } else {
-      // draw the tiny little bullet
-      glBegin(GL_POINTS);
-      glVertex2fv(orig);
-      glEnd();
-    }
   }
-
 }
 
 void			SegmentedShotStrategy::makeSegments(ObstacleEffect e)
@@ -690,16 +697,29 @@ void			ThiefStrategy::radarRender() const
   // draw all segments
   const std::vector<ShotPathSegment>& segmts = getSegments();
   const int numSegments = segmts.size();
-  glBegin(GL_LINES);
-    for (int i = 0; i < numSegments; i++) {
-      const ShotPathSegment& segm = segmts[i];
-      const float* origin = segm.ray.getOrigin();
-      const float* direction = segm.ray.getDirection();
-      const float dt = float(segm.end - segm.start);
-      glVertex2fv(origin);
-      glVertex2f(origin[0] + dt * direction[0], origin[1] + dt * direction[1]);
-    }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  GLfloat drawArray[4];
+
+  glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+  for (int i = 0; i < numSegments; i++) {
+    const ShotPathSegment& segm = segmts[i];
+    const float* origin = segm.ray.getOrigin();
+    const float* direction = segm.ray.getDirection();
+    const float dt = float(segm.end - segm.start);
+
+    drawArray[0] = origin[0];
+    drawArray[1] = origin[1];
+    drawArray[2] = origin[0] + dt * direction[0];
+    drawArray[3] = origin[1] + dt * direction[1];
+
+    glDrawArrays(GL_LINES, 0, 2);
+  }
 }
 
 bool			ThiefStrategy::isStoppedByHit() const
@@ -862,16 +882,29 @@ void			LaserStrategy::radarRender() const
   // draw all segments
   const std::vector<ShotPathSegment>& segmts = getSegments();
   const int numSegments = segmts.size();
-  glBegin(GL_LINES);
-    for (int i = 0; i < numSegments; i++) {
-      const ShotPathSegment& segm = segmts[i];
-      const float* origin = segm.ray.getOrigin();
-      const float* direction = segm.ray.getDirection();
-      const float dt = float(segm.end - segm.start);
-      glVertex2fv(origin);
-      glVertex2f(origin[0] + dt * direction[0], origin[1] + dt * direction[1]);
-    }
-  glEnd();
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  GLfloat drawArray[4];
+
+  glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+  for (int i = 0; i < numSegments; i++) {
+    const ShotPathSegment& segm = segmts[i];
+    const float* origin = segm.ray.getOrigin();
+    const float* direction = segm.ray.getDirection();
+    const float dt = float(segm.end - segm.start);
+
+    drawArray[0] = origin[0];
+    drawArray[1] = origin[1];
+    drawArray[2] = origin[0] + dt * direction[0];
+    drawArray[3] = origin[1] + dt * direction[1];
+
+    glDrawArrays(GL_LINES, 0, 2);
+  }
 }
 
 bool			LaserStrategy::isStoppedByHit() const
