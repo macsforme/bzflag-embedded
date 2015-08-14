@@ -201,9 +201,9 @@ static const float dimFactor = 0.2f;
 void ScoreboardRenderer::hudColor3fv(const GLfloat* c)
 {
   if (dim)
-    glColor3f(dimFactor * c[0], dimFactor * c[1], dimFactor * c[2]);
+    glColor4f(dimFactor * c[0], dimFactor * c[1], dimFactor * c[2], 1.0f);
   else
-    glColor3fv(c);
+    glColor4f(c[0], c[1], c[2], 1.0f);
 }
 
 
@@ -600,15 +600,45 @@ void ScoreboardRenderer::drawRoamTarget(float _x0, float _y0,
     c1 = black;
   }
 
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  GLboolean blendingWasEnabled;
+  glGetBooleanv(GL_BLEND, &blendingWasEnabled);
+  GLboolean lightingWasEnabled;
+  glGetBooleanv(GL_LIGHTING, &lightingWasEnabled);
+  GLboolean texturingWasEnabled;
+  glGetBooleanv(GL_TEXTURE_2D, &texturingWasEnabled);
+
   glDisable(GL_BLEND);
   glDisable(GL_LIGHTING);
   glDisable(GL_TEXTURE_2D);
-  glBegin(GL_LINES);
-  glColor4fv(c0); glVertex2f(x0, y1); glVertex2f(x1, y1);
-  glColor4fv(c1); glVertex2f(x0, y0); glVertex2f(x1, y0);
-  glEnd();
-  glPopAttrib();
+
+  GLfloat drawArray[] = {
+    c0[0], c0[1], c0[2], c0[3],
+    x0, y1,
+    c0[0], c0[1], c0[2], c0[3],
+    x1, y1,
+
+    c1[0], c1[1], c1[2], c1[3],
+    x0, y0,
+    c1[0], c1[1], c1[2], c1[3],
+    x1, y0
+  };
+
+  glEnableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawArray);
+  glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawArray + 4);
+
+  glDrawArrays(GL_LINES, 0, 4);
+
+  if(blendingWasEnabled == GL_TRUE)
+    glEnable(GL_BLEND);
+  if(lightingWasEnabled == GL_TRUE)
+    glEnable(GL_LIGHTING);
+  if(texturingWasEnabled == GL_TRUE)
+    glEnable(GL_TEXTURE_2D);
 }
 
 
