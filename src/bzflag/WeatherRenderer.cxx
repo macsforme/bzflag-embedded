@@ -71,8 +71,6 @@ WeatherRenderer::WeatherRenderer()
 
   puddleColor[0] = puddleColor[1] = puddleColor[2] = puddleColor[3] = 1.0f;
 
-  dropList = puddleList = INVALID_GL_LIST_ID;
-
   gridSize = 200.0f;
 
   keyFactor = 1.0f / gridSize;
@@ -104,7 +102,6 @@ WeatherRenderer::WeatherRenderer()
 
 WeatherRenderer::~WeatherRenderer()
 {
-  freeContext(); // free the display lists
   BZDB.removeCallback("_rainType", bzdbCallBack, this);
   BZDB.removeCallback("_rainDensity", bzdbCallBack, this);
   BZDB.removeCallback("_rainSpread", bzdbCallBack, this);
@@ -144,8 +141,6 @@ void WeatherRenderer::init(void)
 
   gstate.setTexture(tm.getTextureID("puddle"));
   puddleState = gstate.getState();
-
-  buildPuddleList();
 }
 
 
@@ -389,8 +384,6 @@ void WeatherRenderer::set(void)
       }
       lastRainTime = float(TimeKeeper::getCurrent().getSeconds());
     }
-    // recompute the drops based on the posible new size
-    buildDropList();
 
     if (_CULLING_RAIN) { // need to update the bbox depths on all the chunks
       std::map<int, visibleChunk>::iterator itr = chunkMap.begin();
@@ -488,7 +481,6 @@ void WeatherRenderer::draw(const SceneRenderer& sr)
   if (doLineRain) { // we are doing line rain
     rainGState.setState();
     glPushMatrix();
-    glBegin(GL_LINES);
   } else {
     texturedRainState.setState();
   }
@@ -524,7 +516,6 @@ void WeatherRenderer::draw(const SceneRenderer& sr)
   }
 
   if (doLineRain) {
-    glEnd();
     glPopMatrix();
   }
 
@@ -540,141 +531,6 @@ void WeatherRenderer::draw(const SceneRenderer& sr)
   glEnable(GL_CULL_FACE);
   glColor4f(1, 1, 1, 1);
   glDepthMask(GL_TRUE);
-}
-
-
-void WeatherRenderer::freeContext(void)
-{
-  if (dropList != INVALID_GL_LIST_ID) {
-    glDeleteLists(dropList, 1);
-    dropList = INVALID_GL_LIST_ID;
-  }
-  if (puddleList != INVALID_GL_LIST_ID) {
-    glDeleteLists(puddleList, 1);
-    puddleList = INVALID_GL_LIST_ID;
-  }
-  return;
-}
-
-
-void WeatherRenderer::rebuildContext(void)
-{
-  buildDropList();
-  buildPuddleList();
-  return;
-}
-
-
-void WeatherRenderer::buildDropList(bool _draw)
-{
-  if (!_draw) {
-    if (dropList != INVALID_GL_LIST_ID) {
-      glDeleteLists(dropList, 1);
-      dropList = INVALID_GL_LIST_ID;
-    }
-    dropList = glGenLists(1);
-    glNewList(dropList, GL_COMPILE);
-  }
-
-  if (doBillBoards) {
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex3f(-rainSize[0], -rainSize[1], 0);
-
-    glTexCoord2f(1, 0);
-    glVertex3f(rainSize[0], -rainSize[1], 0);
-
-    glTexCoord2f(1, 1);
-    glVertex3f(rainSize[0], rainSize[1], 0);
-
-    glTexCoord2f(0, 1);
-    glVertex3f(-rainSize[0], rainSize[1], 0);
-    glEnd();
-  } else {
-    glPushMatrix();
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex3f(-rainSize[0], 0, -rainSize[1]);
-
-    glTexCoord2f(1, 0);
-    glVertex3f(rainSize[0], 0, -rainSize[1]);
-
-    glTexCoord2f(1, 1);
-    glVertex3f(rainSize[0], 0, rainSize[1]);
-
-    glTexCoord2f(0, 1);
-    glVertex3f(-rainSize[0], 0, rainSize[1]);
-    glEnd();
-
-    glRotatef(120, 0, 0, 1);
-
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex3f(-rainSize[0], 0, -rainSize[1]);
-
-    glTexCoord2f (1, 0);
-    glVertex3f(rainSize[0], 0, -rainSize[1]);
-
-    glTexCoord2f (1, 1);
-    glVertex3f(rainSize[0], 0, rainSize[1]);
-
-    glTexCoord2f (0, 1);
-    glVertex3f(-rainSize[0], 0, rainSize[1]);
-    glEnd();
-
-    glRotatef(120, 0, 0, 1);
-
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex3f(-rainSize[0], 0, -rainSize[1]);
-
-    glTexCoord2f(1, 0);
-    glVertex3f(rainSize[0], 0, -rainSize[1]);
-
-    glTexCoord2f(1, 1);
-    glVertex3f(rainSize[0], 0, rainSize[1]);
-
-    glTexCoord2f(0, 1);
-    glVertex3f(-rainSize[0], 0, rainSize[1]);
-    glEnd();
-    glPopMatrix();
-  }
-
-  if (!_draw) {
-    glEndList();
-  }
-}
-
-
-void WeatherRenderer::buildPuddleList(bool _draw)
-{
-  float scale = 1;
-  if (!_draw) {
-    if (puddleList != INVALID_GL_LIST_ID) {
-      glDeleteLists(puddleList, 1);
-      puddleList = INVALID_GL_LIST_ID;
-    }
-    puddleList = glGenLists(1);
-    glNewList(puddleList, GL_COMPILE);
-  }
-
-  glBegin(GL_QUADS);
-  glTexCoord2f(0, 0);
-  glVertex3f(-scale, -scale, 0);
-
-  glTexCoord2f(1, 0);
-  glVertex3f(scale, -scale, 0);
-
-  glTexCoord2f(1, 1);
-  glVertex3f(scale, scale, 0);
-
-  glTexCoord2f(0, 1);
-  glVertex3f(-scale, scale, 0);
-  glEnd();
-
-  if (!_draw) {
-    glEndList();
-  }
 }
 
 
@@ -788,6 +644,8 @@ bool WeatherRenderer::updatePuddle(std::vector<puddle>::iterator& splash,
 void WeatherRenderer::drawDrop(rain& drop, const SceneRenderer& sr)
 {
   if (doLineRain) {
+    GLfloat drawArray[14];
+
     float alphaMod = 0;
 
     if (drop.pos[2] < 5.0f)
@@ -797,16 +655,37 @@ void WeatherRenderer::drawDrop(rain& drop, const SceneRenderer& sr)
     if (alphaVal < 0)
       alphaVal = 0;
 
-    glColor4f(rainColor[0][0], rainColor[0][1], rainColor[0][2], alphaVal);
-    glVertex3fv(drop.pos);
+    drawArray[0] = rainColor[0][0];
+    drawArray[1] = rainColor[0][1];
+    drawArray[2] = rainColor[0][2];
+    drawArray[3] = alphaVal;
+
+    drawArray[4] = drop.pos[0];
+    drawArray[5] = drop.pos[1];
+    drawArray[6] = drop.pos[2];
 
     alphaVal = rainColor[1][3] - alphaMod;
     if (alphaVal < 0)
       alphaVal = 0;
 
-    glColor4f(rainColor[1][0], rainColor[1][1], rainColor[1][2], alphaVal);
-    glVertex3f(drop.pos[0], drop.pos[1],
-		drop.pos[2] + (rainSize[1] - (drop.speed * 0.15f)));
+    drawArray[7] = rainColor[1][0];
+    drawArray[8] = rainColor[1][1];
+    drawArray[9] = rainColor[1][2];
+    drawArray[10] = alphaVal;
+
+    drawArray[11] = drop.pos[0];
+    drawArray[12] = drop.pos[1];
+    drawArray[13] = drop.pos[2] + (rainSize[1] - (drop.speed * 0.15f));
+
+    glEnableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glColorPointer(4, GL_FLOAT, 7 * sizeof(GLfloat), drawArray);
+    glVertexPointer(3, GL_FLOAT, 7 * sizeof(GLfloat), drawArray + 4);
+
+    glDrawArrays(GL_LINES, 0, 2);
   } else {
     float alphaMod = 0;
 
@@ -824,11 +703,57 @@ void WeatherRenderer::drawDrop(rain& drop, const SceneRenderer& sr)
     if (spinRain)
       glRotatef(lastRainTime * 10.0f * rainSpeed, 0, 0, 1);
 
-    if (1) {
-      glCallList(dropList);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    if (doBillBoards) {
+      GLfloat drawArray[] = {
+	0, 0,
+	-rainSize[0], -rainSize[1], 0,
+	1, 0,
+	rainSize[0], -rainSize[1], 0,
+	1, 1,
+	rainSize[0], rainSize[1], 0,
+	0, 1,
+	-rainSize[0], rainSize[1], 0
+      };
+
+      glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+      glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     } else {
-      buildDropList(true);
+      glPushMatrix();
+
+      GLfloat drawArray[] = {
+	0, 0,
+	-rainSize[0], 0, -rainSize[1],
+	1, 0,
+	rainSize[0], 0, -rainSize[1],
+	1, 1,
+	rainSize[0], 0, rainSize[1],
+	0, 1,
+	-rainSize[0], 0, rainSize[1]
+      };
+
+      glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+      glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+      glRotatef(120, 0, 0, 1);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+      glRotatef(120, 0, 0, 1);
+
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+      glPopMatrix();
     }
+
     glPopMatrix();
   }
 }
@@ -845,11 +770,27 @@ void WeatherRenderer::drawPuddle(puddle& splash)
   glColor4f(puddleColor[0], puddleColor[1], puddleColor[2], 1.0f - lifeTime);
 
   glScalef(scale, scale, scale);
-  if (1) {
-    glCallList(puddleList);
-  } else {
-    buildPuddleList(true);
-  }
+
+  GLfloat drawArray[] = {
+    0, 0,
+    -1.0f, -1.0f, 0,
+    1, 0,
+    1.0f, -1.0f, 0,
+    1, 1,
+    1.0f, 1.0f, 0,
+    0, 1,
+    -1.0f, 1.0f, 0
+  };
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), drawArray);
+  glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), drawArray + 2);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
   glPopMatrix();
 }

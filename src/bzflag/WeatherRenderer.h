@@ -36,7 +36,7 @@ public:
 	WeatherRenderer();
 	~WeatherRenderer();
 
-	// called once to setup the rain state, load lists and materials and stuff
+	// called once to setup the rain state, load materials and stuff
 	void init(void);
 
 	// called each time the rain state needs to change, i.e. when the bzdb stuff changes
@@ -47,12 +47,6 @@ public:
 
 	// called to draw the rain for the current frame
 	void draw(const SceneRenderer& sr);
-
-	// called when the GL lists need to be deleted
-	void freeContext(void);
-
-	// called when the GL lists need to be remade
-	void rebuildContext(void);
 
 protected:
 	OpenGLGState				rainGState;
@@ -77,8 +71,6 @@ protected:
 	float					maxPuddleTime;
 	float					puddleSpeed;
 	float					puddleColor[4];
-	GLuint					dropList;
-	GLuint					puddleList;
 
 public:
 	typedef struct {
@@ -99,9 +91,6 @@ protected:
 	std::vector<puddle>	puddles;
 
 	float			lastRainTime;
-
-	void buildDropList(bool draw = false);
-	void buildPuddleList(bool draw = false);
 
 	bool updateDrop(std::vector<rain>::iterator &drop, float frameTime, std::vector<rain> &toAdd);
 	bool updatePuddle(std::vector<puddle>::iterator &splash, float frameTime);

@@ -1861,7 +1861,6 @@ void BackgroundRenderer::doFreeDrawArrays()
   int i;
 
   // don't forget the tag-along
-  weather.freeContext();
   EFFECTS.freeContext();
 
   // simpleGroundDrawArrays[1] && simpleGroundDrawArrays[3] are copies of [0] & [2]
@@ -1902,7 +1901,6 @@ void BackgroundRenderer::doInitDrawArrays()
   SceneRenderer& renderer = RENDERER;
 
   // don't forget the tag-along
-  weather.rebuildContext();
   EFFECTS.rebuildContext();
 
   //
