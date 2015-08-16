@@ -12,6 +12,7 @@ MAINTAINERCLEANFILES = \
 libGLKit_la_LDFLAGS = -static
 libGLKit_la_SOURCES =			\
 	DrawArrays.cxx			\
+	OpenGLESStubs.cxx		\
 	OpenGLGState.cxx		\
 	OpenGLLight.cxx			\
 	OpenGLMaterial.cxx		\

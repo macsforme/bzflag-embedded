@@ -32,6 +32,9 @@
 #include "global.h"
 #include "OpenGLUtils.h"
 #include "DrawArrays.h"
+#ifdef HAVE_GLES
+#include "OpenGLESStubs.h"
+#endif
 
 /* local implementation headers */
 #include "SceneRenderer.h"
@@ -291,11 +294,7 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-#ifdef HAVE_GLES
-  glOrthof(0.0f, (float)w, 0.0f, (float) window.getHeight(), -1.0f, 1.0f);
-#else
   glOrtho(0.0, (double)w, 0.0, (double) window.getHeight(), -1.0, 1.0);
-#endif
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
@@ -325,17 +324,10 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
     // clear the background
     glColor4f(0.0f, 0.0f, 0.0f, _renderer.getPanelOpacity());
-#ifdef HAVE_GLES
-    bzGLRecti(messageAreaPixels[0] - 1, // clear an extra pixel column to simplify fuzzy float stuff later
-	    messageAreaPixels[1],
-	    messageAreaPixels[0] + messageAreaPixels[2],
-	    messageAreaPixels[1] + messageAreaPixels[3]);
-#else
     glRecti(messageAreaPixels[0] - 1, // clear an extra pixel column to simplify fuzzy float stuff later
 	    messageAreaPixels[1],
 	    messageAreaPixels[0] + messageAreaPixels[2],
 	    messageAreaPixels[1] + messageAreaPixels[3]);
-#endif
 
     // display tabs for chat sections
     if (showTabs) {
@@ -351,30 +343,16 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 
 	if (tabsOnRight) {
 	  // draw the tabs on the right side
-#ifdef HAVE_GLES
-	  bzGLRecti(messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth,
-		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
-		  messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth + int(tabTextWidth[tab]), //+ drawnTabWidth + int(tabTextWidth[tab]),
-		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
-#else
 	  glRecti(messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth,
 		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
 		  messageAreaPixels[0] + messageAreaPixels[2] - totalTabWidth + drawnTabWidth + int(tabTextWidth[tab]), //+ drawnTabWidth + int(tabTextWidth[tab]),
 		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
-#endif
 	} else {
 	  // draw the tabs on the left side
-#ifdef HAVE_GLES
-	  bzGLRecti(messageAreaPixels[0] + drawnTabWidth,
-		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
-		  messageAreaPixels[0] + drawnTabWidth + int(tabTextWidth[tab]),
-		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
-#else
 	  glRecti(messageAreaPixels[0] + drawnTabWidth,
 		  messageAreaPixels[1] + messageAreaPixels[3] - int(lineHeight + 4) + ay,
 		  messageAreaPixels[0] + drawnTabWidth + int(tabTextWidth[tab]),
 		  messageAreaPixels[1] + messageAreaPixels[3] + ay);
-#endif
 	}
 	drawnTabWidth += long(tabTextWidth[tab]);
       } // end iteration over tabs
@@ -398,15 +376,9 @@ void			ControlPanel::render(SceneRenderer& _renderer)
 	top = maxTop;
       }
       glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
-#ifdef HAVE_GLES
-      bzGLRecti(messageAreaPixels[0],
-	      messageAreaPixels[1] + int(offset * (float)messageAreaPixels[3]),
-	      messageAreaPixels[0] + 2, top);
-#else
       glRecti(messageAreaPixels[0],
 	      messageAreaPixels[1] + int(offset * (float)messageAreaPixels[3]),
 	      messageAreaPixels[0] + 2, top);
-#endif
 
     }
   }

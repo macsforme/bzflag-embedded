@@ -25,7 +25,7 @@
 #include "BZDBCache.h"
 #include "OpenGLMaterial.h"
 #ifdef HAVE_GLES
-#include "OpenGLUtils.h"
+#include "OpenGLESStubs.h"
 #endif
 #include "TextureManager.h"
 
@@ -324,11 +324,7 @@ static inline void drawFullScreenRect()
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-#ifdef HAVE_GLES
-  bzGLRectf(-1.0f, -1.0f, +1.0f, +1.0f);
-#else
   glRectf(-1.0f, -1.0f, +1.0f, +1.0f);
-#endif
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);

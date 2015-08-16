@@ -31,7 +31,7 @@
 #include "BZDBCache.h"
 #include "MeshSceneNode.h"
 #ifdef HAVE_GLES
-#include "OpenGLUtils.h"
+#include "OpenGLESStubs.h"
 #endif
 
 /* FIXME - local implementation dependancies */
@@ -844,11 +844,7 @@ void SceneRenderer::render(bool _lastFrame, bool _sameFrame,
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 	glColor4f(mirrorColor[0], mirrorColor[1], mirrorColor[2], mirrorColor[3]);
-#ifdef HAVE_GLES
-	bzGLRectf(-1.0f, -1.0f, +1.0f, +1.0f);
-#else
 	glRectf(-1.0f, -1.0f, +1.0f, +1.0f);
-#endif
 	glDisable(GL_BLEND);
 #ifndef HAVE_GLES
       } else {
@@ -870,11 +866,7 @@ void SceneRenderer::render(bool _lastFrame, bool _sameFrame,
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 	glColor4f(mirrorColor[0], mirrorColor[1], mirrorColor[2], mirrorColor[3]);
-#ifdef HAVE_GLES
-	bzGLRectf(-extent, -extent, +extent, +extent);
-#else
 	glRectf(-extent, -extent, +extent, +extent);
-#endif
 	glDisable(GL_BLEND);
 #ifndef HAVE_GLES
       } else {
@@ -1231,11 +1223,7 @@ void SceneRenderer::renderDimming()
     // if low quality then use stipple -- it's probably much faster
     if (BZDBCache::blend && (useQualityValue >= 1)) {
       glEnable(GL_BLEND);
-#ifdef HAVE_GLES
-      bzGLRectf(-1.0f, -1.0f, 1.0f, 1.0f);
-#else
       glRectf(-1.0f, -1.0f, 1.0f, 1.0f);
-#endif
       glDisable(GL_BLEND);
 #ifndef HAVE_GLES
     }
@@ -1272,11 +1260,7 @@ void SceneRenderer::renderDepthComplexity()
   for (int i = 0; i < numColors; i++) {
     glStencilFunc(i == numColors - 1 ? GL_LEQUAL : GL_EQUAL, i, 0xf);
     glColor4f(depthColors[i][0], depthColors[i][1], depthColors[i][2], 1.0f);
-#ifdef HAVE_GLES
-    bzGLRectf(-1.0f, -1.0f, 1.0f, 1.0f);
-#else
     glRectf(-1.0f, -1.0f, 1.0f, 1.0f);
-#endif
   }
   glDisable(GL_STENCIL_TEST);
 

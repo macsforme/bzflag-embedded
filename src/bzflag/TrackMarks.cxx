@@ -26,7 +26,7 @@
 #include "SceneRenderer.h"
 #include "SceneNode.h"
 #ifdef HAVE_GLES
-#include "OpenGLUtils.h"
+#include "OpenGLESStubs.h"
 #endif
 
 
@@ -726,20 +726,10 @@ static void drawTreads(const TrackEntry& te)
 
     const float halfWidth = 0.5f * TreadMarkWidth;
 
-    if ((te.sides & LeftTread) != 0) {
-#ifdef HAVE_GLES
-      bzGLRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
-#else
+    if ((te.sides & LeftTread) != 0)
       glRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
-#endif
-    }
-    if ((te.sides & RightTread) != 0) {
-#ifdef HAVE_GLES
-      bzGLRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
-#else
+    if ((te.sides & RightTread) != 0)
       glRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
-#endif
-    }
   }
   glPopMatrix();
 
@@ -761,20 +751,10 @@ static void drawSmoke(const TrackEntry& te)
 
     const float halfWidth = 0.5f * TreadMarkWidth;
 
-    if ((te.sides & LeftTread) != 0) {
-#ifdef HAVE_GLES
-      bzGLRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
-#else
+    if ((te.sides & LeftTread) != 0)
       glRectf(-halfWidth, +TreadInside, +halfWidth, +TreadOutside);
-#endif
-    }
-    if ((te.sides & RightTread) != 0) {
-#ifdef HAVE_GLES
-      bzGLRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
-#else
+    if ((te.sides & RightTread) != 0)
       glRectf(-halfWidth, -TreadOutside, +halfWidth, -TreadInside);
-#endif
-    }
   }
   glPopMatrix();
 
