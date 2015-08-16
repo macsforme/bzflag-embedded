@@ -24,7 +24,9 @@
 #include "BzfWindow.h"
 #include "BzfJoystick.h"
 
+#ifndef HAVE_GLES
 #define	USE_GL_STEREO
+#endif
 
 class MainWindow {
   public:

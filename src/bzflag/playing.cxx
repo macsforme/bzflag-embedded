@@ -88,6 +88,7 @@
 #include "World.h"
 #include "WorldBuilder.h"
 #include "HUDui.h"
+#include "OpenGLUtils.h"
 
 #include "CollisionManager.h"
 
@@ -5176,7 +5177,20 @@ static void renderRoamMouse()
   const int y2 = oy + (mainWindow->getViewHeight() / 2);
   const int yc = (sy - y2 - 1); // flip the y axis
 
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  GLfloat scissorOldParams[4];
+  glGetFloatv(GL_SCISSOR_BOX, scissorOldParams);
+  GLint previousShadeModel;
+  glGetIntegerv(GL_SHADE_MODEL, &previousShadeModel);
+  GLboolean blendingWasEnabled;
+  glGetBooleanv(GL_BLEND, &blendingWasEnabled);
+  GLint previousBlendSourceFactor;
+  glGetIntegerv(GL_BLEND_SRC, &previousBlendSourceFactor);
+  GLint previousBlendDestinationFactor;
+  glGetIntegerv(GL_BLEND_DST, &previousBlendDestinationFactor);
+  GLboolean smoothLineWasEnabled;
+  glGetBooleanv(GL_LINE_SMOOTH, &smoothLineWasEnabled);
+  GLfloat previousLineWidth;
+  glGetFloatv(GL_LINE_WIDTH, &previousLineWidth);
 
   glScissor(ox, oy, sx, sy);
   glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
@@ -5196,15 +5210,36 @@ static void renderRoamMouse()
   static const float color1[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
   glLineWidth(1.49f);
-  glBegin(GL_LINES);
-  glColor4fv(color0); glVertex2i(xc, yc);
-  glColor4fv(color1); glVertex2i(mx, my);
-  glEnd();
+
+  GLfloat drawArray[] = {
+    color0[0], color0[1], color0[2],color0[3],
+    (float) xc, (float) yc,
+    color1[0], color1[1], color1[2], color1[3],
+    (float) mx, (float) my
+  };
+
+  glEnableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glColorPointer(4, GL_FLOAT, 6 * sizeof(GLfloat), drawArray);
+  glVertexPointer(2, GL_FLOAT, 6 * sizeof(GLfloat), drawArray + 4);
+
+  glDrawArrays(GL_LINES, 0, 2);
 
   glMatrixMode(GL_PROJECTION); glPopMatrix();
   glMatrixMode(GL_MODELVIEW);  glPopMatrix();
 
-  glPopAttrib();
+  glScissor(scissorOldParams[0], scissorOldParams[1],
+	    scissorOldParams[2], scissorOldParams[3]);
+  glShadeModel(previousShadeModel);
+  if(blendingWasEnabled == GL_FALSE)
+    glDisable(GL_BLEND);
+  glBlendFunc(previousBlendSourceFactor, previousBlendDestinationFactor);
+  if(smoothLineWasEnabled == GL_FALSE)
+    glDisable(GL_LINE_SMOOTH);
+  glLineWidth(previousLineWidth);
 }
 
 
@@ -5890,13 +5925,28 @@ void drawFrame(const float dt)
       // drawn, but increment the value in the stencil buffer.
       glStencilFunc(GL_NEVER, 0x0, 0x0);
       glStencilOp(GL_INCR, GL_INCR, GL_INCR);
-      glColor3f(1.0f, 1.0f, 1.0f);
+      glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+      GLfloat *drawArray = new GLfloat[(height / 2 + 1) * 4];
+
       for (int y=0;y<=height;y+=2) {
-	glBegin(GL_LINES);
-	glVertex2i(0, y);
-	glVertex2i(width, y);
-	glEnd();
+	drawArray[y * 2 + 0] = 0.0f;
+	drawArray[y * 2 + 1] = (float) y;
+
+	drawArray[y * 2 + 2] = (float) width;
+	drawArray[y * 2 + 3] = (float) y;
       }
+
+      glDisableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+
+      glVertexPointer(2, GL_FLOAT, 0, drawArray);
+
+      glDrawArrays(GL_LINES, 0, (height / 2 + 1) * 2);
+
+      delete[] drawArray;
 
       // draw except where the stencil pattern is 0x1
       // do not change the stencil buffer
@@ -5963,17 +6013,31 @@ void drawFrame(const float dt)
       glPushMatrix();
       glLoadIdentity();
 
-      glColor3f(0.0f, 0.0f, 0.0f);
+      glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+#ifdef HAVE_GLES
+      bzGLRecti(mx - 8, my - 2, mx - 2, my + 2);
+      bzGLRecti(mx + 2, my - 2, mx + 8, my + 2);
+      bzGLRecti(mx - 2, my - 8, mx + 2, my - 2);
+      bzGLRecti(mx - 2, my + 2, mx + 2, my + 8);
+#else
       glRecti(mx - 8, my - 2, mx - 2, my + 2);
       glRecti(mx + 2, my - 2, mx + 8, my + 2);
       glRecti(mx - 2, my - 8, mx + 2, my - 2);
       glRecti(mx - 2, my + 2, mx + 2, my + 8);
+#endif
 
-      glColor3f(1.0f, 1.0f, 1.0f);
+      glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+#ifdef HAVE_GLES
+      bzGLRecti(mx - 7, my - 1, mx - 3, my + 1);
+      bzGLRecti(mx + 3, my - 1, mx + 7, my + 1);
+      bzGLRecti(mx - 1, my - 7, mx + 1, my - 3);
+      bzGLRecti(mx - 1, my + 3, mx + 1, my + 7);
+#else
       glRecti(mx - 7, my - 1, mx - 3, my + 1);
       glRecti(mx + 3, my - 1, mx + 7, my + 1);
       glRecti(mx - 1, my - 7, mx + 1, my - 3);
       glRecti(mx - 1, my + 3, mx + 1, my + 7);
+#endif
 
       glPopMatrix();
     }
