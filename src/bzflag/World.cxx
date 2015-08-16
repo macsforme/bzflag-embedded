@@ -1226,13 +1226,26 @@ static void drawLines (int count, float (*vertices)[3], int color)
   else if (color >= colorCount) {
     color = colorCount - 1;
   }
-  glColor4fv (colors[color]);
 
-  glBegin (GL_LINE_STRIP);
+  glColor4f(colors[color][0], colors[color][1], colors[color][2], colors[color][3]);
+
+  GLfloat *drawArray = new GLfloat[count * 3];
+
   for (int i = 0; i < count; i++) {
-    glVertex3fv (vertices[i]);
+    drawArray[i * 3 + 0] = vertices[i][0];
+    drawArray[i * 3 + 1] = vertices[i][1];
+    drawArray[i * 3 + 2] = vertices[i][2];
   }
-  glEnd ();
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_LINE_STRIP, 0, count);
+
+  delete[] drawArray;
 
   return;
 }
@@ -1266,7 +1279,16 @@ static void drawInsideOutsidePoints()
     }
   }
 
-  glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_POINT_BIT | GL_LINE_BIT);
+  GLboolean depthTestWasEnabled;
+  glGetBooleanv(GL_DEPTH_TEST, &depthTestWasEnabled);
+  GLboolean smoothPointWasEnabled;
+  glGetBooleanv(GL_POINT_SMOOTH, &smoothPointWasEnabled);
+  GLboolean smoothLineWasEnabled;
+  glGetBooleanv(GL_LINE_SMOOTH, &smoothLineWasEnabled);
+  GLfloat previousLineWidth;
+  glGetFloatv(GL_LINE_WIDTH, &previousLineWidth);
+  GLfloat previousPointSize;
+  glGetFloatv(GL_POINT_SIZE, &previousPointSize);
 
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_POINT_SMOOTH);
@@ -1274,33 +1296,91 @@ static void drawInsideOutsidePoints()
   glLineWidth(1.49f);
   glPointSize(4.49f);
 
-  glBegin(GL_POINTS); {
-    glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
-    for (size_t i = 0; i < insides.size(); i++) {
-      glVertex3fv(insides[i]);
-    }
-    glColor4f(1.0f, 0.0f, 0.0f, 0.8f);
-    for (size_t i = 0; i < outsides.size(); i++) {
-      glVertex3fv(outsides[i]);
-    }
-  }
-  glEnd();
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
 
-  glBegin(GL_LINES); {
-    glColor4f(0.0f, 1.0f, 0.0f, 0.2f);
-    for (size_t i = 0; i < insides.size(); i++) {
-      glVertex3f(insides[i][0], insides[i][1], 0.0f);
-      glVertex3fv(insides[i]);
-    }
-    glColor4f(1.0f, 0.0f, 0.0f, 0.2f);
-    for (size_t i = 0; i < outsides.size(); i++) {
-      glVertex3f(outsides[i][0], outsides[i][1], 0.0f);
-      glVertex3fv(outsides[i]);
-    }
-  }
-  glEnd();
+  glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
 
-  glPopAttrib();
+  GLfloat *drawArray = new GLfloat[insides.size() * 3];
+
+  for (size_t i = 0; i < insides.size(); i++) {
+    drawArray[i * 3 + 0] = insides[i][0];
+    drawArray[i * 3 + 1] = insides[i][1];
+    drawArray[i * 3 + 2] = insides[i][2];
+  }
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_POINTS, 0, insides.size());
+
+  delete[] drawArray;
+
+  glColor4f(1.0f, 0.0f, 0.0f, 0.8f);
+
+  drawArray = new GLfloat[outsides.size() * 3];
+
+  for (size_t i = 0; i < outsides.size(); i++) {
+    drawArray[i * 3 + 0] = outsides[i][0];
+    drawArray[i * 3 + 1] = outsides[i][1];
+    drawArray[i * 3 + 2] = outsides[i][2];
+  }
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_POINTS, 0, outsides.size());
+
+  delete[] drawArray;
+
+  glColor4f(0.0f, 1.0f, 0.0f, 0.2f);
+
+  drawArray = new GLfloat[insides.size() * 6];
+
+  for (size_t i = 0; i < insides.size(); i++) {
+    drawArray[i * 6 + 0] = insides[i][0];
+    drawArray[i * 6 + 1] = insides[i][1];
+    drawArray[i * 6 + 2] = 0.0f;
+
+    drawArray[i * 6 + 3] = insides[i][0];
+    drawArray[i * 6 + 4] = insides[i][1];
+    drawArray[i * 6 + 5] = insides[i][2];
+  }
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_LINES, 0, insides.size() * 2);
+
+  delete[] drawArray;
+
+  glColor4f(1.0f, 0.0f, 0.0f, 0.2f);
+
+  drawArray = new GLfloat[outsides.size() * 6];
+
+  for (size_t i = 0; i < outsides.size(); i++) {
+    drawArray[i * 6 + 0] = outsides[i][0];
+    drawArray[i * 6 + 1] = outsides[i][1];
+    drawArray[i * 6 + 2] = 0.0f;
+
+    drawArray[i * 6 + 3] = outsides[i][0];
+    drawArray[i * 6 + 4] = outsides[i][1];
+    drawArray[i * 6 + 5] = outsides[i][2];
+  }
+
+  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+
+  glDrawArrays(GL_LINES, 0, outsides.size() * 2);
+
+  delete[] drawArray;
+
+  if(depthTestWasEnabled == GL_TRUE)
+    glEnable(GL_DEPTH_TEST);
+  if(smoothPointWasEnabled == GL_FALSE)
+    glDisable(GL_POINT_SMOOTH);
+  if(smoothLineWasEnabled == GL_FALSE)
+    glDisable(GL_LINE_SMOOTH);
+  glLineWidth(previousLineWidth);
+  glPointSize(previousPointSize);
 }
 
 
