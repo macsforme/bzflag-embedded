@@ -35,6 +35,8 @@ void glOrtho(double left, double right, double bottom, double top, double near_v
 
 void glClipPlane(GLenum plane, const double *equation);
 
+void glDepthRange(double near_val, double far_val);
+
 void glRecti(short int x1, short int y1, short int x2, short int y2);
 void glRectf(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
 

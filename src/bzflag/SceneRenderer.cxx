@@ -227,11 +227,7 @@ void SceneRenderer::setZBufferSplit(bool on)
     if (numDepthRanges != 1) {
       numDepthRanges = 1;
       depthRangeSize = 1.0;
-#ifdef HAVE_GLES
-      glDepthRangef(0.0f, 1.0f);
-#else
       glDepthRange(0.0, 1.0);
-#endif
     }
   }
   else {
@@ -978,20 +974,11 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
     }
     if (!sameFrame && numDepthRanges != 1) {
       if (useHiddenLineOn) {
-#ifdef HAVE_GLES
-	glDepthRangef(0.0f, 1.0f);
-#else
 	glDepthRange(0.0, 1.0);
-#endif
       }
       else {
-#ifdef HAVE_GLES
-	GLfloat x_near = (float)depthRange * (float)depthRangeSize;
-	glDepthRangef(x_near, x_near + (float)depthRangeSize);
-#else
-	GLclampd x_near = (GLclampd)depthRange * depthRangeSize;
+	double x_near = (double)depthRange * depthRangeSize;
 	glDepthRange(x_near, x_near + depthRangeSize);
-#endif
       }
     }
   }
