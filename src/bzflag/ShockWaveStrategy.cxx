@@ -152,6 +152,8 @@ void ShockWaveStrategy::radarRender() const
   glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
   glDrawArrays(GL_LINE_LOOP, 0, sides);
+
+  delete[] drawArray;
 }
 
 
