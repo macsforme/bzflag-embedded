@@ -26,6 +26,9 @@
 #include "StateDatabase.h"
 #include "SceneRenderer.h"
 #include "BZDBCache.h"
+#ifdef HAVE_GLES
+#include "OpenGLESStubs.h"
+#endif
 
 // local implementation headers
 #include "ViewFrustum.h"
@@ -426,17 +429,10 @@ void TankSceneNode::setClipPlane(const GLfloat* _plane)
     clip = false;
   } else {
     clip = true;
- #ifdef HAVE_GLES
     clipPlane[0] = _plane[0];
     clipPlane[1] = _plane[1];
     clipPlane[2] = _plane[2];
     clipPlane[3] = _plane[3];
- #else
-    clipPlane[0] = GLdouble(_plane[0]);
-    clipPlane[1] = GLdouble(_plane[1]);
-    clipPlane[2] = GLdouble(_plane[2]);
-    clipPlane[3] = GLdouble(_plane[3]);
- #endif
   }
 }
 
@@ -944,11 +940,7 @@ void TankSceneNode::TankRenderNode::render()
   }
 
   if (sceneNode->clip && !isShadow) {
- #ifdef HAVE_GLES
-    glClipPlanef(GL_CLIP_PLANE0, sceneNode->clipPlane);
- #else
     glClipPlane(GL_CLIP_PLANE0, sceneNode->clipPlane);
- #endif
     glEnable(GL_CLIP_PLANE0);
   }
 
@@ -1476,13 +1468,8 @@ void TankSceneNode::TankRenderNode::renderJumpJets()
   myColor4f(1.0f, 1.0f, 1.0f, 0.5f);
 
   // use a clip plane, because the ground has no depth
-#ifdef HAVE_GLES
-  const GLfloat clip_plane[4] = {0.0f, 0.0f, 1.0f, 0.0f};
-  glClipPlanef(GL_CLIP_PLANE1, clip_plane);
-#else
-  const GLdouble clip_plane[4] = {0.0, 0.0, 1.0, 0.0};
+  const double clip_plane[4] = {0.0, 0.0, 1.0, 0.0};
   glClipPlane(GL_CLIP_PLANE1, clip_plane);
-#endif
   glEnable(GL_CLIP_PLANE1);
 
   sceneNode->jumpJetsGState.setState();

@@ -338,15 +338,8 @@ void SphereLodSceneNode::SphereLodRenderNode::render()
   const GLfloat radius = sceneNode->radius;
   const GLfloat* sphere = sceneNode->getSphere();
 
-#ifdef HAVE_GLES
-  static const GLfloat groundPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-
-  glClipPlanef(GL_CLIP_PLANE0, groundPlane);
-#else
-  static const GLdouble groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
-
+  static const double groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
   glClipPlane(GL_CLIP_PLANE0, groundPlane);
-#endif
   glEnable(GL_CLIP_PLANE0);
 
 #ifdef GL_VERSION_1_2
@@ -585,19 +578,13 @@ void			SphereBspSceneNode::SphereBspRenderNode::
 
 void			SphereBspSceneNode::SphereBspRenderNode::render()
 {
+  static const double groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
+
   int i, j;
   const GLfloat radius = sceneNode->radius;
   const GLfloat* sphere = sceneNode->getSphere();
 
-#ifdef HAVE_GLES
-  static const GLfloat groundPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-
-  glClipPlanef(GL_CLIP_PLANE0, groundPlane);
-#else
-  static const GLdouble groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
-
   glClipPlane(GL_CLIP_PLANE0, groundPlane);
-#endif
   glEnable(GL_CLIP_PLANE0);
 
   glPushMatrix();

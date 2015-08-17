@@ -23,6 +23,9 @@
 // common implementation headers
 #include "BZDBCache.h"
 #include "TextureManager.h"
+#ifdef HAVE_GLES
+#include "OpenGLESStubs.h"
+#endif
 
 // local implementation headers
 #include "ViewFrustum.h"
@@ -346,15 +349,9 @@ void			BillboardSceneNode::BillboardRenderNode::
 
 void			BillboardSceneNode::BillboardRenderNode::render()
 {
-#ifdef HAVE_GLES
-  static const GLfloat groundPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-
-  glClipPlanef(GL_CLIP_PLANE0, groundPlane);
-#else
-  static const GLdouble groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
+  static const double groundPlane[] = { 0.0, 0.0, 1.0, 0.0 };
 
   glClipPlane(GL_CLIP_PLANE0, groundPlane);
-#endif
   glEnable(GL_CLIP_PLANE0);
 
   // want to move the billboard directly towards the eye a little bit.

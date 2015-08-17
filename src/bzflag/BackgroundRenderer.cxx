@@ -24,6 +24,9 @@
 #include "TextureMatrix.h"
 #include "ParseColor.h"
 #include "BZDBCache.h"
+#ifdef HAVE_GLES
+#include "OpenGLESStubs.h"
+#endif
 
 // local headers
 #include "daylight.h"
@@ -1098,13 +1101,8 @@ void BackgroundRenderer::drawSky(SceneRenderer& renderer, bool mirror)
 
   if (useClipPlane) {
     glEnable(GL_CLIP_PLANE0);
-#ifdef HAVE_GLES
-    const GLfloat plane[4] = {0.0f, 0.0f, 1.0f, 0.0f};
-    glClipPlanef(GL_CLIP_PLANE0, plane);
-#else
-    const GLdouble plane[4] = {0.0, 0.0, +1.0, 0.0};
+    const double plane[4] = {0.0, 0.0, +1.0, 0.0};
     glClipPlane(GL_CLIP_PLANE0, plane);
-#endif
   }
 
   if (doSkybox) {

@@ -48,6 +48,18 @@ void glOrtho(double left, double right, double bottom, double top, double near_v
   glOrthof((float) left, (float) right, (float) bottom, (float) top, (float) near_val, (float) far_val);
 }
 
+void glClipPlane(GLenum plane, const double *equation)
+{
+  GLfloat equationf[] = {
+    (GLfloat) equation[0],
+    (GLfloat) equation[1],
+    (GLfloat) equation[2],
+    (GLfloat) equation[3]
+  };
+
+  glClipPlanef(plane, equationf);
+}
+
 void glRecti(short int x1, short int y1, short int x2, short int y2)
 {
   GLshort drawArray[] = {
