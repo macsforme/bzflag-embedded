@@ -454,7 +454,7 @@ if test x$with_gles = xyes ; then
 
     OLD_CPPFLAGS="$CPPFLAGS"
     CPPFLAGS="$CPPFLAGS -D__USE_SDL_GLES__"
-    AC_CHECK_HEADER([GLES/glu.h], [], [AC_MSG_ERROR([no OpenGL GLU ES headers were found... please install GLU for OpenGL ES])])
+    AC_CHECK_HEADER([GLES/glu.h], [], [AC_MSG_ERROR([no OpenGL GLU ES headers were found... please install GLU for OpenGL ES from https://github.com/macsforme/glues])])
     CPPFLAGS="$OLD_CPPFLAGS"
 fi
 
@@ -535,7 +535,7 @@ AC_CHECK_TYPES([std::shared_ptr<int>],
 # detect OpenGL or OpenGL ES libraries
 if test x$with_gles = xyes ; then
     AC_CHECK_LIB([GLESv1_CM], [glDrawArrays], GLIBS="$GLIBS -lGLESv1_CM", [AC_MSG_ERROR([no OpenGL ES library was found... please install an OpenGL ES library or try a standard OpenGL build])])
-    AC_CHECK_LIB([GLUES], [gluNewQuadric], GLIBS="$GLIBS -lGLUES", [AC_MSG_ERROR([no OpenGL GLU ES library was found... please install GLU for OpenGL ES])], [-lGLESv1_CM])
+    AC_CHECK_LIB([GLUES], [gluNewQuadric], GLIBS="$GLIBS -lGLUES", [AC_MSG_ERROR([no OpenGL GLU ES library was found... please install GLU for OpenGL ES from https://github.com/macsforme/glues])], [-lGLESv1_CM])
 else
     ac_cv_search_glBegin=no
     ac_cv_search_gluScaleImage=no
