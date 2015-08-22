@@ -1101,8 +1101,7 @@ void			HUDRenderer::renderCracks()
   glLineWidth(3.0);
   hudColor3f(1.0f, 1.0f, 1.0f);
 
-  unsigned int drawArrayID = DrawArrays::newArray();
-  DrawArrays::beginArray(drawArrayID);
+  DrawArrays::beginTempArray();
 
   for (int i = 0; i < HUDNumCracks; i++) {
     DrawArrays::addVertex(cracks[i][0][0], cracks[i][0][1]);
@@ -1118,9 +1117,7 @@ void			HUDRenderer::renderCracks()
     }
   }
 
-  DrawArrays::finishArray();
-  DrawArrays::draw(drawArrayID, GL_LINES);
-  DrawArrays::deleteArray(drawArrayID);
+  DrawArrays::drawTempArray(GL_LINES);
 
   glLineWidth(1.0);
   glPopMatrix();
@@ -1430,8 +1427,7 @@ void			HUDRenderer::renderBox(SceneRenderer&)
   // draw targeting box
   hudColor3fv(hudColor);
 
-  unsigned int drawArrayID = DrawArrays::newArray();
-  DrawArrays::beginArray(drawArrayID);
+  DrawArrays::beginTempArray();
 
   // inner box
   DrawArrays::addVertex((float) (centerx - noMotionSize), (float) (centery - noMotionSize));
@@ -1459,9 +1455,7 @@ void			HUDRenderer::renderBox(SceneRenderer&)
   DrawArrays::addVertex((float) (centerx - maxMotionSize), (float) (centery + maxMotionSize));
   DrawArrays::addVertex((float) (centerx - maxMotionSize), (float) (centery - maxMotionSize));
 
-  DrawArrays::finishArray();
-  DrawArrays::draw(drawArrayID, GL_LINES);
-  DrawArrays::deleteArray(drawArrayID);
+  DrawArrays::drawTempArray(GL_LINES);
 
   // draw heading strip
   if (true /* always draw heading strip */) {
@@ -1470,13 +1464,10 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 		2 * maxMotionSize, 25 + (int)(headingFontSize + 0.5f));
 
     // draw heading mark
-    drawArrayID = DrawArrays::newArray();
-    DrawArrays::beginArray(drawArrayID);
+    DrawArrays::beginTempArray();
     DrawArrays::addVertex((float) centerx, (float) (centery + maxMotionSize));
     DrawArrays::addVertex((float) centerx, (float) (centery + maxMotionSize - 5));
-    DrawArrays::finishArray();
-    DrawArrays::draw(drawArrayID, GL_LINES);
-    DrawArrays::deleteArray(drawArrayID);
+    DrawArrays::drawTempArray(GL_LINES);
 
     // figure out which marker is closest to center
     int baseMark = int(heading) / 10;
@@ -1496,8 +1487,7 @@ void			HUDRenderer::renderBox(SceneRenderer&)
     if (!smooth) basex = floorf(basex);
     glTranslatef((float)centerx - basex, (float)(centery + maxMotionSize), 0.0f);
     x = smooth ? 0.0f : -0.5f;
-    drawArrayID = DrawArrays::newArray();
-    DrawArrays::beginArray(drawArrayID);
+    DrawArrays::beginTempArray();
     for (i = minMark; i <= maxMark; i++) {
       DrawArrays::addVertex((int)x, 0);
       DrawArrays::addVertex((int)x, 8);
@@ -1506,9 +1496,7 @@ void			HUDRenderer::renderBox(SceneRenderer&)
       DrawArrays::addVertex((int)x, 4);
       x += headingMarkSpacing;
     }
-    DrawArrays::finishArray();
-    DrawArrays::draw(drawArrayID, GL_LINES);
-    DrawArrays::deleteArray(drawArrayID);
+    DrawArrays::drawTempArray(GL_LINES);
 
     // back to our regular rendering mode
     if (smooth) {
@@ -1554,8 +1542,7 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 	// on the visible part of tape
 	GLfloat mx = maxMotionSize / headingOffset *
 			((relAngle < 180.0f) ? relAngle : relAngle - 360.0f);
-	drawArrayID = DrawArrays::newArray();
-	DrawArrays::beginArray(drawArrayID);
+	DrawArrays::beginTempArray();
 
 	DrawArrays::addVertex(mx, 0.0f);
 	DrawArrays::addVertex(mx + 4.0f, 4.0f);
@@ -1565,33 +1552,25 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 	DrawArrays::addVertex(mx - 4.0f, 4.0f);
 	DrawArrays::addVertex(mx, 0.0f);
 
-	DrawArrays::finishArray();
-	DrawArrays::draw(drawArrayID, GL_TRIANGLES);
-	DrawArrays::deleteArray(drawArrayID);
+	DrawArrays::drawTempArray(GL_TRIANGLES);
       } else if (relAngle <= 180.0) {
 	// off to the right
-	drawArrayID = DrawArrays::newArray();
-	DrawArrays::beginArray(drawArrayID);
+	DrawArrays::beginTempArray();
 
 	DrawArrays::addVertex((float)maxMotionSize, 0.0f);
 	DrawArrays::addVertex((float)maxMotionSize + 4.0f, 4.0f);
 	DrawArrays::addVertex((float)maxMotionSize, 8.0f);
 
-	DrawArrays::finishArray();
-	DrawArrays::draw(drawArrayID, GL_TRIANGLES);
-	DrawArrays::deleteArray(drawArrayID);
+	DrawArrays::drawTempArray(GL_TRIANGLES);
       } else {
 	// off to the left
-	drawArrayID = DrawArrays::newArray();
-	DrawArrays::beginArray(drawArrayID);
+	DrawArrays::beginTempArray();
 
 	DrawArrays::addVertex(-(float)maxMotionSize, 0.0f);
 	DrawArrays::addVertex(-(float)maxMotionSize, 8.0f);
 	DrawArrays::addVertex(-(float)maxMotionSize - 4.0f, 4.0f);
 
-	DrawArrays::finishArray();
-	DrawArrays::draw(drawArrayID, GL_TRIANGLES);
-	DrawArrays::deleteArray(drawArrayID);
+	DrawArrays::drawTempArray(GL_TRIANGLES);
       }
     }
     markers.clear();
@@ -1607,15 +1586,12 @@ void			HUDRenderer::renderBox(SceneRenderer&)
     // draw altitude mark
     hudColor3fv(hudColor);
 
-    drawArrayID = DrawArrays::newArray();
-    DrawArrays::beginArray(drawArrayID);
+    DrawArrays::beginTempArray();
 
     DrawArrays::addVertex((float) (centerx + maxMotionSize), (float) centery);
     DrawArrays::addVertex((float) (centerx + maxMotionSize - 5), (float) centery);
 
-    DrawArrays::finishArray();
-    DrawArrays::draw(drawArrayID, GL_LINES);
-    DrawArrays::deleteArray(drawArrayID);
+    DrawArrays::drawTempArray(GL_LINES);
 
     // figure out which marker is closest to center
     int baseMark = int(altitude) / 5;
@@ -1641,8 +1617,7 @@ void			HUDRenderer::renderBox(SceneRenderer&)
 				(float)centery - basey, 0.0f);
     y = smooth ? 0.0f : -0.5f;
 
-    drawArrayID = DrawArrays::newArray();
-    DrawArrays::beginArray(drawArrayID);
+    DrawArrays::beginTempArray();
 
     for (i = minMark; i <= maxMark; i++) {
       DrawArrays::addVertex(0.0f, y);
@@ -1650,9 +1625,7 @@ void			HUDRenderer::renderBox(SceneRenderer&)
       y += altitudeMarkSpacing;
     }
 
-    DrawArrays::finishArray();
-    DrawArrays::draw(drawArrayID, GL_LINES);
-    DrawArrays::deleteArray(drawArrayID);
+    DrawArrays::drawTempArray(GL_LINES);
 
     // back to our regular rendering mode
     if (smooth) {

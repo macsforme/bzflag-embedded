@@ -106,8 +106,7 @@ QuadWallSceneNode::Geometry::~Geometry()
 
 #define	RENDER(_e)							\
   for (int k = 0, t = 0; t < dt; t++) {					\
-    unsigned int drawArrayID = DrawArrays::newArray();			\
-    DrawArrays::beginArray(drawArrayID);				\
+    DrawArrays::beginTempArray();					\
     for (int s = 0; s < dsq; k += 4, s++) {				\
       _e(k+ds+1);							\
       _e(k);								\
@@ -140,9 +139,7 @@ QuadWallSceneNode::Geometry::~Geometry()
 	_e(k);								\
 	k++;								\
     }									\
-    DrawArrays::finishArray();						\
-    DrawArrays::draw(drawArrayID, GL_TRIANGLE_STRIP);			\
-    DrawArrays::deleteArray(drawArrayID);				\
+    DrawArrays::drawTempArray(GL_TRIANGLE_STRIP);			\
   }
 #define EMITV(_i)	DrawArrays::addVertex(vertex[_i][0], vertex[_i][1], vertex[_i][2]);
 #define EMITVT(_i)	DrawArrays::addTexCoord(uv[_i][0], uv[_i][1]) ;	\

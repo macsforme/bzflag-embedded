@@ -18,6 +18,8 @@
 #endif
 #include <cstring>
 
+#define TEMP_DRAW_ARRAY_ID (unsigned int) -1
+
 // initialize static class members
 unsigned int DrawArrays::constructingID = 0;
 struct DrawArrays::DrawArrayData DrawArrays::constructingDrawArray;
@@ -45,6 +47,16 @@ void DrawArrays::beginArray(unsigned int index)
   assert(arrayIDs.find(index) != arrayIDs.end());
 #endif
   constructingID = index;
+
+  constructingDrawArray.colors.clear();
+  constructingDrawArray.texCoords.clear();
+  constructingDrawArray.normals.clear();
+  constructingDrawArray.vertices.clear();
+}
+
+void DrawArrays::beginTempArray()
+{
+  constructingID = TEMP_DRAW_ARRAY_ID;
 
   constructingDrawArray.colors.clear();
   constructingDrawArray.texCoords.clear();
@@ -219,6 +231,118 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
   glVertexPointer(3, GL_FLOAT, 12 * sizeof(GLfloat), arrayIDs[index].buffer + 9);
 
   glDrawArrays(mode, 0, arrayIDs[index].elements);
+}
+
+void DrawArrays::drawTempArray(GLenum mode)
+{
+#ifdef DEBUG
+  assert(constructingID == TEMP_DRAW_ARRAY_ID);
+#endif
+
+  bool useColors;
+  bool useTexCoords;
+  bool useNormals;
+
+  // the number of colors, texcoords, and normals (if used)
+  // need to fit the number of vertices specified
+  if(constructingDrawArray.colors.size() > 0) {
+#ifdef DEBUG
+    assert(constructingDrawArray.colors.size() / 4 == constructingDrawArray.vertices.size() / 3);
+#endif
+    useColors = true;
+  } else {
+    useColors = false;
+  }
+
+  if(constructingDrawArray.texCoords.size() > 0) {
+#ifdef DEBUG
+    assert(constructingDrawArray.texCoords.size() / 2 == constructingDrawArray.vertices.size() / 3);
+#endif
+    useTexCoords = true;
+  } else {
+    useTexCoords = false;
+  }
+
+  if(constructingDrawArray.normals.size() > 0) {
+#ifdef DEBUG
+    assert(constructingDrawArray.normals.size() / 3 == constructingDrawArray.vertices.size() / 3);
+#endif
+    useNormals = true;
+  } else {
+    useNormals = false;
+  }
+
+  const size_t elements = constructingDrawArray.vertices.size() / 3;
+  GLfloat* const buffer = new GLfloat[elements * 12];
+
+  if(elements == 0) {
+    // this is allowed, but doesn't do anything
+    constructingID = 0;
+    delete[] buffer;
+
+    return;
+  }
+
+  for(size_t i = 0; i < elements * 12; ++i)
+    buffer[i] = 0.0f;
+
+  for(size_t i = 0; i < constructingDrawArray.colors.size(); ++i)
+    buffer[i / 4 * 12 + i % 4 + 0] = constructingDrawArray.colors[i];
+  for(size_t i = 0; i < constructingDrawArray.texCoords.size(); ++i)
+    buffer[i / 2 * 12 + i % 2 + 4] = constructingDrawArray.texCoords[i];
+  for(size_t i = 0; i < constructingDrawArray.normals.size(); ++i)
+    buffer[i / 3 * 12 + i % 3 + 6] = constructingDrawArray.normals[i];
+  for(size_t i = 0; i < constructingDrawArray.vertices.size(); ++i)
+    buffer[i / 3 * 12 + i % 3 + 9] = constructingDrawArray.vertices[i];
+
+#ifdef DEBUG
+  // GL_TRIANGLES requires vertices be divisible by 3, and
+  // GL_LINES requires they be divisible by 2
+  unsigned int primitiveCoordinates = 1;
+  if(mode == GL_TRIANGLES)
+    primitiveCoordinates = 3;
+  else if(mode == GL_LINES)
+    primitiveCoordinates = 2;
+  assert(elements % primitiveCoordinates == 0);
+
+  // GL_LINES and GL_LINE_STRIP require 2+ vertices, and everything
+  // else except GL_POINTS requires 3+ vertices
+  unsigned int minimumCoordinates = 1;
+  if(mode == GL_LINES || mode == GL_LINE_STRIP)
+    minimumCoordinates = 2;
+  else if(mode != GL_POINTS)
+    minimumCoordinates = 3;
+  assert(elements >= minimumCoordinates);
+#endif
+
+  // set required state and draw
+  if(useColors)
+    glEnableClientState(GL_COLOR_ARRAY);
+  else
+    glDisableClientState(GL_COLOR_ARRAY);
+
+  if(useTexCoords)
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  else
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+  if(useNormals)
+    glEnableClientState(GL_NORMAL_ARRAY);
+  else
+    glDisableClientState(GL_NORMAL_ARRAY);
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glColorPointer(4, GL_FLOAT, 12 * sizeof(GLfloat), buffer + 0);
+  glTexCoordPointer(2, GL_FLOAT, 12 * sizeof(GLfloat), buffer + 4);
+  glNormalPointer(GL_FLOAT, 12 * sizeof(GLfloat), buffer + 6);
+  glVertexPointer(3, GL_FLOAT, 12 * sizeof(GLfloat), buffer + 9);
+
+  glDrawArrays(mode, 0, elements);
+
+  delete[] buffer;
+
+  constructingID = 0;
 }
 
 void DrawArrays::deleteArray(unsigned int index)

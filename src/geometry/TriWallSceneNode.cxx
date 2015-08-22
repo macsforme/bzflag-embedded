@@ -98,17 +98,14 @@ TriWallSceneNode::Geometry::~Geometry()
 
 #define	RENDER(_e)							\
   for (int k = 0, t = 0; t < de; t++) {					\
-    unsigned int drawArrayID = DrawArrays::newArray();			\
-    DrawArrays::beginArray(drawArrayID);				\
+    DrawArrays::beginTempArray();					\
     int e = de - t;							\
     for (int s = 0; s < e; k++, s++) {					\
       _e(k+e+1);							\
       _e(k);								\
     }									\
     _e(k);								\
-    DrawArrays::finishArray();						\
-    DrawArrays::draw(drawArrayID, GL_TRIANGLE_STRIP);			\
-    DrawArrays::deleteArray(drawArrayID);				\
+    DrawArrays::drawTempArray(GL_TRIANGLE_STRIP);			\
     k++;								\
   }
 #define EMITV(_i)	DrawArrays::addVertex(vertex[_i][0], vertex[_i][1], vertex[_i][2]);

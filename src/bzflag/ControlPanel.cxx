@@ -541,8 +541,7 @@ void			ControlPanel::render(SceneRenderer& _renderer)
   // nice border
   glColor4f(teamColor[0], teamColor[1], teamColor[2],outlineOpacity );
 
-  unsigned int drawArrayID = DrawArrays::newArray();
-  DrawArrays::beginArray(drawArrayID);
+  DrawArrays::beginTempArray();
 
   long xpos;
   long ypos;
@@ -589,10 +588,7 @@ void			ControlPanel::render(SceneRenderer& _renderer)
     DrawArrays::addVertex((float) xpos, (float) ypos);
   }
 
-  DrawArrays::finishArray();
-  DrawArrays::draw(drawArrayID, GL_LINE_LOOP);
-
-  DrawArrays::deleteArray(drawArrayID);
+  DrawArrays::drawTempArray(GL_LINE_LOOP);
 
   if (BZDBCache::blend)
 	  glDisable(GL_BLEND);

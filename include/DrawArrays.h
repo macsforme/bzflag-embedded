@@ -30,6 +30,8 @@ public:
 
   static void beginArray(unsigned int index);
 
+  static void beginTempArray();
+
   static void addColor(float r, float g, float b, float a = 1.0f);
   static void addTexCoord(float s, float t);
   static void addNormal(float x, float y, float z);
@@ -38,6 +40,8 @@ public:
   static void finishArray();
 
   static void draw(unsigned int index, GLenum mode = GL_TRIANGLES);
+
+  static void drawTempArray(GLenum mode = GL_TRIANGLES); // equivalent to finish, draw, and delete
 
   static void deleteArray(unsigned int index);
 
