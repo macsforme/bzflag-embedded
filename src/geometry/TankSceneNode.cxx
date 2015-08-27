@@ -1268,6 +1268,8 @@ void TankSceneNode::TankRenderNode::renderPart(TankPart part)
   if (!overide || params.draw)
   {
     // draw the part
+    glShadeModel(GL_SMOOTH);
+
     DrawArrays::draw(drawArrayID);
 
     // add to the triangle count

@@ -28,10 +28,6 @@ int TankGeometryUtils::buildMedTurret ( void )
 
 
   doNormal3f(-0.741466f, 0.000000f, -0.670990f);
-  doTexCoord2f(0.559f, 0.339f);
-  doVertex3f(-0.456f, -1.060f, 1.040f);
-
-  doNormal3f(-0.741466f, 0.000000f, -0.670990f);
   doTexCoord2f(1.080f, 0.169f);
   doVertex3f(-1.370f, 0.764f, 2.050f);
 
@@ -39,6 +35,10 @@ int TankGeometryUtils::buildMedTurret ( void )
   doTexCoord2f(0.996f, -0.132f);
   doVertex3f(-0.456f, 1.080f, 1.040f);
 
+  doNormal3f(-0.741466f, 0.000000f, -0.670990f);
+  doTexCoord2f(0.559f, 0.339f);
+  doVertex3f(-0.456f, -1.060f, 1.040f);
+
 
   doNormal3f(-0.741466f, 0.000000f, -0.670990f);
   doTexCoord2f(1.080f, 0.169f);
@@ -54,16 +54,16 @@ int TankGeometryUtils::buildMedTurret ( void )
 
 
   doNormal3f(-0.238331f, -0.968849f, 0.067303f);
-  doTexCoord2f(0.546f, 0.156f);
-  doVertex3f(0.001f, -1.110f, 1.940f);
-
-  doNormal3f(-0.238331f, -0.968849f, 0.067303f);
   doTexCoord2f(0.866f, 0.402f);
   doVertex3f(-1.370f, -0.765f, 2.050f);
 
   doNormal3f(-0.238331f, -0.968849f, 0.067303f);
   doTexCoord2f(0.559f, 0.339f);
   doVertex3f(-0.456f, -1.060f, 1.040f);
+
+  doNormal3f(-0.238331f, -0.968849f, 0.067303f);
+  doTexCoord2f(0.546f, 0.156f);
+  doVertex3f(0.001f, -1.110f, 1.940f);
 
 
   doNormal3f(0.079953f, 0.000000f, 0.996799f);
@@ -78,18 +78,18 @@ int TankGeometryUtils::buildMedTurret ( void )
   doTexCoord2f(1.080f, 0.169f);
   doVertex3f(-1.370f, 0.764f, 2.050f);
 
+
+  doNormal3f(0.079953f, 0.000000f, 0.996799f);
+  doTexCoord2f(1.080f, 0.169f);
+  doVertex3f(-1.370f, 0.764f, 2.050f);
+
+  doNormal3f(0.079953f, 0.000000f, 0.996799f);
+  doTexCoord2f(0.546f, 0.156f);
+  doVertex3f(0.001f, -1.110f, 1.940f);
 
   doNormal3f(0.079953f, 0.000000f, 0.996799f);
   doTexCoord2f(0.812f, -0.134f);
   doVertex3f(0.007f, 1.110f, 1.940f);
-
-  doNormal3f(0.079953f, 0.000000f, 0.996799f);
-  doTexCoord2f(1.080f, 0.169f);
-  doVertex3f(-1.370f, 0.764f, 2.050f);
-
-  doNormal3f(0.079953f, 0.000000f, 0.996799f);
-  doTexCoord2f(0.546f, 0.156f);
-  doVertex3f(0.001f, -1.110f, 1.940f);
 
   doNormal3f(0.991228f, 0.000000f, -0.132164f);
   doTexCoord2f(0.107f, -0.009f);
@@ -105,10 +105,6 @@ int TankGeometryUtils::buildMedTurret ( void )
 
 
   doNormal3f(0.991228f, 0.000000f, -0.132164f);
-  doTexCoord2f(0.457f, -0.429f);
-  doVertex3f(1.580f, 0.435f, 1.790f);
-
-  doNormal3f(0.991228f, 0.000000f, -0.132164f);
   doTexCoord2f(0.224f, -0.178f);
   doVertex3f(1.580f, -0.434f, 1.790f);
 
@@ -116,6 +112,10 @@ int TankGeometryUtils::buildMedTurret ( void )
   doTexCoord2f(0.617f, -0.559f);
   doVertex3f(1.480f, 0.516f, 1.040f);
 
+  doNormal3f(0.991228f, 0.000000f, -0.132164f);
+  doTexCoord2f(0.457f, -0.429f);
+  doVertex3f(1.580f, 0.435f, 1.790f);
+
 
   doNormal3f(0.094595f, 0.000000f, 0.995516f);
   doTexCoord2f(0.224f, -0.178f);
@@ -131,16 +131,16 @@ int TankGeometryUtils::buildMedTurret ( void )
 
 
   doNormal3f(0.094595f, 0.000000f, 0.995516f);
-  doTexCoord2f(0.812f, -0.134f);
-  doVertex3f(0.007f, 1.110f, 1.940f);
-
-  doNormal3f(0.094595f, 0.000000f, 0.995516f);
   doTexCoord2f(0.546f, 0.156f);
   doVertex3f(0.001f, -1.110f, 1.940f);
 
   doNormal3f(0.094595f, 0.000000f, 0.995516f);
   doTexCoord2f(0.457f, -0.429f);
   doVertex3f(1.580f, 0.435f, 1.790f);
+
+  doNormal3f(0.094595f, 0.000000f, 0.995516f);
+  doTexCoord2f(0.812f, -0.134f);
+  doVertex3f(0.007f, 1.110f, 1.940f);
 
   doNormal3f(0.149229f, -0.988713f, 0.013310f);
   doTexCoord2f(0.458f, 0.244f);
