@@ -186,7 +186,9 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
   assert(arrayIDs[index].buffer != NULL);
 #endif
 
-  if(arrayIDs[index].elements == 0)
+  const DrawArrayInfo& arrayInfo = arrayIDs[index];
+
+  if(arrayInfo.elements == 0)
     // this is allowed, but doesn't do anything
     return;
 
@@ -195,7 +197,7 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
   unsigned int primitiveCoordinates = 1;
   if(mode == GL_TRIANGLES)
     primitiveCoordinates = 3;
-  assert(arrayIDs[index].elements % primitiveCoordinates == 0);
+  assert(arrayInfo.elements % primitiveCoordinates == 0);
 
   // GL_LINES and GL_LINE_STRIP require 2+ vertices, and everything
   // else except GL_POINTS requires 3+ vertices
@@ -204,33 +206,33 @@ void DrawArrays::draw(unsigned int index, GLenum mode)
     minimumCoordinates = 2;
   else if(mode != GL_POINTS)
     minimumCoordinates = 3;
-  assert(arrayIDs[index].elements >= minimumCoordinates);
+  assert(arrayInfo.elements >= minimumCoordinates);
 #endif
 
   // set required state and draw
-  if(arrayIDs[index].useColors)
+  if(arrayInfo.useColors)
     glEnableClientState(GL_COLOR_ARRAY);
   else
     glDisableClientState(GL_COLOR_ARRAY);
 
-  if(arrayIDs[index].useTexCoords)
+  if(arrayInfo.useTexCoords)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   else
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-  if(arrayIDs[index].useNormals)
+  if(arrayInfo.useNormals)
     glEnableClientState(GL_NORMAL_ARRAY);
   else
     glDisableClientState(GL_NORMAL_ARRAY);
 
   glEnableClientState(GL_VERTEX_ARRAY);
 
-  glColorPointer(4, GL_FLOAT, 12 * sizeof(GLfloat), arrayIDs[index].buffer + 0);
-  glTexCoordPointer(2, GL_FLOAT, 12 * sizeof(GLfloat), arrayIDs[index].buffer + 4);
-  glNormalPointer(GL_FLOAT, 12 * sizeof(GLfloat), arrayIDs[index].buffer + 6);
-  glVertexPointer(3, GL_FLOAT, 12 * sizeof(GLfloat), arrayIDs[index].buffer + 9);
+  glColorPointer(4, GL_FLOAT, 12 * sizeof(GLfloat), arrayInfo.buffer + 0);
+  glTexCoordPointer(2, GL_FLOAT, 12 * sizeof(GLfloat), arrayInfo.buffer + 4);
+  glNormalPointer(GL_FLOAT, 12 * sizeof(GLfloat), arrayInfo.buffer + 6);
+  glVertexPointer(3, GL_FLOAT, 12 * sizeof(GLfloat), arrayInfo.buffer + 9);
 
-  glDrawArrays(mode, 0, arrayIDs[index].elements);
+  glDrawArrays(mode, 0, arrayInfo.elements);
 }
 
 void DrawArrays::drawTempArray(GLenum mode)
