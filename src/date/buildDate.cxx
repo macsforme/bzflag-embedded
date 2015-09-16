@@ -132,8 +132,14 @@ const char*		getAppVersion()
   if (!appVersion.size()){
     std::ostringstream	appVersionStream;
     // TODO add current platform, release, cpu, etc
-    appVersionStream << getMajorMinorRevVersion() << "." << getBuildDate()
-	<< "-" << BZ_BUILD_TYPE << "-" << BZ_BUILD_OS;
+    appVersionStream <<
+      getMajorMinorRevVersion()
+	<< "." << getBuildDate()
+	<< "-" << BZ_BUILD_TYPE
+#ifdef HAVE_GLES
+	<< "-embedded"
+#endif
+	<< "-" << BZ_BUILD_OS;
 #ifdef HAVE_SDL
     appVersionStream << "-SDL";
 #ifdef HAVE_SDL2
