@@ -341,6 +341,12 @@ void OpenGLTexture::bind()
 
 int OpenGLTexture::getBestFormat(int _width, int _height, const GLvoid* pixels)
 {
+#ifdef HAVE_GLES
+  // quell warnings
+  _width = _width; _height = _height; if(pixels == pixels) { }
+
+  return GL_RGBA;
+#else
   // see if all pixels are achromatic
   const GLubyte* scan = (const GLubyte*)pixels;
   const int size = _width * _height;
@@ -357,7 +363,6 @@ int OpenGLTexture::getBestFormat(int _width, int _height, const GLvoid* pixels)
       break;
   const bool useAlpha = (i != size);
 
-#ifndef HAVE_GLES
     bool useIntensity = false;
     if (useLuminance) {
       scan = (const GLubyte*)pixels;
@@ -368,12 +373,12 @@ int OpenGLTexture::getBestFormat(int _width, int _height, const GLvoid* pixels)
     }
     if (useIntensity)
       return GL_INTENSITY;
-#endif
 
   // pick internal format
   return (useLuminance ?
 		(useAlpha ? GL_LUMINANCE_ALPHA : GL_LUMINANCE) :
 		(useAlpha ? GL_RGBA : GL_RGB));
+#endif
 }
 
 
