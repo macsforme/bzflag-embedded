@@ -18,7 +18,11 @@
 #include "common.h"
 
 #ifdef HAVE_GLES
-#  include <GLES/gl.h>
+#  ifdef __IPHONEOS__
+#    include <OpenGLES/ES1/gl.h>
+#  else
+#    include <GLES/gl.h>
+#  endif
 #  define __USE_SDL_GLES__
 #  include <GLES/glu.h>
 #else

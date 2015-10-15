@@ -17,10 +17,16 @@
 /* Include the auto-generated IDE information header */
 #include "buildinfo.h"
 
+/* Use OpenGL ES */
+#define HAVE_GLES 1
+
+/* Build for iOS */
+#define __IPHONEOS__ 1
+
 /* BZFlag System Environment */
-#if defined __llvm__ && defined __x86_64__
+#if defined __llvm__ && (defined __x86_64__ || defined __ARM_64BIT_STATE)
   #define BZ_BUILD_ARCH_STR "64"
-#elif defined __llvm__ && defined __i386__
+#elif defined __llvm__ && (defined __i386__ || defined __ARM_32BIT_STATE)
   #define BZ_BUILD_ARCH_STR "32"
 #endif
 #ifdef DEBUG
@@ -28,7 +34,11 @@
 #else
   #define BZ_BUILD_DEBUG_STR ""
 #endif
-#define BZ_BUILD_OS "mac" BZ_BUILD_ARCH_STR "xc" XCODE_VERSION BZ_BUILD_DEBUG_STR
+#ifdef HAVE_GLES
+#  define BZ_BUILD_OS "iOS" BZ_BUILD_ARCH_STR "xc" XCODE_VERSION BZ_BUILD_DEBUG_STR
+#else
+#  define BZ_BUILD_OS "mac" BZ_BUILD_ARCH_STR "xc" XCODE_VERSION BZ_BUILD_DEBUG_STR
+#endif
 
 /* If it's a debug build, use the debug rendering features */
 #ifdef DEBUG

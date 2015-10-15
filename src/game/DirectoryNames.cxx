@@ -26,8 +26,17 @@
 #  include <direct.h>
 #  include <shlobj.h>
 #endif  // _WIN32
-#if defined(__APPLE__)
-#  include <CoreServices/CoreServices.h>
+#ifdef __APPLE__
+#  ifdef __IPHONEOS__
+#    include "bzfgl.h"
+#    ifdef HAVE_SDL2_SDL_H
+#      include <SDL2/SDL_filesystem.h>
+#    else
+#      include "SDL_filesystem.h"
+#    endif
+#  else
+#    include <CoreServices/CoreServices.h>
+#  endif
 #endif
 
 
@@ -92,6 +101,16 @@ std::string		getConfigDirName( const char* versionName )
   return name;
 
 #elif defined(__APPLE__)
+#ifdef __IPHONEOS__
+  char* namePointer = SDL_GetPrefPath("Tim Riker", "BZFlag");
+  if(namePointer != NULL) {
+    std::string name = namePointer;
+    SDL_free(namePointer);
+    return name;
+  }
+  return "";
+
+#else
   std::string name;
   ::FSRef libraryFolder;
   ::OSErr err;
@@ -109,6 +128,7 @@ std::string		getConfigDirName( const char* versionName )
     }
   }
   return name;
+#endif
 #else
   std::string name;
   struct passwd *pwent = getpwuid(getuid());
