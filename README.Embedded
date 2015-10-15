@@ -1,0 +1,84 @@
+///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// Introduction /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+This is a port of BZFlag (http://bzflag.org) to embedded devices using OpenGL
+ES. Most of the original features were preserved. The few exceptions were for
+functionality that either doesn't exist or doesn't make sense to implement
+on OpenGL ES (draw lists, stipples, automatic texture coordinate generation,
+etc.).
+
+This port was done by Joshua Bodine. Unlike contributions to the main BZFlag
+repository, the copyright for all changes related to this port IS NOT turned
+over to Tim Riker and is retained by the author. An attempt was made to
+indicate in the header of any affected files that the copyright on any
+changes was retained. Tim Riker retains copyright of the source code for the
+original BZFlag project.
+
+This source code is licensed under the GNU Lesser Public License (LGPL)
+version 2.1, just like the main BZFlag source code.
+
+
+///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////// Building ///////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+This project targets multiple embedded device platforms. Instructions for
+building for several devices/platforms are below. You may have success getting
+this project to build for other devices/platforms as well. If you do, please
+let the author know so instructions can be included here.
+
+
+//////////////////////////////// Raspberry Pi /////////////////////////////////
+
+The following is an example of commands to build on a Raspberry Pi with a
+barebones Raspbian installation. If you have already installed some packages
+on your system, you may not need to install all of the listed packages.
+
+$ # Install packages
+$ sudo apt-get install autoconf libtool libc-ares-dev libcurl4-openssl-dev \
+	libncurses-dev mercurial
+
+$ # Set up the compiler flags
+$ export CPPFLAGS=-I/opt/vc/include
+$ export LDFLAGS=-L/opt/vc/lib
+
+$ # Until a newer version of SDL 2 is available, it must be built from source
+$ hg clone http://hg.libsdl.org/SDL
+$ cd SDL
+$ ./autogen.sh
+$ ./configure
+$ make -j`nproc`
+$ sudo make install
+$ cd ..
+
+$ # Retrieve and build GLU for OpenGL ES
+$ git clone https://github.com/macsforme/glues.git
+$ cd glues
+$ ./autogen.sh
+$ ./configure
+$ make -j`nproc`
+$ sudo make install
+$ cd ..
+
+$ # Retrieve and build BZFlag for Embedded Devices
+$ git clone https://github.com/macsforme/bzflag-embedded.git
+$ cd bzflag-embedded
+$ ./autogen.sh
+$ ./configure --with-gles
+$ make -j`nproc`
+$ sudo make install
+
+IMPORTANT: Prior to running bzflag, to avoid a possible system lockup,
+increase the amount of memory allocated to the GPU by navigating in the menus
+to Menu->Prefrences->Raspberry Pi Configuration->Performance->GPU Memory and
+increasing the amount (128MB might be enough). You may then run BZFlag from
+the source directory or from the installation directory. Please note that
+running from X11 does not currently appear to work, so you may have to run
+BZFlag from the command line interface.
+
+
+///////////////////////////////////// iOS /////////////////////////////////////
+
+
+////////////////////////////// GCW Zero on Linux //////////////////////////////
