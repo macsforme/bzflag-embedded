@@ -218,6 +218,16 @@ bool OpenGLTexture::setupImage(const GLubyte* pixels)
   imageMemory = unaligned;
 
   // note if internal format uses alpha
+#ifdef HAVE_GLES
+  // we only use GL_RGBA, so test each pixel value for transparancy
+  const GLubyte* scan = (const GLubyte*)pixels;
+  const int size = width * height;
+  int i;
+  for (i = 0; i < size; scan += 4, i++)
+    if (scan[3] != 0xff)
+      break;
+  alpha = (i != size);
+#else
   switch (internalFormat) {
     case GL_LUMINANCE_ALPHA:
 #if defined(GL_LUMINANCE4_ALPHA4)
@@ -237,6 +247,7 @@ bool OpenGLTexture::setupImage(const GLubyte* pixels)
       alpha = false;
       break;
   }
+#endif
 
   return true;
 }
