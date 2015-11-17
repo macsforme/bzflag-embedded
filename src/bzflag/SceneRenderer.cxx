@@ -1031,6 +1031,36 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
       glEnable(GL_DEPTH_TEST);
     }
 
+#ifdef HAVE_GLES
+    // mask out the ground plane in the depth buffer
+    // this is a workaround for Mesa bug that breaks custom clipping planes
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+    const float maskExtent = BZDBCache::worldSize / 2.0f + BZDB.evalInt(StateDatabase::BZDB_SHOCKOUTRADIUS);
+
+    GLfloat maskArray[] = {
+      -maskExtent, -maskExtent, 0.0f,
+      maskExtent, -maskExtent, 0.0f,
+      maskExtent, maskExtent, 0.0f,
+      -maskExtent, maskExtent, 0.0f
+    };
+
+    glVertexPointer(3, GL_FLOAT, 0, maskArray);
+
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDisable(GL_TEXTURE_2D); // we want to mask out a solid plane
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    glEnable(GL_TEXTURE_2D);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+#endif
+
 #ifndef HAVE_GLES
     if (useHiddenLineOn) {
       glEnable(GL_POLYGON_OFFSET_FILL);
