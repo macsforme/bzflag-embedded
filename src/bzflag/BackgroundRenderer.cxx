@@ -24,6 +24,7 @@
 #include "TextureMatrix.h"
 #include "ParseColor.h"
 #include "BZDBCache.h"
+#include "DrawArrays.h"
 #ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
 #endif
@@ -618,13 +619,7 @@ void BackgroundRenderer::renderGroundEffects(SceneRenderer& renderer,
     // kilometers away.
     if (BZDBCache::blend && BZDBCache::lighting &&
 		!drawingMirror && BZDBCache::drawGroundLights) {
-#ifdef HAVE_GLES
-      // no luck yet figuring out how to replicate the automatic
-      // texture coordinate generation below in OpenGL ES
-      if (false) {
-#else
       if (BZDBCache::tesselation && (renderer.useQuality() >= 3)) {
-#endif
 //	  (BZDB.get(StateDatabase::BZDB_FOGMODE) == "none")) {
 	// not really tesselation, but it is tied to the "Best" lighting,
 	// avoid on foggy maps, because the blending function accumulates
@@ -1661,11 +1656,6 @@ void BackgroundRenderer::drawGroundReceivers(SceneRenderer& renderer)
 
 void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
 {
-#ifdef HAVE_GLES
-  // no luck yet figuring out how to replicate the automatic
-  // texture coordinate generation below in OpenGL ES
-  renderer.getNumAllLights(); // quell warning
-#else
   const float minLuminance = 0.02f;
   static const int receiverSlices = 32;
   static const float receiverRingSize = 0.5f;	// meters
@@ -1710,18 +1700,8 @@ void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
   float fogColor[4];
   setupBlackFog(fogColor);
 
-  // lazy way to get texcoords
-  if (useTexture) {
-    const float repeat = BZDB.eval("groundHighResTexRepeat");
-    const float sPlane[4] = { repeat, 0.0f, 0.0f, 0.0f };
-    const float tPlane[4] = { 0.0f, repeat, 0.0f, 0.0f };
-    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-    glTexGenfv(GL_S, GL_EYE_PLANE, sPlane);
-    glTexGenfv(GL_T, GL_EYE_PLANE, tPlane);
-    glEnable(GL_TEXTURE_GEN_S);
-    glEnable(GL_TEXTURE_GEN_T);
-  }
+  // setup texture coordinates
+  const float repeat = BZDB.eval("groundHighResTexRepeat");
 
   glPushMatrix();
   int i, j;
@@ -1772,14 +1752,16 @@ void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
     float outerColor[3];
 
     // draw ground receiver, computing lighting at each vertex ourselves
-    glBegin(GL_TRIANGLE_FAN);
+    DrawArrays::beginTempArray();
     {
       // center point
       innerColor[0] = I * baseColor[0];
       innerColor[1] = I * baseColor[1];
       innerColor[2] = I * baseColor[2];
-      glColor3fv(innerColor);
-      glVertex2f(0.0f, 0.0f);
+      DrawArrays::addColor(innerColor[0], innerColor[1], innerColor[2]);
+      if (useTexture)
+	DrawArrays::addTexCoord(pos[0] * repeat, pos[1] * repeat);
+      DrawArrays::addVertex(0.0f, 0.0f);
 
       // inner ring
       d = hypotf(receiverRingSize, pos[2]);
@@ -1788,14 +1770,17 @@ void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
       outerColor[0] = I * baseColor[0];
       outerColor[1] = I * baseColor[1];
       outerColor[2] = I * baseColor[2];
-      glColor3fv(outerColor);
       outerSize = receiverRingSize;
       for (j = 0; j <= receiverSlices; j++) {
-	glVertex2f(outerSize * angle[j][0],
+	DrawArrays::addColor(outerColor[0], outerColor[1], outerColor[2]);
+        if(useTexture)
+	  DrawArrays::addTexCoord((pos[0] + outerSize * angle[j][0]) * repeat,
+				  (pos[1] + outerSize * angle[j][1]) * repeat);
+	DrawArrays::addVertex(outerSize * angle[j][0],
 		   outerSize * angle[j][1]);
       }
     }
-    glEnd();
+    DrawArrays::drawTempArray(GL_TRIANGLE_FAN);
     triangleCount += receiverSlices;
 
     bool moreRings = true;
@@ -1817,16 +1802,22 @@ void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
       outerColor[1] = I * baseColor[1];
       outerColor[2] = I * baseColor[2];
 
-      glBegin(GL_QUAD_STRIP);
+      DrawArrays::beginTempArray();
       {
 	for (j = 0; j <= receiverSlices; j++) {
-	  glColor3fv(innerColor);
-	  glVertex2f(angle[j][0] * innerSize, angle[j][1] * innerSize);
-	  glColor3fv(outerColor);
-	  glVertex2f(angle[j][0] * outerSize, angle[j][1] * outerSize);
+	  DrawArrays::addColor(innerColor[0], innerColor[1], innerColor[2]);
+          if(useTexture)
+	    DrawArrays::addTexCoord((pos[0] + angle[j][0] * innerSize) * repeat,
+				    (pos[1] + angle[j][1] * innerSize) * repeat);
+	  DrawArrays::addVertex(angle[j][0] * innerSize, angle[j][1] * innerSize);
+	  DrawArrays::addColor(outerColor[0], outerColor[1], outerColor[2]);
+          if(useTexture)
+	    DrawArrays::addTexCoord((pos[0] + angle[j][0] * outerSize) * repeat,
+				    (pos[1] + angle[j][1] * outerSize) * repeat);
+	  DrawArrays::addVertex(angle[j][0] * outerSize, angle[j][1] * outerSize);
 	}
       }
-      glEnd();
+      DrawArrays::drawTempArray(GL_TRIANGLE_STRIP);
     }
     triangleCount += (receiverSlices * 2 * (i - 2));
 
@@ -1834,13 +1825,7 @@ void BackgroundRenderer::drawAdvancedGroundReceivers(SceneRenderer& renderer)
   }
   glPopMatrix();
 
-  if (useTexture) {
-    glDisable(GL_TEXTURE_GEN_S);
-    glDisable(GL_TEXTURE_GEN_T);
-  }
-
   glFogfv(GL_FOG_COLOR, fogColor);
-#endif
 }
 
 
