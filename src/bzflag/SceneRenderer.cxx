@@ -1042,12 +1042,13 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     const float maskExtent = BZDBCache::worldSize / 2.0f + BZDB.evalInt(StateDatabase::BZDB_SHOCKOUTRADIUS);
+    const float maskHeight = -0.1f; // so it doesn't stop flat bases from being drawn
 
     GLfloat maskArray[] = {
-      -maskExtent, -maskExtent, 0.0f,
-      maskExtent, -maskExtent, 0.0f,
-      maskExtent, maskExtent, 0.0f,
-      -maskExtent, maskExtent, 0.0f
+      -maskExtent, -maskExtent, maskHeight,
+      maskExtent, -maskExtent, maskHeight,
+      maskExtent, maskExtent, maskHeight,
+      -maskExtent, maskExtent, maskHeight
     };
 
     glVertexPointer(3, GL_FLOAT, 0, maskArray);
