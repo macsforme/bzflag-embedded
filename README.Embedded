@@ -73,9 +73,7 @@ IMPORTANT: Prior to running bzflag, to avoid a possible system lockup,
 increase the amount of memory allocated to the GPU by navigating in the menus
 to Menu->Prefrences->Raspberry Pi Configuration->Performance->GPU Memory and
 increasing the amount (128MB might be enough). You may then run BZFlag from
-the source directory or from the installation directory. Please note that
-running from X11 does not currently appear to work, so you may have to run
-BZFlag from the command line interface.
+the source directory or from the installation directory.
 
 
 ///////////////////////////////////// iOS /////////////////////////////////////
