@@ -80,5 +80,63 @@ BZFlag from the command line interface.
 
 ///////////////////////////////////// iOS /////////////////////////////////////
 
+This project should build and run on iOS devices, but functionality is
+currently very limited. Some of the current issues are:
+
+* Joining a server by hostname fails (servers must be specified by IP address)
+* No HTTPS support for fetching the server list or message of the day
+* Client always runs at 480x320, regardless of native display resolution
+* No input abilities (no touch controls, and external keyboards may not work)
+
+These flaws currently make the client unusuable on iOS devices for most
+purposes, so iOS support should currently be considered as strictly
+proof-of-concept.
+
+Xcode 7.0 or later is required to build. To retrieve the source code, clone
+the repository using Git in the following manner:
+
+$ git clone https://github.com/macsforme/bzflag-embedded.git
+
+Once you have done so, navigate to the Xcode project at
+bzflag-embedded/Xcode/BZFlag.xcodeproj, and double-click on it to open it.
+
+IMPORTANT: the first time you build the project, a build script will attempt
+to download all the necessary dependencies from the internet. Make sure you
+are connected to the internet for this purpose.
+
+You may build the project for any of the available device simulators, or you
+may build it to run on a physical device. To make your selection, first plug
+in your device if applicable, then click on the "BZFlag" button near the top
+left area of the project window. Under the "BZFlag" target, select the device
+or simulator you are targeting. Once you have made your selection, proceed
+with building the project.
+
+IMPORTANT: to deploy the application to an iOS device, you must have a signing
+identity set up in Xcode. If you already have a paid developer account with
+Apple, you may use your existing signing identity. If not, you may create a
+free signing identity to test the application on devices that you own. Select
+the BZFlag project in the navigator pane, and then near the top left of the
+center pane, select the BZFlag application target from the drop-down menu.
+Make sure the "General" tab is selected, then find the setting for "Team," and
+then below that click the button for "Fix Issue." Add your Apple ID to Xcode,
+and then follow the prompts to create a "Personal Team," which you can then
+use to sign the application. Once you build the project and attempt to run it,
+Xcode may report an error related to security. To correct this, unlock your
+device and navigate to the Settings application. Select "General," then
+"Profile" near the bottom, then select your profile and configure your device
+to trust that profile. You should then be able to run the application. If
+Xcode reports an error regarding the device being locked even though it is
+not, try disconnecting and re-connecting the device, or try shutting down both
+Xcode and the device and then starting them both up again.
+
+To test the application, click on the "BZFlag" button near the top left area
+of the project window, then scroll to the bottom and select "Edit Scheme..."
+Under the "Run" settings and under the "Arguments" tab, specify the callsign,
+password (optionally), server and port you wish to join, and that you wish to
+join with the observer team. For example,
+"-team observer PlayerName:PlayerPassword@123.123.123.123:5154" Unlock your
+device and run the application from Xcode. It should start running on your
+device and connect to the server you specified.
+
 
 ////////////////////////////// GCW Zero on Linux //////////////////////////////
