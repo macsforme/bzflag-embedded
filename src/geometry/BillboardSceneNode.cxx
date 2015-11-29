@@ -23,9 +23,7 @@
 // common implementation headers
 #include "BZDBCache.h"
 #include "TextureManager.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 // local implementation headers
 #include "ViewFrustum.h"

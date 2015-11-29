@@ -24,9 +24,7 @@
 #include "StateDatabase.h"
 #include "BZDBCache.h"
 #include "OpenGLMaterial.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 #include "TextureManager.h"
 
 // local implementation headers

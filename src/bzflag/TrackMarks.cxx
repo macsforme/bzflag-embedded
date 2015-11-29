@@ -25,9 +25,7 @@
 #include "SceneDatabase.h"
 #include "SceneRenderer.h"
 #include "SceneNode.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 
 using namespace TrackMarks;

@@ -30,9 +30,7 @@
 #include "ParseColor.h"
 #include "BZDBCache.h"
 #include "MeshSceneNode.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 /* FIXME - local implementation dependancies */
 #include "BackgroundRenderer.h"

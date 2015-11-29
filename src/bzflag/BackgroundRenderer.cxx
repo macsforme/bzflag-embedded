@@ -25,9 +25,7 @@
 #include "ParseColor.h"
 #include "BZDBCache.h"
 #include "DrawArrays.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 // local headers
 #include "daylight.h"

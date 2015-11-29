@@ -27,9 +27,7 @@
 #include "BoxBuilding.h"
 #include "PyramidBuilding.h"
 #include "MeshObstacle.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 // local implementation headers
 #include "LocalPlayer.h"

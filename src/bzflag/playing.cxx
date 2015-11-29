@@ -61,9 +61,7 @@
 #include "version.h"
 #include "WordFilter.h"
 #include "ZSceneDatabase.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 // local implementation headers
 #include "AutoPilot.h"

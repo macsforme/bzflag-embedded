@@ -26,9 +26,7 @@
 #include "StateDatabase.h"
 #include "SceneRenderer.h"
 #include "BZDBCache.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 // local implementation headers
 #include "ViewFrustum.h"

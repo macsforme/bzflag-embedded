@@ -22,9 +22,7 @@
 #include "FontManager.h"
 #include "BZDBCache.h"
 #include "DrawArrays.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 /* local implementation headers */
 #include "LocalPlayer.h"

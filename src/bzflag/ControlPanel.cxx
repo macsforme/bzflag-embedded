@@ -32,9 +32,7 @@
 #include "global.h"
 #include "OpenGLUtils.h"
 #include "DrawArrays.h"
-#ifdef HAVE_GLES
 #include "OpenGLESStubs.h"
-#endif
 
 /* local implementation headers */
 #include "SceneRenderer.h"
