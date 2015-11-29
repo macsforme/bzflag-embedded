@@ -148,6 +148,10 @@ void EighthDimShellNode::ShellRenderNode::render()
   }
 
 #ifndef HAVE_GLES
+  // right now there's no equivalent functionality implemented for OpenGL ES,
+  // but it's unclear whether this code would ever be reached... possibly
+  // only while driving with Oscillation Overthruster through a mesh with
+  // proper inside and outside points?
   glPolygonMode(GL_BACK, GL_LINE);
   glLineWidth(3.0f);
 
