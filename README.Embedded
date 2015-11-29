@@ -135,6 +135,3 @@ join with the observer team. For example,
 "-team observer PlayerName:PlayerPassword@123.123.123.123:5154" Unlock your
 device and run the application from Xcode. It should start running on your
 device and connect to the server you specified.
-
-
-////////////////////////////// GCW Zero on Linux //////////////////////////////
