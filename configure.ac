@@ -2,6 +2,9 @@ dnl                   C O N F I G U R E . A C
 dnl BZFlag
 dnl Copyright (c) 1993-2016 Tim Riker
 dnl
+dnl embedded port changes
+dnl Copyright (c) 2015 Joshua Bodine
+dnl
 dnl This package is free software;  you can redistribute it and/or
 dnl modify it under the terms of the license found in the file
 dnl named COPYING that should have accompanied this file.

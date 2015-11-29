@@ -1,6 +1,9 @@
 /* bzflag
  * Copyright (c) 1993-2016 Tim Riker
  *
+ * embedded port changes
+ * Copyright (c) 2015 Joshua Bodine
+ *
  * This package is free software;  you can redistribute it and/or
  * modify it under the terms of the license found in the file
  * named COPYING that should have accompanied this file.
