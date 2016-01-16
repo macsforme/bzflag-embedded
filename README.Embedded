@@ -37,11 +37,7 @@ on your system, you may not need to install all of the listed packages.
 
 $ # Install packages
 $ sudo apt-get install autoconf libtool libc-ares-dev libcurl4-openssl-dev \
-	libncurses-dev mercurial
-
-$ # Set up the compiler flags
-$ export CPPFLAGS=-I/opt/vc/include
-$ export LDFLAGS=-L/opt/vc/lib
+	libncurses-dev mercurial libudev-dev
 
 $ # Until a newer version of SDL 2 is available, it must be built from source
 $ hg clone http://hg.libsdl.org/SDL
@@ -51,6 +47,10 @@ $ ./configure
 $ make -j`nproc`
 $ sudo make install
 $ cd ..
+
+$ # Set up the compiler flags
+$ export CPPFLAGS=-I/opt/vc/include
+$ export LDFLAGS=-L/opt/vc/lib
 
 $ # Retrieve and build GLU for OpenGL ES
 $ git clone https://github.com/macsforme/glues.git
@@ -74,6 +74,11 @@ increase the amount of memory allocated to the GPU by navigating in the menus
 to Menu->Prefrences->Raspberry Pi Configuration->Performance->GPU Memory and
 increasing the amount (128MB might be enough). You may then run BZFlag from
 the source directory or from the installation directory.
+
+Note that there is a known issue where if you run BZFlag from the command line
+outside of X, after the game exits the command line is frozen and does not
+accept any further input. You may need to kill the session using another
+terminal.
 
 
 ///////////////////////////////////// iOS /////////////////////////////////////
