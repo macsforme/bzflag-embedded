@@ -3,7 +3,7 @@
  * Writen By Jeffrey Myers
  *
  * embedded port changes
- * Copyright (c) 2015 Joshua Bodine
+ * Copyright (c) 2015-2016 Joshua Bodine
  *
  * This package is free software;  you can redistribute it and/or
  * modify it under the terms of the license found in the file
