@@ -90,6 +90,8 @@ class QuadWallSceneNode : public WallSceneNode {
 	int		ds, dt;
 	int		dsq, dsr;
 	const GLfloat*	normal;
+	unsigned int drawArrayID;
+	unsigned int shadowDrawArrayID;
       public:
 	GLfloat3Array	vertex;
 	GLfloat2Array	uv;

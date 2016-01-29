@@ -69,6 +69,8 @@ class TriWallSceneNode : public WallSceneNode {
 	int		style;
 	int		de;
 	const GLfloat*	normal;
+	unsigned int drawArrayID;
+	unsigned int shadowDrawArrayID;
       public:
 	GLfloat3Array	vertex;
 	GLfloat2Array	uv;

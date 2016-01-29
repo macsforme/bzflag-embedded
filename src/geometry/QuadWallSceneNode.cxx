@@ -52,6 +52,8 @@ QuadWallSceneNode::Geometry::Geometry(QuadWallSceneNode* _wall,
 				dsq(uCount / 4),
 				dsr(uCount % 4),
 				normal(_normal),
+				drawArrayID(INVALID_DRAW_ARRAY_ID),
+				shadowDrawArrayID(INVALID_DRAW_ARRAY_ID),
 				vertex((uCount+1) * (vCount+1)),
 				uv((uCount+1) * (vCount+1))
 {
@@ -99,12 +101,36 @@ QuadWallSceneNode::Geometry::Geometry(QuadWallSceneNode* _wall,
     }
   }
 
+  // build default draw array
+  drawArrayID = DrawArrays::newArray();
+  DrawArrays::beginArray(drawArrayID);
+
+  int defaultIndices[] = { 2, 0, 3, 1 };
+  for(int i = 0; i < 4; ++i) {
+    DrawArrays::addTexCoord(uv[defaultIndices[i]][0], uv[defaultIndices[i]][1]);
+    DrawArrays::addVertex(vertex[defaultIndices[i]][0], vertex[defaultIndices[i]][1], vertex[defaultIndices[i]][2]);
+  }
+
+  DrawArrays::finishArray();
+
+  // build default shadow draw array
+  shadowDrawArrayID = DrawArrays::newArray();
+  DrawArrays::beginArray(shadowDrawArrayID);
+
+  DrawArrays::addVertex(vertex[2][0], vertex[2][1], vertex[2][2]);
+  DrawArrays::addVertex(vertex[0][0], vertex[0][1], vertex[0][2]);
+  DrawArrays::addVertex(vertex[2 + 1][0], vertex[2 + 1][1], vertex[2 + 1][2]);
+  DrawArrays::addVertex(vertex[1][0], vertex[1][1], vertex[1][2]);
+
+  DrawArrays::finishArray();
+
   triangles = 2 * (uCount * vCount);
 }
 
 QuadWallSceneNode::Geometry::~Geometry()
 {
-  // do nothing
+  DrawArrays::deleteArray(drawArrayID);
+  DrawArrays::deleteArray(shadowDrawArrayID);
 }
 
 #define	RENDER(_e)							\
@@ -152,10 +178,15 @@ void			QuadWallSceneNode::Geometry::render()
 {
   wall->setColor();
   glNormal3f(normal[0], normal[1], normal[2]);
-  if (style >= 2) {
-    drawVT();
+  if(ds == 1 && dt == 1) {
+    // standard... use the draw array
+    DrawArrays::draw(drawArrayID, GL_TRIANGLE_STRIP);
   } else {
-    drawV();
+    if (style >= 2) {
+      drawVT();
+    } else {
+      drawV();
+    }
   }
   addTriangleCount(triangles);
   return;
@@ -163,33 +194,38 @@ void			QuadWallSceneNode::Geometry::render()
 
 void			QuadWallSceneNode::Geometry::renderShadow()
 {
-  int last = (ds + 1) * dt;
-  GLfloat drawArray[] = {
-    vertex[last][0],
-    vertex[last][1],
-    vertex[last][2],
+  if(ds == 1 && dt == 1) {
+    // standard... use the shadow draw array
+    DrawArrays::draw(shadowDrawArrayID, GL_TRIANGLE_STRIP);
+  } else {
+    int last = (ds + 1) * dt;
+    GLfloat drawArray[] = {
+      vertex[last][0],
+      vertex[last][1],
+      vertex[last][2],
 
-    vertex[0][0],
-    vertex[0][1],
-    vertex[0][2],
+      vertex[0][0],
+      vertex[0][1],
+      vertex[0][2],
 
-    vertex[last + ds][0],
-    vertex[last + ds][1],
-    vertex[last + ds][2],
+      vertex[last + ds][0],
+      vertex[last + ds][1],
+      vertex[last + ds][2],
 
-    vertex[ds][0],
-    vertex[ds][1],
-    vertex[ds][2]
-  };
+      vertex[ds][0],
+      vertex[ds][1],
+      vertex[ds][2]
+    };
 
-  glDisableClientState(GL_COLOR_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  glDisableClientState(GL_NORMAL_ARRAY);
-  glEnableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
 
-  glVertexPointer(3, GL_FLOAT, 0, drawArray);
+    glVertexPointer(3, GL_FLOAT, 0, drawArray);
 
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  }
 
   addTriangleCount(2);
 }
