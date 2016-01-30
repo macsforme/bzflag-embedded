@@ -1055,11 +1055,13 @@ void SceneRenderer::renderScene(bool UNUSED(_lastFrame), bool UNUSED(_sameFrame)
     glVertexPointer(3, GL_FLOAT, 0, maskArray);
 
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDisable(GL_TEXTURE_2D); // we want to mask out a solid plane
+    if(BZDBCache::texture)
+      glDisable(GL_TEXTURE_2D); // we want to mask out a solid plane
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-    glEnable(GL_TEXTURE_2D);
+    if(BZDBCache::texture)
+      glEnable(GL_TEXTURE_2D);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 #endif
 
