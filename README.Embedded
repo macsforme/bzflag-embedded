@@ -86,7 +86,6 @@ terminal.
 This project should build and run on iOS devices, but functionality is
 currently very limited. Some of the current issues are:
 
-* Joining a server by hostname fails (servers must be specified by IP address)
 * No HTTPS support for fetching the server list or message of the day
 * Client always runs at 480x320, regardless of native display resolution
 * No input abilities (no touch controls, and external keyboards may not work)
