@@ -84,13 +84,12 @@ terminal.
 ///////////////////////////////////// iOS /////////////////////////////////////
 
 This project should build and run on iOS devices, but functionality is
-currently very limited. Some of the current issues are:
-
-* No input abilities (no touch controls, and external keyboards may not work)
-
-These flaws currently make the client unusuable on iOS devices for most
-purposes, so iOS support should currently be considered as strictly
-proof-of-concept.
+currently limited. There are only basic touch controls: swipe up/down/left/
+right for arrows, tap with one finger for return, tap with two fingers for
+escape and tap with three fingers to toggle the on-screen keyboard. These
+controls are mostly only useful for observer mode at this point. However, it
+is possible to use the on-screen keyboard to manipulate the settings, chat
+with people and send server commands.
 
 Xcode 7.0 or later is required to build. To retrieve the source code, clone
 the repository using Git in the following manner:
@@ -129,11 +128,6 @@ Xcode reports an error regarding the device being locked even though it is
 not, try disconnecting and re-connecting the device, or try shutting down both
 Xcode and the device and then starting them both up again.
 
-To test the application, click on the "BZFlag" button near the top left area
-of the project window, then scroll to the bottom and select "Edit Scheme..."
-Under the "Run" settings and under the "Arguments" tab, specify the callsign,
-password (optionally), server and port you wish to join, and that you wish to
-join with the observer team. For example,
-"-team observer PlayerName:PlayerPassword@123.123.123.123:5154" Unlock your
-device and run the application from Xcode. It should start running on your
-device and connect to the server you specified.
+To test the application, run it from Xcode. After launching for the first time
+from Xcode, the application should remain on your device and you can launch it
+like any other application.
