@@ -26,6 +26,7 @@
 
 // system interface headers
 #include <map>
+#include <utility>
 
 class SDLDisplay : public BzfDisplay {
  public:
@@ -50,6 +51,9 @@ class SDLDisplay : public BzfDisplay {
   int  min_height;
   int  x;
   int  y;
+  // touch input stuff
+  mutable std::map< SDL_FingerID, std::pair<float, float> > fingerOrigins;
+  mutable unsigned int tapCount;
 };
 
 #endif // BZF_SDLDISPLAY_H

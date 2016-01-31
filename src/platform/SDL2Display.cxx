@@ -19,7 +19,7 @@
 static int mx = 0;
 static int my = 0;
 
-SDLDisplay::SDLDisplay() : min_width(), min_height(),  x(), y()
+SDLDisplay::SDLDisplay() : min_width(), min_height(),  x(), y(), tapCount(0)
 {
   if (SDL_VideoInit(NULL) < 0) {
     printf("Could not initialize SDL Video subsystem: %s.\n", SDL_GetError());
@@ -512,6 +512,97 @@ bool SDLDisplay::setupEvent(BzfEvent& _event, const SDL_Event& event) const
       break;
     }
     break;
+
+  case SDL_FINGERDOWN:
+    if (fingerOrigins.find(event.tfinger.fingerId) != fingerOrigins.end())
+      break;
+
+    // track the finger origin for swipes
+    fingerOrigins[event.tfinger.fingerId] = std::make_pair(event.tfinger.x, event.tfinger.y);
+
+    break;
+
+  case SDL_FINGERUP:
+  {
+    if (fingerOrigins.find(event.tfinger.fingerId) == fingerOrigins.end())
+      break;
+
+    // see if the motion was enough for a swipe
+    int windowWidth, windowHeight;
+    const_cast<SDLDisplay*>(this)->getWindowSize(windowWidth, windowHeight);
+    const float windowRatio = (float) windowWidth / (float) windowHeight;
+    const float xMovement = (event.tfinger.x - fingerOrigins[event.tfinger.fingerId].first) * windowRatio;
+    const float yMovement = event.tfinger.y - fingerOrigins[event.tfinger.fingerId].second;
+
+    fingerOrigins.erase(fingerOrigins.find(event.tfinger.fingerId));
+
+    // has to go at least some distance, otherwise it's a tap
+    const float touchSwipeDist = 0.1f;
+    if (fabs(xMovement) < touchSwipeDist && fabs(yMovement) < touchSwipeDist) {
+      if(fingerOrigins.size() > 0) {
+	// other fingers still down
+	++tapCount;
+      } else {
+	// last finger... it's a tap (3 fingers maximum)
+	if (tapCount < 2) {
+	  SDL_Event fakeEvent;
+	  fakeEvent.type = SDL_KEYDOWN;
+	  fakeEvent.key.keysym.mod = KMOD_NONE;
+	  if (tapCount == 0) {
+	    fakeEvent.key.keysym.sym = SDLK_RETURN;
+	    fakeEvent.key.keysym.scancode = SDL_SCANCODE_RETURN;
+	  } else {
+	    fakeEvent.key.keysym.sym = SDLK_ESCAPE;
+	    fakeEvent.key.keysym.scancode = SDL_SCANCODE_ESCAPE;
+	  }
+	  SDL_PushEvent(&fakeEvent);
+	  fakeEvent.type = SDL_KEYUP;
+	  SDL_PushEvent(&fakeEvent);
+	} else if (tapCount == 2) {
+	  if (! SDL_IsScreenKeyboardShown(SDL_GL_GetCurrentWindow()))
+	    SDL_StartTextInput();
+	  else
+	    SDL_StopTextInput();
+	}
+
+	tapCount = 0;
+      }
+      break;
+    }
+
+    // can't be diagonal
+    const float touchSwipePriorityMultiplier = 2.0f;
+    if (fabs(fabs(xMovement) - fabs(yMovement)) / touchSwipeDist < touchSwipePriorityMultiplier)
+      if (fabs(xMovement) >= touchSwipeDist && fabs(yMovement) >= touchSwipeDist)
+	break;
+
+    // push a keyboard arrow event
+    SDL_Event fakeEvent;
+    fakeEvent.type = SDL_KEYDOWN;
+    fakeEvent.key.keysym.mod = KMOD_NONE;
+    if (fabs(xMovement) > fabs(yMovement)) {
+      if (xMovement > 0.0f) {
+	fakeEvent.key.keysym.sym = SDLK_RIGHT;
+	fakeEvent.key.keysym.scancode = SDL_SCANCODE_RIGHT;
+      } else {
+	fakeEvent.key.keysym.sym = SDLK_LEFT;
+	fakeEvent.key.keysym.scancode = SDL_SCANCODE_LEFT;
+      }
+    } else {
+      if (yMovement > 0.0f) {
+	fakeEvent.key.keysym.sym = SDLK_DOWN;
+	fakeEvent.key.keysym.scancode = SDL_SCANCODE_DOWN;
+      } else {
+	fakeEvent.key.keysym.sym = SDLK_UP;
+	fakeEvent.key.keysym.scancode = SDL_SCANCODE_UP;
+      }
+    }
+    SDL_PushEvent(&fakeEvent);
+    fakeEvent.type = SDL_KEYUP;
+    SDL_PushEvent(&fakeEvent);
+
+    break;
+  }
 
   default:
     return false;
