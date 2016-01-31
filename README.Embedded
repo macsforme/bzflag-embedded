@@ -86,7 +86,6 @@ terminal.
 This project should build and run on iOS devices, but functionality is
 currently very limited. Some of the current issues are:
 
-* Client always runs at 480x320, regardless of native display resolution
 * No input abilities (no touch controls, and external keyboards may not work)
 
 These flaws currently make the client unusuable on iOS devices for most
