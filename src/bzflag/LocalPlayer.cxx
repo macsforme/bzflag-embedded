@@ -68,7 +68,13 @@ LocalPlayer::LocalPlayer(const PlayerId& _id,
     shots[i] = NULL;
   // set input method
   if (BZDB.isTrue("allowInputChange")) {
+#ifdef HAVE_GLES
+    // most embedded platforms don't support mouse warps, so we would always
+    // spawn with the tank rotating... set default input to keyboard instead
+    inputMethod = Keyboard;
+#else
     inputMethod = Mouse;
+#endif
   } else {
     setInputMethod(BZDB.get("activeInputDevice"));
   }
