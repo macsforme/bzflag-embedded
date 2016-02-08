@@ -645,8 +645,12 @@ void			ControlPanel::resize()
 
   switch (static_cast<int>(BZDB.eval("cpanelfontsize"))) {
   case 0: { // auto
-    const bool useBigFont = (messageAreaPixels[2] / 100.0f) > 10.0f;
-    fontSize = useBigFont ? 12.0f : 8.0f;
+    if (messageAreaPixels[2] <= 400)
+      fontSize = 6;
+    else if (messageAreaPixels[2] <= 1000)
+      fontSize = 8;
+    else
+      fontSize = 12;
     break;
     }
   case 1: // tiny

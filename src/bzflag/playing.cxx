@@ -6862,6 +6862,7 @@ static void		playingLoop()
 // game initialization
 //
 
+#ifndef HAVE_GLES
 static float		timeConfiguration(bool useZBuffer)
 {
   // prepare depth buffer if requested
@@ -7029,6 +7030,7 @@ static void		findFastConfiguration()
 
   sceneRenderer->setSceneDatabase(NULL);
 }
+#endif
 
 static void		defaultErrorCallback(const char* msg)
 {
@@ -7248,9 +7250,25 @@ void			startPlaying(BzfDisplay* _display,
   // if no configuration file try to determine rendering settings
   // that yield reasonable performance.
   if (!startupInfo.hasConfiguration) {
+#ifdef HAVE_GLES
+    // we have our own default settings for the embedded branch
+    printError("creating default settings;  please wait...");
+    BZDB.set("blend", "1");
+    BZDB.set("smooth", "0");
+    BZDB.set("lighting", "0");
+    TextureManager& tm = TextureManager::instance();
+    tm.setMaxFilter(OpenGLTexture::Max);
+    BZDB.set("texture", tm.getMaxFilterName());
+    sceneRenderer->setQuality(2);
+    BZDB.set("dither", "0");
+    BZDB.set("shadows", "0");
+    BZDB.set("radarStyle", "3");
+    dumpResources();
+#else
     printError("testing performance;  please wait...");
     findFastConfiguration();
     dumpResources();
+#endif
   }
 
   static const GLfloat	zero[3] = { 0.0f, 0.0f, 0.0f };

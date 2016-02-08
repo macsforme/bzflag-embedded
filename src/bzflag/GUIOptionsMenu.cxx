@@ -394,7 +394,7 @@ void			GUIOptionsMenu::resize(int _width, int _height)
     ((HUDuiList*)listHUD[i++])->setIndex(BZDB.isTrue("coloredradarshots") ? 1
 					 : 0);
     ((HUDuiList*)listHUD[i++])->setIndex(static_cast<int>
-					 (BZDB.eval("linedradarshots")));
+					 (BZDB.eval("linedradarshots")) / 6);
     ((HUDuiList*)listHUD[i++])->setIndex(static_cast<int>
 					 (BZDB.eval("sizedradarshots")));
     ((HUDuiList*)listHUD[i++])->setIndex(static_cast<int>(BZDB.eval("leadingShotLine")));
@@ -491,7 +491,7 @@ void			GUIOptionsMenu::callback(HUDuiControl* w, const void* data)
       break;
 
     case 'l':
-      BZDB.set("linedradarshots", TextUtils::format("%d", list->getIndex()));
+      BZDB.set("linedradarshots", TextUtils::format("%d", list->getIndex() * 6));
       break;
 
     case 's':
