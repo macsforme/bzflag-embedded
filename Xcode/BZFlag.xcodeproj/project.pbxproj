@@ -393,6 +393,7 @@
 		03C8EF1A167AC55800BB07A5 /* libdate.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0357A8D51670B9930056C938 /* libdate.a */; };
 		03C8EF1E167AC59A00BB07A5 /* libtank.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0357A81B1670B2990056C938 /* libtank.a */; };
 		03D479281BC73EED00C906A8 /* ServerListFilterMenu.cxx in Sources */ = {isa = PBXBuildFile; fileRef = 03D479261BC73EED00C906A8 /* ServerListFilterMenu.cxx */; };
+		03DD3FD61C6B3B660009B16C /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03DD3FD51C6B3B660009B16C /* Images.xcassets */; };
 		03E42D1B1B322E2C006EE763 /* AUTHORS in CopyFiles */ = {isa = PBXBuildFile; fileRef = 03D88EA71670CB1300725DBE /* AUTHORS */; };
 		03E42D1C1B322E2C006EE763 /* ChangeLog in CopyFiles */ = {isa = PBXBuildFile; fileRef = 03D88EA81670CB1300725DBE /* ChangeLog */; };
 		03E42D1D1B322E2C006EE763 /* COPYING in CopyFiles */ = {isa = PBXBuildFile; fileRef = 03E42D191B322DFC006EE763 /* COPYING */; };
@@ -1416,6 +1417,7 @@
 		03D88EAB1670CB1300725DBE /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README; path = ../README; sourceTree = "<group>"; };
 		03D88EAC1670CB1300725DBE /* README.MacOSX */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README.MacOSX; path = ../README.MacOSX; sourceTree = "<group>"; };
 		03D926DF166C67EF00DDDBEB /* BZFlag.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = BZFlag.icns; sourceTree = "<group>"; };
+		03DD3FD51C6B3B660009B16C /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		03E42D121B321DF2006EE763 /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = data; path = ../data; sourceTree = "<group>"; };
 		03E42D191B322DFC006EE763 /* COPYING */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = COPYING; path = ../COPYING; sourceTree = "<group>"; };
 		03F8B2811C5E18AB0048520F /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
@@ -1735,6 +1737,7 @@
 				03D926DF166C67EF00DDDBEB /* BZFlag.icns */,
 				030DF52417424A4D00B3815C /* buildinfo.h */,
 				03C5E79716707857005A26C4 /* config.h */,
+				03DD3FD51C6B3B660009B16C /* Images.xcassets */,
 			);
 			name = Xcode;
 			sourceTree = "<group>";
@@ -3229,6 +3232,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0397B73B1BC1D639001C04D2 /* CustomZoneSample.bzw in Resources */,
+				03DD3FD61C6B3B660009B16C /* Images.xcassets in Resources */,
 				0397B73C1BC1E72B001C04D2 /* flagStay.bzw in Resources */,
 				038DA4FA1BB64A9E0009F369 /* README.HoldTheFlag.txt in Resources */,
 				038DA5161BB64DCA0009F369 /* README.rabbitTimer.txt in Resources */,
@@ -3294,7 +3298,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# update buildinfo.h with the build information if necessary\nXCODE_VERSION=`echo $XCODE_VERSION_ACTUAL | awk '{print $1 + 0}'`\n\nif [[ ! -f buildinfo.h || `cat buildinfo.h | grep XCODE_VERSION | grep $XCODE_VERSION` == \"\" ]] ; then\necho \\#define XCODE_VERSION \\\"$XCODE_VERSION\\\" > buildinfo.h\nfi\n\n# re-create the plist with the build version information\nMAJOR_VERSION=`sed -e 's/#.*define.*BZ_MAJOR_VERSION[^0-9]*\\(.*\\)/\\1/' -e t -e d < ../src/date/buildDate.cxx`\nMINOR_VERSION=`sed -e 's/#.*define.*BZ_MINOR_VERSION[^0-9]*\\(.*\\)/\\1/' -e t -e d < ../src/date/buildDate.cxx`\nREV=`sed -e 's/#.*define.*BZ_REV[^0-9]*\\(.*\\)/\\1/' -e t -e d < ../src/date/buildDate.cxx`\n\nBZFLAG_VERSION=\"$MAJOR_VERSION.$MINOR_VERSION.$REV\"\n\necho \"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\n<!DOCTYPE plist PUBLIC \\\"-//Apple//DTD PLIST 1.0//EN\\\" \\\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\\\">\n<plist version=\\\"1.0\\\">\n<dict>\n<key>CFBundleDevelopmentRegion</key>\n<string>en</string>\n<key>CFBundleExecutable</key>\n<string>\\$(EXECUTABLE_NAME)</string>\n<key>CFBundleIdentifier</key>\n<string>org.BZFlag</string>\n<key>CFBundleInfoDictionaryVersion</key>\n<string>6.0</string>\n<key>CFBundleName</key>\n<string>BZFlag</string>\n<key>CFBundlePackageType</key>\n<string>APPL</string>\n<key>CFBundleShortVersionString</key>\n<string>$BZFLAG_VERSION</string>\n<key>CFBundleSignature</key>\n<string>????</string>\n<key>CFBundleVersion</key>\n<string>$BZFLAG_VERSION</string>\n<key>LSApplicationCategoryType</key>\n<string>public.app-category.arcade-games</string>\n<key>NSHumanReadableCopyright</key>\n<string>Copyright (c) 1993-2016 Tim Riker</string>\n<key>NSHighResolutionCapable</key>\n<true/>\n<key>UISupportedInterfaceOrientations</key>\n<array>\n<string>UIInterfaceOrientationLandscapeLeft</string>\n<string>UIInterfaceOrientationLandscapeRight</string>\n</array>\n<key>UILaunchStoryboardName</key>\n<string>LaunchScreen</string>\n</dict>\n</plist>\" > BZFlag-Info.plist";
+			shellScript = "# update buildinfo.h with the build information if necessary\nXCODE_VERSION=`echo $XCODE_VERSION_ACTUAL | awk '{print $1 + 0}'`\n\nif [[ ! -f buildinfo.h || `cat buildinfo.h | grep XCODE_VERSION | grep $XCODE_VERSION` == \"\" ]] ; then\necho \\#define XCODE_VERSION \\\"$XCODE_VERSION\\\" > buildinfo.h\nfi\n\n# re-create the plist with the build version information\nMAJOR_VERSION=`sed -e 's/#.*define.*BZ_MAJOR_VERSION[^0-9]*\\(.*\\)/\\1/' -e t -e d < ../src/date/buildDate.cxx`\nMINOR_VERSION=`sed -e 's/#.*define.*BZ_MINOR_VERSION[^0-9]*\\(.*\\)/\\1/' -e t -e d < ../src/date/buildDate.cxx`\nREV=`sed -e 's/#.*define.*BZ_REV[^0-9]*\\(.*\\)/\\1/' -e t -e d < ../src/date/buildDate.cxx`\n\nBZFLAG_VERSION=\"$MAJOR_VERSION.$MINOR_VERSION.$REV\"\n\necho \"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\n<!DOCTYPE plist PUBLIC \\\"-//Apple//DTD PLIST 1.0//EN\\\" \\\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\\\">\n<plist version=\\\"1.0\\\">\n<dict>\n<key>CFBundleDevelopmentRegion</key>\n<string>en</string>\n<key>CFBundleExecutable</key>\n<string>\\$(EXECUTABLE_NAME)</string>\n<key>CFBundleIcons</key>\n<dict/>\n<key>CFBundleIcons~ipad</key>\n<dict/>\n<key>CFBundleIdentifier</key>\n<string>org.BZFlag</string>\n<key>CFBundleInfoDictionaryVersion</key>\n<string>6.0</string>\n<key>CFBundleName</key>\n<string>BZFlag</string>\n<key>CFBundlePackageType</key>\n<string>APPL</string>\n<key>CFBundleShortVersionString</key>\n<string>$BZFLAG_VERSION</string>\n<key>CFBundleSignature</key>\n<string>????</string>\n<key>CFBundleVersion</key>\n<string>$BZFLAG_VERSION</string>\n<key>LSApplicationCategoryType</key>\n<string>public.app-category.arcade-games</string>\n<key>NSHumanReadableCopyright</key>\n<string>Copyright (c) 1993-2016 Tim Riker</string>\n<key>NSHighResolutionCapable</key>\n<true/>\n<key>UISupportedInterfaceOrientations</key>\n<array>\n<string>UIInterfaceOrientationLandscapeLeft</string>\n<string>UIInterfaceOrientationLandscapeRight</string>\n</array>\n<key>UILaunchStoryboardName</key>\n<string>LaunchScreen</string>\n</dict>\n</plist>\" > BZFlag-Info.plist";
 		};
 		03E42D171B32274A006EE763 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4201,6 +4205,8 @@
 		03C8EE3F167ABE2300BB07A5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -4228,6 +4234,8 @@
 		03C8EE40167ABE2300BB07A5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
