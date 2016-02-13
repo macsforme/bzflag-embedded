@@ -26,6 +26,7 @@
 
 // system interface headers
 #include <map>
+#include <vector>
 #include <utility>
 
 class SDLDisplay : public BzfDisplay {
@@ -54,6 +55,8 @@ class SDLDisplay : public BzfDisplay {
   // touch input stuff
   mutable std::map< SDL_FingerID, std::pair<float, float> > fingerOrigins;
   mutable unsigned int tapCount;
+  mutable std::vector<SDL_Keycode> swipes;
+  mutable int messagePanelIndex;
 };
 
 #endif // BZF_SDLDISPLAY_H
