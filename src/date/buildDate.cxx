@@ -52,6 +52,10 @@
 #  define BZ_REV		4
 #endif
 
+#ifndef BZ_EMBEDDED_VERSION
+#  define BZ_EMBEDDED_VERSION	1
+#endif
+
 // DEVEL | RC# | STABLE | MAINT
 #ifndef BZ_BUILD_TYPE
 #  define BZ_BUILD_TYPE		"MAINT"
@@ -137,11 +141,12 @@ const char*		getAppVersion()
     // TODO add current platform, release, cpu, etc
     appVersionStream <<
       getMajorMinorRevVersion()
+#ifdef HAVE_GLES
+	<< ".embedded"
+	<< "." << BZ_EMBEDDED_VERSION
+#endif
 	<< "." << getBuildDate()
 	<< "-" << BZ_BUILD_TYPE
-#ifdef HAVE_GLES
-	<< "-embedded"
-#endif
 	<< "-" << BZ_BUILD_OS;
 #ifdef HAVE_SDL
     appVersionStream << "-SDL";
