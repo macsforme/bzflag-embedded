@@ -645,7 +645,7 @@ void			ControlPanel::resize()
 
   switch (static_cast<int>(BZDB.eval("cpanelfontsize"))) {
   case 0: { // auto
-    if (messageAreaPixels[2] <= 400)
+    if (messageAreaPixels[2] <= 550)
       fontSize = 6;
     else if (messageAreaPixels[2] <= 1000)
       fontSize = 8;
