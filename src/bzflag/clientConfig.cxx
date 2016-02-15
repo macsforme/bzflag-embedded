@@ -293,12 +293,10 @@ void updateConfigFile(void)
     // URL gets reset back to the new HTTPS URL
     BZDB.set("list", BZDB.getDefault("list"));
   
-  case 5:
-    break;
-
   case 5: // undefined version upgrade
     BZDB.unset("flagLists");  // removed in embedded branch
     BZDB.unset("lightLists"); // removed in embedded branch
+    break;
 
   default: // hm, we don't know about this one...
 	  printError(TextUtils::format("Config file is tagged version \"%d\", "
