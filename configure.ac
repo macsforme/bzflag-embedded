@@ -963,7 +963,7 @@ case $host_os in
     irix*)
 	irix=true
 	;;
-    linux*|kfreebsd*|freebsd*|netbsd*|openbsd*|dragonfly*|gnu*)
+    linux*|kfreebsd*|freebsd*|netbsd*|openbsd*|dragonfly*|gnu*|elf)
 	linux=true
 	;;
     macos|darwin*)
