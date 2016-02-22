@@ -59,7 +59,7 @@ void	  MainMenu::createControls()
   textureLabel->setString("BZFlag");
   listHUD.push_back(textureLabel);
 
-  label = createLabel("Up/Down arrows to move, Enter to select, Esc to dismiss");
+  label = createLabel("Up/Down arrows to move, Start to select, Select to dismiss");
   listHUD.push_back(label);
 
   join = createLabel("Join Game");

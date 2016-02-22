@@ -45,8 +45,8 @@
 const float		HUDRenderer::altitudeOffset = 20.0f;
 const GLfloat		HUDRenderer::black[3] = { 0.0f, 0.0f, 0.0f };
 std::string		HUDRenderer::headingLabel[36];
-std::string		HUDRenderer::restartLabelFormat("Press %s to start");
-std::string		HUDRenderer::resumeLabel("Press Pause to resume");
+std::string		HUDRenderer::restartLabelFormat("Press Start to start");
+std::string		HUDRenderer::resumeLabel("Press X to resume");
 std::string		HUDRenderer::autoPilotLabel("AutoPilot on");
 std::string		HUDRenderer::cancelDestructLabel("Press Destruct to cancel");
 std::string		HUDRenderer::gameOverLabel("GAME OVER");
@@ -532,7 +532,7 @@ void HUDRenderer::AddLockOnMarker(const fvec3& pos, std::string name,
 
 void			HUDRenderer::setRestartKeyLabel(const std::string& label)
 {
-  restartLabel = TextUtils::format(BundleMgr::getCurrentBundle()->getLocalString(restartLabelFormat).c_str(), label.c_str());
+  restartLabel = TextUtils::format(BundleMgr::getCurrentBundle()->getLocalString(restartLabelFormat).c_str());
   FontManager &fm = FontManager::instance();
   restartLabelWidth = fm.getStrLength(bigFontFace, bigFontSize, restartLabel);
 }
