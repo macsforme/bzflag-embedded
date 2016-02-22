@@ -142,7 +142,7 @@ const char*		getAppVersion()
     appVersionStream <<
       getMajorMinorRevVersion()
 #ifdef HAVE_GLES
-	<< ".embedded"
+	<< ".gcw0"
 	<< "." << BZ_EMBEDDED_VERSION
 #endif
 	<< "." << getBuildDate()
