@@ -191,6 +191,9 @@ void TankGeometryMgr::buildDrawArrays()
   } else if (quality > 3) {
     quality = 3;
   }
+  // for GCW Zero, use no more than medium quality
+  if (quality > 1)
+    quality = 1;
   int wheelDivs = divisionLevels[quality][0];
   int treadDivs = divisionLevels[quality][1];
 
