@@ -80,6 +80,10 @@ cURLManager::cURLManager()
   if (result != CURLE_OK)
     logDebugMessage(1,"CURLOPT_WRITEDATA error %d : %s\n", result, errorBuffer);
 
+  result = curl_easy_setopt(easyHandle, CURLOPT_SSL_VERIFYPEER, false);
+  if (result != CURLE_OK)
+    logDebugMessage(1,"CURLOPT_SSL_VERIFYPEER error %d : %s\n", result, errorBuffer);
+
   cURLMap[easyHandle] = this;
 }
 
