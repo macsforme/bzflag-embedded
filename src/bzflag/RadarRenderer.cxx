@@ -416,6 +416,50 @@ void RadarRenderer::renderFrame(SceneRenderer& renderer)
   // note that this scissor setup is used for the reset of the rendering
   glScissor(ox + x, oy + y, w, h);
 
+  #define MASK_LEVEL 0.5f
+  GLfloat maskCoordinates[] = {
+    0.0f, 0.0f, MASK_LEVEL,
+    (float) (x + w), 0.0f, MASK_LEVEL,
+    (float) (x + w), (float) y, MASK_LEVEL,
+    0.0f, (float) y, MASK_LEVEL,
+
+    0.0f, (float) y, MASK_LEVEL,
+    (float) x, (float) y, MASK_LEVEL,
+    (float) x, (float) (y + h), MASK_LEVEL,
+    0.0f, (float) (y + h), MASK_LEVEL,
+
+    0.0f, (float) (y + h), MASK_LEVEL,
+    (float) window.getWidth(), (float) (y + h), MASK_LEVEL,
+    (float) window.getWidth(), (float) window.getHeight(), MASK_LEVEL,
+    0.0f, (float) window.getHeight(), MASK_LEVEL,
+
+    (float) (x + w), 0.0f, MASK_LEVEL,
+    (float) window.getWidth(), 0.0f, MASK_LEVEL,
+    (float) window.getWidth(), (float) (y + h), MASK_LEVEL,
+    (float) (x + w), (float) (y + h), MASK_LEVEL
+  };
+
+  glDisable(GL_SCISSOR_TEST);
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_DEPTH_BUFFER_BIT);
+
+  glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, maskCoordinates);
+
+  for(int i = 0; i < 4; ++i)
+    glDrawArrays(GL_TRIANGLE_FAN, i * 4, 4);
+
+  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+  glEnable(GL_SCISSOR_TEST);
+  glDisable(GL_DEPTH_TEST);
+
   if (opacity == 1.0f) {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -451,6 +495,10 @@ void RadarRenderer::render(SceneRenderer& renderer, bool blank, bool observer)
   if (!world) {
     return;
   }
+
+  glDisable(GL_SCISSOR_TEST);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
 
   smooth = !multiSampled && BZDBCache::smooth;
   const bool fastRadar = ((BZDBCache::radarStyle == 1) ||
@@ -868,6 +916,10 @@ void RadarRenderer::render(SceneRenderer& renderer, bool blank, bool observer)
 
   // restore GL state
   glPopMatrix();
+
+  glEnable(GL_SCISSOR_TEST);
+  glDisable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
 
   triangleCount = RenderNode::getTriangleCount();
 }
