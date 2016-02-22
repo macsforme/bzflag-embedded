@@ -682,7 +682,7 @@ void HUDRenderer::drawGeometry()
   float rad = lockonSize * 0.25f;
 
   // geometry
-  GLfloat *drawArray = new GLfloat[(2 + segments) * 3];
+  GLfloat *drawArray = new GLfloat[(2 + segments + 1) * 3];
 
   drawArray[0] = -rad;
   drawArray[1] = rad + rad * 0.25f;
@@ -700,6 +700,10 @@ void HUDRenderer::drawGeometry()
     drawArray[6 + t * 3 + 2] = 0.02f;
   }
 
+  drawArray[6 + segments * 3 + 0] = sinf(0.0f) * rad;
+  drawArray[6 + segments * 3 + 1] = cosf(0.0f) * rad + rad * 0.25f;
+  drawArray[6 + segments * 3 + 2] = 0.02f;
+
   glDisableClientState(GL_COLOR_ARRAY);
   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
@@ -711,14 +715,14 @@ void HUDRenderer::drawGeometry()
   hudColor4f( 1,1,1, 0.85f );
   glLineWidth(4.0f);
   glDrawArrays(GL_LINES, 0, 2);
-  glDrawArrays(GL_LINE_LOOP, 2, segments);
+  glDrawArrays(GL_LINE_STRIP, 2, segments + 1);
 
 
   // red X
   hudColor4f( 1,0,0, 0.85f );
   glLineWidth(2.0f);
   glDrawArrays(GL_LINES, 0, 2);
-  glDrawArrays(GL_LINE_LOOP, 2, segments);
+  glDrawArrays(GL_LINE_STRIP, 2, segments + 1);
 
   delete[] drawArray;
 

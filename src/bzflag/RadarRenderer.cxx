@@ -233,7 +233,8 @@ void RadarRenderer::drawTank(const float pos[3], const Player* player, bool useS
     -size, 0.0f,
     0.0f, -size,
     +size, 0.0f,
-    0.0f, +size
+    0.0f, +size,
+    -size, 0.0f
   };
 
   glDisableClientState(GL_COLOR_ARRAY);
@@ -243,7 +244,7 @@ void RadarRenderer::drawTank(const float pos[3], const Player* player, bool useS
 
   glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
-  glDrawArrays(GL_LINE_LOOP, 0, 4);
+  glDrawArrays(GL_LINE_STRIP, 0, 5);
 
   glPopMatrix();
 }
@@ -387,12 +388,13 @@ void RadarRenderer::renderFrame(SceneRenderer& renderer)
     left, top,
     right, top,
     right, bottom,
-    left, bottom
+    left, bottom,
+    left, top
   };
 
   glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
-  glDrawArrays(GL_LINE_LOOP, 0, 4);
+  glDrawArrays(GL_LINE_STRIP, 0, 5);
 
   if (BZDBCache::blend)
 	  glDisable(GL_BLEND);
@@ -1260,12 +1262,13 @@ void RadarRenderer::renderBoxPyrMesh()
 	pos[0] - wx - hx, pos[1] - wy - hy,
 	pos[0] + wx - hx, pos[1] + wy - hy,
 	pos[0] + wx + hx, pos[1] + wy + hy,
-	pos[0] - wx + hx, pos[1] - wy + hy
+	pos[0] - wx + hx, pos[1] - wy + hy,
+	pos[0] - wx - hx, pos[1] - wy - hy
       };
 
       glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
-      glDrawArrays(GL_LINE_LOOP, 0, 4);
+      glDrawArrays(GL_LINE_STRIP, 0, 5);
     }
 
     count = pyramids.size();
@@ -1285,12 +1288,13 @@ void RadarRenderer::renderBoxPyrMesh()
 	pos[0] - wx - hx, pos[1] - wy - hy,
 	pos[0] + wx - hx, pos[1] + wy - hy,
 	pos[0] + wx + hx, pos[1] + wy + hy,
-	pos[0] - wx + hx, pos[1] - wy + hy
+	pos[0] - wx + hx, pos[1] - wy + hy,
+	pos[0] - wx - hx, pos[1] - wy - hy
       };
 
       glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
-      glDrawArrays(GL_LINE_LOOP, 0, 4);
+      glDrawArrays(GL_LINE_STRIP, 0, 5);
     }
   }
 
@@ -1318,7 +1322,8 @@ void RadarRenderer::renderBasesAndTeles()
 	  base[0] + r * cosf(base[3] + beta), base[1] + r * sinf(base[3] + beta),
 	  base[0] + r * cosf((float)(base[3] - beta + M_PI)), base[1] + r * sinf((float)(base[3] - beta + M_PI)),
 	  base[0] + r * cosf((float)(base[3] + beta + M_PI)), base[1] + r * sinf((float)(base[3] + beta + M_PI)),
-	  base[0] + r * cosf(base[3] - beta), base[1] + r * sinf(base[3] - beta)
+	  base[0] + r * cosf(base[3] - beta), base[1] + r * sinf(base[3] - beta),
+	  base[0] + r * cosf(base[3] + beta), base[1] + r * sinf(base[3] + beta)
 	};
 
 	glDisableClientState(GL_COLOR_ARRAY);
@@ -1328,7 +1333,7 @@ void RadarRenderer::renderBasesAndTeles()
 
 	glVertexPointer(2, GL_FLOAT, 0, drawData);
 
-	glDrawArrays(GL_LINE_LOOP, 0, 4);
+	glDrawArrays(GL_LINE_STRIP, 0, 5);
       }
     }
   }

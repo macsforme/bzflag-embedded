@@ -139,13 +139,16 @@ void ShockWaveStrategy::radarRender() const
   static const int sides = 20;
   const float* shotPos = getPath().getPosition();
 
-  GLfloat *drawArray = new GLfloat[sides * 2];
+  GLfloat *drawArray = new GLfloat[(sides + 1) * 2];
 
   for (int i = 0; i < sides; i++) {
     const float angle = (float)(2.0 * M_PI * double(i) / double(sides));
     drawArray[i * 2 + 0] = shotPos[0] + radius * cosf(angle);
     drawArray[i * 2 + 1] = shotPos[1] + radius * sinf(angle);
   }
+
+  drawArray[sides * 2 + 0] = shotPos[0] + radius * cosf(0.0f);
+  drawArray[sides * 2 + 1] = shotPos[1] + radius * sinf(0.0f);
 
   glDisableClientState(GL_COLOR_ARRAY);
   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -154,7 +157,7 @@ void ShockWaveStrategy::radarRender() const
 
   glVertexPointer(2, GL_FLOAT, 0, drawArray);
 
-  glDrawArrays(GL_LINE_LOOP, 0, sides);
+  glDrawArrays(GL_LINE_STRIP, 0, sides + 1);
 
   delete[] drawArray;
 }

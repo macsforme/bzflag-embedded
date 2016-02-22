@@ -589,7 +589,11 @@ void			ControlPanel::render(SceneRenderer& _renderer)
     DrawArrays::addVertex((float) xpos, (float) ypos);
   }
 
-  DrawArrays::drawTempArray(GL_LINE_LOOP);
+  xpos = x + messageAreaPixels[0] - 1;
+  ypos = y + messageAreaPixels[1] - 1;
+  DrawArrays::addVertex((float) xpos, (float) ypos);
+
+  DrawArrays::drawTempArray(GL_LINE_STRIP);
 
   if (BZDBCache::blend)
 	  glDisable(GL_BLEND);

@@ -289,12 +289,13 @@ void			HUDuiControl::renderFocus()
     GLfloat drawArray2[] = {
       x - fh2 - fontHeight, y + fontHeight - 1.0f,
       x - fh2 - fontHeight, y,
-      x - fh2 - 1.0f, y + 0.5f * (fontHeight - 1.0f)
+      x - fh2 - 1.0f, y + 0.5f * (fontHeight - 1.0f),
+      x - fh2 - fontHeight, y + fontHeight - 1.0f
     };
 
     glVertexPointer(2, GL_FLOAT, 0, drawArray2);
 
-    glDrawArrays(GL_LINE_LOOP, 0, 3);
+    glDrawArrays(GL_LINE_STRIP, 0, 4);
   }
 }
 
