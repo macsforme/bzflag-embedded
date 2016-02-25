@@ -49,7 +49,7 @@
 #endif
 
 #ifndef BZ_REV
-#  define BZ_REV		4
+#  define BZ_REV		5
 #endif
 
 #ifndef BZ_EMBEDDED_VERSION
