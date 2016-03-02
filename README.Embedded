@@ -131,3 +131,134 @@ Xcode and the device and then starting them both up again.
 To test the application, run it from Xcode. After launching for the first time
 from Xcode, the application should remain on your device and you can launch it
 like any other application.
+
+
+////////////////////////////// GCW Zero on Linux //////////////////////////////
+
+You can build this project to run on the GCW Zero, but support for this device
+is incomplete. The primary shortcomings are a lack of usable bindings between
+the device's buttons and some of the game controls needed to play, a lack of
+an on-screen keyboard to chat with other players and type commands, and
+generally low performance/a lack of optimization.
+
+This branch contains several workarounds for deficiencies in the OpenGL ES
+library on the GCW Zero, as follows:
+
+* GL_LINE_LOOPs cause a lockup, so GL_LINE_STRIPs must be used instead
+* Drawing GL_LINEs outside a scissor test area creates strange artifacts
+
+There are also some additional flaws for which no fix or workaround has yet
+been created; for example:
+
+* Z buffer issues resulting in artifacts and improper ordering of geometry
+* Fog rendering is very inconsistent
+* Inefficiencies creating low fps, dropped rendering commands, and jitter
+
+By following these commands (which target a Debian/Ubuntu 64-bit system),
+you should be able to compile this project for the GCW Zero:
+
+$ # Download and install the GCW Zero toolchain (substitute the latest
+$ # version)
+$ cd ~/Downloads
+$ wget http://www.gcw-zero.com/files/opendingux-gcw0-toolchain.2014-08-20.tar.bz2
+$ sudo mkdir -p /opt
+$ cd /opt
+$ sudo tar -xjf ~/Downloads/http://www.gcw-zero.com/files/opendingux-gcw0-toolchain.2014-08-20.tar.bz2
+$ cd
+
+$ # Install packages
+$ sudo apt-get install autoconf libtool git squashfs-tools imagemagick \
+	lib32z1 lib32stdc++6
+
+$ # Set up build directory (create this wherever you like)
+$ mkdir bzflag-gcw0-build
+$ cd bzflag-gcw0-build
+
+$ # Set up the compiler flags
+$ export DEPS_DIR=`pwd`/dependencies
+$ export BUILD_DIR=`pwd`/build
+$ export CC="/opt/gcw0-toolchain/usr/bin/mipsel-gcw0-linux-uclibc-gcc"
+$ export CXX="/opt/gcw0-toolchain/usr/bin/mipsel-gcw0-linux-uclibc-g++"
+$ export CPPFLAGS="-I$DEPS_DIR/include"
+$ export LDFLAGS="-L$DEPS_DIR/lib"
+
+$ # Retrieve and build GLU for OpenGL ES
+$ git clone https://github.com/macsforme/glues.git
+$ cd glues
+$ ./autogen.sh
+$ ./configure --host=mips --prefix=$DEPS_DIR
+$ make -j`nproc`
+$ make install
+$ cd ..
+
+$ # Retrieve and build c-ares (substitute the latest version)
+$ wget http://c-ares.haxx.se/download/c-ares-1.10.0.tar.gz
+$ tar -xzf c-ares-1.10.0.tar.gz
+$ cd c-ares-1.10.0
+$ ./configure --host=mips --prefix=$DEPS_DIR
+$ make -j`nproc`
+$ make install
+$ cd ..
+
+$ # Retrieve and build libcurl (substitute the latest version)
+$ wget http://curl.haxx.se/download/curl-7.45.0.tar.bz2
+$ tar -xjf curl-7.45.0.tar.bz2
+$ cd curl-7.45.0
+$ ./configure --host=mips --prefix=$DEPS_DIR --enable-ares=$DEPS_DIR \
+	--with-ssl=/opt/gcw0-toolchain/usr/mipsel-gcw0-linux-uclibc/sysroot
+$ make -j`nproc`
+$ make install
+$ cd ..
+
+$ # Retrieve and build BZFlag for Embedded Devices
+$ git clone https://github.com/macsforme/bzflag-embedded.git -b gcw0
+$ cd bzflag-embedded
+$ ./autogen.sh
+$ ./configure --host=mips --prefix=$BUILD_DIR --with-gles --disable-plugins \
+	--with-libcurl=$DEPS_DIR \
+	--with-sdl-prefix=/opt/gcw0-toolchain/usr/mipsel-gcw0-linux-uclibc/sysroot/usr
+$ make -j`nproc`
+$ make install
+$ cd ..
+
+$ mkdir opkdir
+$ echo -e "[Desktop Entry]\n\
+	Type=Application\n\
+	Name=BZFlag\n\
+	Comment=A multiplayer networked tank battle game\n\
+	Exec=bzflag\n\
+	Icon=bzflag-32x32\n\
+	Categories=games;\n\
+	" > opkdir/default.gcw0.desktop
+$ cp build/bin/bzflag opkdir/
+$ cp build/bin/bzadmin opkdir/
+$ cp -pR build/share/bzflag opkdir/data
+$ convert build/share/bzflag/bzflag-48x48.png -resize 32x32 \
+	opkdir/bzflag-32x32.png
+$ mksquashfs opkdir bzflag.opk -all-root -noappend -no-exports -no-xattrs
+
+You should now have a "bzflag.opk" file in your current directory, which you
+can upload to your GCW Zero device (at /media/data/apps/).
+
+Because the default input bindings for certain critical functions do not
+correspond to all of the buttons on the GCW Zero, and because of several other
+known issues, prior to launching the game, you may want to create a text file
+with the following contents on the device at ~/.bzf/2.4/config.cfg:
+
+set callsign <your callsign here>
+set displayFlagHelp 0
+set list http://my.bzflag.org/db/
+set cpanelfontsize 1
+set panelheight 5
+set mouseboxsize 1
+set radarsize 18
+bind Enter up restart
+
+You should then be able to launch BZFlag and navigate the menus with the
+D-pad, Start, and Select, as well as play the game with the following button
+mappings:
+
+Enter:		Respawn/Fire
+D-Pad:		Drive
+Left Trigger:	Jump
+Y:		Drop Flag
