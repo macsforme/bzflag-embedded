@@ -40,7 +40,7 @@ DefaultDBItem	defaultDBItems[] = {
   { "radarTankPixels",		"2.0",			true,	StateDatabase::ReadWrite,	NULL },
   { "coloredradarshots",	"1",			true,	StateDatabase::ReadWrite,	NULL },
   { "linedradarshots",		"30",			true,	StateDatabase::ReadWrite,	NULL },
-  { "sizedradarshots",		"3",			true,	StateDatabase::ReadWrite,	NULL },
+  { "sizedradarshots",		"1",			true,	StateDatabase::ReadWrite,	NULL },
   { "panelopacity",		"0.6",			true,	StateDatabase::ReadWrite,	NULL },
   { "radaropacity",             "0.6",                  true,   StateDatabase::ReadWrite,       NULL },
   { "panelheight",		"5",			true,	StateDatabase::ReadWrite,	NULL },
