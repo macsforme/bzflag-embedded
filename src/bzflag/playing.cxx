@@ -1953,8 +1953,12 @@ static void		handleServerMessage(bool human, uint16_t code,
       msg = nboUnpackInt(msg, timeLeft);
       hud->setTimeLeft(timeLeft);
       if (timeLeft == 0) {
-	if (myTank->getTeam() != ObserverTeam)
+	if (myTank->getTeam() != ObserverTeam) {
 	  gameOver = true;
+
+	  // show the console
+	  BZDB.setBool("displayConsole", true);
+	}
 	myTank->explodeTank();
 	controlPanel->addMessage("Time Expired");
 	hud->setAlert(0, "Time Expired", 10.0f, true);
@@ -2010,6 +2014,8 @@ static void		handleServerMessage(bool human, uint16_t code,
 	if (robots[i])
 	  robots[i]->explodeTank();
 #endif
+      // show the console
+      BZDB.setBool("displayConsole", true);
       break;
     }
 
@@ -2129,6 +2135,9 @@ static void		handleServerMessage(bool human, uint16_t code,
 	tank->spawnEffect();
 	if (tank == myTank) {
 	  myTank->setSpawning(false);
+
+	  // hide the console
+	  BZDB.setBool("displayConsole", false);
 	}
 	playSound(SFX_POP, pos, true, isViewTank(tank));
       }
@@ -2197,6 +2206,9 @@ static void		handleServerMessage(bool human, uint16_t code,
 	// uh oh, local player is dead
 	if (victimLocal->isAlive()){
 	  gotBlowedUp(victimLocal, GotKilledMsg, killer);
+	} else {
+	  // gotBlowedUp() won't be called to do it, so show the console
+	  BZDB.setBool("displayConsole", true);
 	}
       }
       else if (victimPlayer) {
@@ -3585,6 +3597,11 @@ static bool		gotBlowedUp(BaseLocalPlayer* tank,
     hud->setAlert(0, blowedUpNotice.c_str(), 4.0f, true);
     controlPanel->addMessage(blowedUpNotice);
   }
+
+
+  if (reason != GotShot || flag != Flags::Shield || shotId == -1)
+    // show the console
+    BZDB.setBool("displayConsole", true);
 
   // make sure shot is terminated locally (if not globally) so it can't
   // hit me again if I had the shield flag.  this is important for the

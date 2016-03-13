@@ -61,7 +61,7 @@ DefaultDBItem	defaultDBItems[] = {
   { "slowKeyboard",		"0",			false,	StateDatabase::ReadWrite,	NULL },
   { "displayRadarFlags",	"1",			false,	StateDatabase::ReadWrite,	NULL },
   { "displayMainFlags",		"1",			false,	StateDatabase::ReadWrite,	NULL },
-  { "displayScore",		"1",			true,	StateDatabase::ReadWrite,	NULL },
+  { "displayScore",		"0",			false,	StateDatabase::ReadWrite,	NULL },
   { "displayFlagHelp",		"0",			true,	StateDatabase::ReadWrite,	setFlagHelp },
   { "displayConsole",		"1",			false,	StateDatabase::ReadWrite,	NULL },
   { "displayReloadTimer",	"1",			true,	StateDatabase::ReadWrite,	NULL },
