@@ -166,8 +166,8 @@ $ sudo tar -xjf ~/Downloads/http://www.gcw-zero.com/files/opendingux-gcw0-toolch
 $ cd
 
 $ # Install packages
-$ sudo apt-get install autoconf libtool git squashfs-tools imagemagick \
-	lib32z1 lib32stdc++6
+$ sudo apt-get install autoconf libtool git squashfs-tools lib32z1 \
+	lib32stdc++6
 
 $ # Set up build directory (create this wherever you like)
 $ mkdir bzflag-gcw0-build
@@ -220,20 +220,19 @@ $ make -j`nproc`
 $ make install
 $ cd ..
 
+$ # Assemble the package
 $ mkdir opkdir
 $ echo -e "[Desktop Entry]\n\
 	Type=Application\n\
 	Name=BZFlag\n\
 	Comment=A multiplayer networked tank battle game\n\
 	Exec=bzflag\n\
-	Icon=bzflag-32x32\n\
+	Icon=data/bzflag-32x32\n\
 	Categories=games;\n\
 	" > opkdir/default.gcw0.desktop
 $ cp build/bin/bzflag opkdir/
 $ cp build/bin/bzadmin opkdir/
 $ cp -pR build/share/bzflag opkdir/data
-$ convert build/share/bzflag/bzflag-48x48.png -resize 32x32 \
-	opkdir/bzflag-32x32.png
 $ mksquashfs opkdir bzflag.opk -all-root -noappend -no-exports -no-xattrs
 
 You should now have a "bzflag.opk" file in your current directory, which you
