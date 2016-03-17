@@ -220,7 +220,10 @@ DefaultDBItem	defaultDBItems[] = {
   { "listFilter9", "/+replay,# Replay servers",				true, StateDatabase::ReadWrite, NULL },
 
   // We don't want to keep the geometry settings
-  { "geometry",		"",			false,	StateDatabase::ReadWrite, NULL }
+  { "geometry",		"",			false,	StateDatabase::ReadWrite, NULL },
+
+  // GCW Zero joystick
+  { "joystickname", "linkdev device (Analog 2-axis 8-button 2-hat)", false, StateDatabase::ReadWrite, NULL }
 };
 
 

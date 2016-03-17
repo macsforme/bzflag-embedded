@@ -40,11 +40,6 @@ OptionsMenu::OptionsMenu() : guiOptionsMenu(NULL), effectsMenu(NULL),
   label->setString("Options");
   listHUD.push_back(label);
 
-  inputSetting = label = new HUDuiLabel;
-  label->setFontFace(fontFace);
-  label->setLabel("Input Settings");
-  listHUD.push_back(label);
-
   audioSetting = label = new HUDuiLabel;
   label->setFontFace(fontFace);
   label->setLabel("Audio Settings");
@@ -166,7 +161,7 @@ void OptionsMenu::resize(int _width, int _height)
     HUDuiControl *ctl = listHUD[i];
     ctl->setFontSize(fontSize);
     ctl->setPosition(x, y);
-    if ((i == 6) || (i == 8)) {
+    if ((i == 5) || (i == 7)) {
       y -= 1.75f * h;
     } else {
       y -= 1.0f * h;
@@ -174,7 +169,7 @@ void OptionsMenu::resize(int _width, int _height)
   }
 
   // load current settings
-  i = 7;
+  i = 6;
 
   ((HUDuiList*)listHUD[i++])->setIndex(BZDB.evalInt("saveSettings"));
   ((HUDuiList*)listHUD[i++])->setIndex(BZDB.evalInt("saveIdentity"));

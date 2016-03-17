@@ -82,7 +82,6 @@ GUIOptionsMenu::GUIOptionsMenu()
   options->push_back(std::string("Auto"));
   option->createSlider(4);
   option->update();
-  listHUD.push_back(option);
 
   option = new HUDuiList;
   option->setFontFace(fontFace);
@@ -92,7 +91,6 @@ GUIOptionsMenu::GUIOptionsMenu()
   options->push_back(std::string("Auto"));
   option->createSlider(4);
   option->update();
-  listHUD.push_back(option);
 
   // set observer info
   option = new HUDuiList;
@@ -105,7 +103,6 @@ GUIOptionsMenu::GUIOptionsMenu()
   options->push_back(std::string("On With Apparent Speeds"));
   options->push_back(std::string("Full"));
   option->update();
-  listHUD.push_back(option);
 
   // set Panel Translucency
   option = new HUDuiList;
@@ -243,7 +240,6 @@ GUIOptionsMenu::GUIOptionsMenu()
   options->push_back(std::string("Left"));
   options->push_back(std::string("Right"));
   option->update();
-  listHUD.push_back(option);
   // Automatic pausing of the console
   option = new HUDuiList;
   option->setFontFace(fontFace);
@@ -381,12 +377,6 @@ void			GUIOptionsMenu::resize(int _width, int _height)
     ((HUDuiList*)listHUD[i++])->setIndex(BZDBCache::radarStyle);
     ((HUDuiList*)listHUD[i++])->setIndex(ScoreboardRenderer::getSort());
     ((HUDuiList*)listHUD[i++])->setIndex(ScoreboardRenderer::getAlwaysTeamScore());
-    ((HUDuiList*)listHUD[i++])->setIndex(static_cast<int>(BZDB.eval
-							  ("scorefontsize")));
-    ((HUDuiList*)listHUD[i++])->setIndex(static_cast<int>(BZDB.eval
-							  ("cpanelfontsize")));
-	((HUDuiList*)listHUD[i++])->setIndex(static_cast<int>(BZDB.eval
-		("showVelocities")));
    ((HUDuiList*)listHUD[i++])->setIndex((int)(10.0f * renderer
 					       ->getPanelOpacity() + 0.5));
    ((HUDuiList*)listHUD[i++])->setIndex((int)(10.0f * renderer
@@ -403,8 +393,6 @@ void			GUIOptionsMenu::resize(int _width, int _height)
     ((HUDuiList*)listHUD[i++])->setIndex(renderer->getPanelHeight());
     ((HUDuiList*)listHUD[i++])->setIndex(renderer->getMaxMotionFactor() + 11);
     i++; // locale
-    ((HUDuiList*)listHUD[i++])->setIndex(static_cast<int>(BZDB.eval
-							  ("showtabs")));
 	((HUDuiList*)listHUD[i++])->setIndex(BZDB.isTrue("pauseConsole") ? 1 : 0);
     ((HUDuiList*)listHUD[i++])->setIndex(BZDB.isTrue("colorful") ? 1 : 0);
 

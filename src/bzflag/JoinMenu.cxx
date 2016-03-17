@@ -122,7 +122,6 @@ JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL)
   startServer = new HUDuiLabel;
   startServer->setFontFace(fontFace);
   startServer->setString("Start Server");
-  listHUD.push_back(startServer);
 
   status = new HUDuiLabel;
   status->setFontFace(fontFace);

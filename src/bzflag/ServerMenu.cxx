@@ -224,12 +224,10 @@ ServerMenu::ServerMenu()
   help1 = new HUDuiLabel;
   help1->setFontFace(MainMenu::getFontFace());
   help1->setString("Press +/- to add/remove favorites, f to toggle favorites-only list,");
-  getControls().push_back(help1);
 
   help2 = new HUDuiLabel;
   help2->setFontFace(MainMenu::getFontFace());
   help2->setString("1 to 9 for quick filters, 0 to clear, e to edit quick filters, ? for filter help");
-  getControls().push_back(help2);
 
   // set initial focus
   setFocus(status);
@@ -273,7 +271,6 @@ void ServerMenu::setFind(bool mode, bool clear)
     listFilter.parse(search->getString());
     BZDB.set("listFilter", search->getString());
     if (listFilter.getSource().empty()) {
-      setFindLabel("Press '/' to search");
     } else {
       std::string filter_number;
       for (int i = 1; i <= 9; i++) {
