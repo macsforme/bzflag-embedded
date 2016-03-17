@@ -37,7 +37,7 @@ on your system, you may not need to install all of the listed packages.
 
 $ # Install packages
 $ sudo apt-get install autoconf libtool libc-ares-dev libcurl4-openssl-dev \
-	libncurses-dev mercurial libudev-dev
+	libncurses-dev mercurial libudev-dev libasound2-dev
 
 $ # Until a newer version of SDL 2 is available, it must be built from source
 $ hg clone http://hg.libsdl.org/SDL
