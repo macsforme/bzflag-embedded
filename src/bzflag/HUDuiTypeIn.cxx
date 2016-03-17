@@ -133,10 +133,6 @@ bool			HUDuiTypeIn::doKeyPress(const BzfKeyEvent& key)
 	  }
   }
 
-  if (c == '\t') {
-    HUDui::setFocus(getNext());
-    return true;
-  }
   if (c >0 && (!isprint(c) && c != backspace))
     return false;
 

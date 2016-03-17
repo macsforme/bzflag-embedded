@@ -85,12 +85,6 @@ bool ServerMenuDefaultKey::keyPress(const BzfKeyEvent& key)
       }
     }
   }
-  else if (key.ascii == '\t') {
-    if (HUDui::getFocus()) {
-      menu->setSelected(menu->getSelected() + 1);
-    }
-    return true;
-  }
   else if (key.ascii == '/') {
     if (HUDui::getFocus() && !menu->getFind()) {
       menu->setFind(true, (key.shift & BzfKeyEvent::AltKey) != 0);

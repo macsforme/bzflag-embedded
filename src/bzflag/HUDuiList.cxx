@@ -84,11 +84,6 @@ void			HUDuiList::createSlider(const int numValues)
 
 bool			HUDuiList::doKeyPress(const BzfKeyEvent& key)
 {
-  if (key.ascii == '\t') {
-    HUDui::setFocus(getNext());
-    return true;
-  }
-
   if (key.ascii == 0)
     switch (key.button) {
       case BzfKeyEvent::Up:

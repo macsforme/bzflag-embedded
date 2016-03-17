@@ -84,11 +84,6 @@ bool			HUDuiLabel::doKeyPress(const BzfKeyEvent& key)
       return false;
   }
 
-  if (key.ascii == '\t') {
-    HUDui::setFocus(getNext());
-    return true;
-  }
-
   switch (key.ascii) {
     case 13:
     case 27:
