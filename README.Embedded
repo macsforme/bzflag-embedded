@@ -135,11 +135,10 @@ like any other application.
 
 ////////////////////////////// GCW Zero on Linux //////////////////////////////
 
-You can build this project to run on the GCW Zero, but support for this device
-is incomplete. The primary shortcomings are a lack of usable bindings between
-the device's buttons and some of the game controls needed to play, a lack of
-an on-screen keyboard to chat with other players and type commands, and
-generally low performance/a lack of optimization.
+The gcw0 branch allows you to compile this project to run on the GCW Zero.
+The client supports most features that the standard desktop client does, with
+the exception of a few features that don't work well without a full keyboard.
+The control bindings may be found under the "Help" section in the main menu.
 
 This branch contains several workarounds for deficiencies in the OpenGL ES
 library on the GCW Zero, as follows:
@@ -239,26 +238,3 @@ $ mksquashfs opkdir bzflag.opk -all-root -noappend -no-exports -no-xattrs
 
 You should now have a "bzflag.opk" file in your current directory, which you
 can upload to your GCW Zero device (at /media/data/apps/).
-
-Because the default input bindings for certain critical functions do not
-correspond to all of the buttons on the GCW Zero, and because of several other
-known issues, prior to launching the game, you may want to create a text file
-with the following contents on the device at ~/.bzf/2.4/config.cfg:
-
-set callsign <your callsign here>
-set displayFlagHelp 0
-set list http://my.bzflag.org/db/
-set cpanelfontsize 1
-set panelheight 5
-set mouseboxsize 1
-set radarsize 18
-bind Enter up restart
-
-You should then be able to launch BZFlag and navigate the menus with the
-D-pad, Start, and Select, as well as play the game with the following button
-mappings:
-
-Enter:		Respawn/Fire
-D-Pad:		Drive
-Left Trigger:	Jump
-Y:		Drop Flag
