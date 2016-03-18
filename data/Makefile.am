@@ -20,6 +20,7 @@ dist_pkgdata_DATA =		\
 	bzflag-32x32.png	\
 	bzflag-32x32.xpm	\
 	bzflag-48x48.png	\
+	gcw0_controls.png	\
 	caution.png		\
 	clouds.png		\
 	dusty_flare.png		\
