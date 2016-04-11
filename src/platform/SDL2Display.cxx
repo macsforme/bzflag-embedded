@@ -19,7 +19,7 @@
 static int mx = 0;
 static int my = 0;
 
-SDLDisplay::SDLDisplay() : min_width(), min_height(),  x(), y(), messagePanelIndex(1), altIsDown(false) {
+SDLDisplay::SDLDisplay() : altIsDown(false), min_width(), min_height(),  x(), y(), messagePanelIndex(1) {
   if (SDL_VideoInit(NULL) < 0) {
     printf("Could not initialize SDL Video subsystem: %s.\n", SDL_GetError());
     exit (-1);
@@ -596,7 +596,7 @@ bool SDLDisplay::setupEvent(BzfEvent& _event, const SDL_Event& event) const
 	swipes.push_back(fakeEvent.key.keysym.sym);
       } else {
 	bool allSameDirection = true;
-	for (int i = 0; i < swipes.size(); ++i) {
+	for (size_t i = 0; i < swipes.size(); ++i) {
 	  if (swipes[i] != fakeEvent.key.keysym.sym) {
 	    allSameDirection = false;
 
