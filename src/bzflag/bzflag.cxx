@@ -849,12 +849,13 @@ int			main(int argc, char** argv)
 #ifdef _WIN32
   // this is cheap but it will work on windows
   // clear out the stdout file
-  if (echoToConsole){
-	  FILE	*fp = fopen ("stdout.txt","w");
-	  if (fp) {
-		  fprintf(fp,"stdout started\r\n" );
-		  fclose(fp);
-	  }
+  if (echoToConsole) {
+    std::string filename = getConfigDirName() + "stdout.txt";
+    FILE *fp = fopen (filename.c_str(), "w");
+    if (fp) {
+      fprintf(fp,"stdout started\r\n" );
+      fclose(fp);
+    }
   }
 #endif
 
@@ -960,11 +961,8 @@ int			main(int argc, char** argv)
   }
   window->setTitle("bzflag");
 
-  // create & initialize the joystick
+  // create the joystick
   BzfJoystick* joystick = platformFactory->createJoystick();
-  joystick->initJoystick(BZDB.get("joystickname").c_str());
-  joystick->setXAxis(BZDB.get("jsXAxis"));
-  joystick->setYAxis(BZDB.get("jsYAxis"));
 
   // Change audio driver if requested
   if (BZDB.isSet("audioDriver"))
@@ -1135,6 +1133,11 @@ int			main(int argc, char** argv)
     if (startupInfo.hasConfiguration && BZDB.isSet("volume"))
       setSoundVolume(static_cast<int>(BZDB.eval("volume")));
   }
+
+  // Initialize the joystick
+  joystick->initJoystick(BZDB.get("joystickname").c_str());
+  joystick->setXAxis(BZDB.get("jsXAxis"));
+  joystick->setYAxis(BZDB.get("jsYAxis"));
 
   // set main window's minimum size (arbitrary but should be big enough
   // to see stuff in control panel)
