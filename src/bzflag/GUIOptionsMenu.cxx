@@ -333,15 +333,6 @@ GUIOptionsMenu::GUIOptionsMenu()
   option->update();
   listHUD.push_back(option);
 
-  // set motto display length
-  option = new HUDuiList;
-  option->setFontFace(fontFace);
-  option->setLabel("Motto Display Length:");
-  option->setCallback(callback, "E");
-  option->createSlider(32+1);
-  option->update();
-  listHUD.push_back(option);
-
   initNavigation(listHUD, 1, listHUD.size()-1);
 }
 
@@ -604,11 +595,6 @@ void			GUIOptionsMenu::callback(HUDuiControl* w, const void* data)
 
     case 'q':
       ScoreboardRenderer::setAlwaysTeamScore(list->getIndex() ? true : false);
-      break;
-
-    case 'E':
-      BZDB.set("mottoDispLen",  TextUtils::format("%d", list->getIndex() * 4));
-      BZDB.set("hideMottos", list->getIndex() ? "0" : "1");
       break;
 
   }
