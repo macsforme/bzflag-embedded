@@ -21,10 +21,21 @@
 #include "TimeKeeper.h"
 #include "config.h"
 
+#ifdef _WIN32
+HWND SDLWindow::hwnd = NULL;
+#endif
+
 SDLWindow::SDLWindow(const SDLDisplay* _display, SDLVisual*)
-  : BzfWindow(_display), hasGamma(true), windowId(NULL), glContext(NULL),
-  canGrabMouse(true), fullScreen(false), base_width(640), base_height(480)
+  : BzfWindow(_display), hasGamma(true), origGamma(-1.0f), lastGamma(1.0f),
+  windowId(NULL), glContext(NULL), canGrabMouse(true), fullScreen(false),
+  base_width(640), base_height(480)
 {
+}
+
+SDLWindow::~SDLWindow()
+{
+  // Restore the original gamma when we exit the client
+  setGamma(origGamma);
 }
 
 void SDLWindow::setTitle(const char *_title) {
@@ -43,15 +54,34 @@ void SDLWindow::iconify(void) {
 
 
 void SDLWindow::disableConfineToMotionbox() {
+#ifndef _WIN32
   SDL_SetWindowGrab(windowId, SDL_FALSE);
+#else
+  ClipCursor(NULL);
+#endif
 }
 
 
 void SDLWindow::confineToMotionbox(int x1, int y1, int x2, int y2) {
+#ifndef _WIN32
   if(! SDL_GetWindowGrab(windowId))
     SDL_SetWindowGrab(windowId, SDL_TRUE);
 
   BzfWindow::confineToMotionbox(x1, y1, x2, y2);
+#else
+  int posx, posy;
+  SDL_GetWindowPosition(windowId, &posx, &posy);
+
+  // Store the boundary positions as rectangle
+  RECT rect;
+  rect.top = y1 + posy;
+  rect.left = x1 + posx;
+  rect.bottom = y2 + posy;
+  rect.right = x2 + posx;
+
+  // Restrict cursor to that rectangle
+  ClipCursor(&rect);
+#endif
 }
 
 
@@ -81,6 +111,7 @@ void SDLWindow::getSize(int& width, int& height) const {
 }
 
 void SDLWindow::setGamma(float gamma) {
+  lastGamma = gamma;
   int result = SDL_SetWindowBrightness(windowId, gamma);
   if (result == -1) {
     printf("Could not set Gamma: %s.\n", SDL_GetError());
@@ -173,6 +204,22 @@ bool SDLWindow::create(void) {
       targetWidth,
       targetHeight,
       flags);
+
+  // Store the gamma immediately after creating the first window
+  if (origGamma < 0)
+    origGamma = getGamma();
+
+  // At least on Windows, recreating the window resets the gamma, so set it
+  setGamma(lastGamma);
+
+#ifdef _WIN32
+  SDL_VERSION(&info.version);
+  if(SDL_GetWindowWMInfo(windowId,&info)) {
+    if (info.subsystem == SDL_SYSWM_WINDOWS) {
+      hwnd = info.info.win.window;
+    }
+  }
+#endif
 
   if (!windowId) {
     printf("Could not set Video Mode: %s.\n", SDL_GetError());

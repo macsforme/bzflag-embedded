@@ -37,7 +37,7 @@ on your system, you may not need to install all of the listed packages.
 
 $ # Install packages
 $ sudo apt-get install autoconf libtool libc-ares-dev libcurl4-openssl-dev \
-	libncurses-dev mercurial libudev-dev
+	libncurses-dev mercurial libudev-dev libasound2-dev
 
 $ # Until a newer version of SDL 2 is available, it must be built from source
 $ hg clone http://hg.libsdl.org/SDL
@@ -85,11 +85,13 @@ terminal.
 
 This project should build and run on iOS devices, but functionality is
 currently limited. There are only basic touch controls: swipe up/down/left/
-right for arrows, tap with one finger for return, tap with two fingers for
-escape and tap with three fingers to toggle the on-screen keyboard. These
-controls are mostly only useful for observer mode at this point. However, it
-is possible to use the on-screen keyboard to manipulate the settings, chat
-with people and send server commands.
+right with one finger for arrows, swipe up/down with two fingers to scroll the
+console, swipe left/right with two fingers to switch console tabs, tap with
+one finger for return, tap with two fingers for escape and tap with three
+fingers to toggle the on-screen keyboard. These controls are mostly only
+useful for observer mode at this point. However, it is possible to use the
+on-screen keyboard to manipulate the settings, chat with people and send
+server commands.
 
 Xcode 7.0 or later is required to build. To retrieve the source code, clone
 the repository using Git in the following manner:
