@@ -35,10 +35,10 @@ extern Player* getRoamTargetTank();
 
 #define DEBUG_SHOWRATIOS 1
 
-std::string ScoreboardRenderer::scoreSpacingLabel("88% 8888 888-888 [88]");
+std::string ScoreboardRenderer::scoreSpacingLabel("88% 8888");
 std::string ScoreboardRenderer::scoreLabel("Score");
-std::string ScoreboardRenderer::killSpacingLabel("888~888 Hunt->");
-std::string ScoreboardRenderer::killLabel(" Kills");
+std::string ScoreboardRenderer::killSpacingLabel("Hunt->");
+std::string ScoreboardRenderer::killLabel("");
 std::string ScoreboardRenderer::teamScoreSpacingLabel("88 (888-888) 88");
 std::string ScoreboardRenderer::teamCountSpacingLabel("888");
 std::string ScoreboardRenderer::playerLabel("Player");
@@ -445,7 +445,7 @@ void ScoreboardRenderer::renderScoreboard(void)
 
   const float x1 = winX;
   const float x2 = x1 + scoreLabelWidth;
-  const float x3 = x2 + killsLabelWidth;
+  const float x3 = x2 /*+ killsLabelWidth*/;
   const float y0 = winY;
   hudColor3fv(messageColor);
 
@@ -455,7 +455,7 @@ void ScoreboardRenderer::renderScoreboard(void)
     psLabel += sortLabels[sortMode];
   }
   fm.drawString(x1, y0, 0, minorFontFace, minorFontSize, bdl->getLocalString(scoreLabel));
-  fm.drawString(x2, y0, 0, minorFontFace, minorFontSize, bdl->getLocalString(killLabel));
+//  fm.drawString(x2, y0, 0, minorFontFace, minorFontSize, bdl->getLocalString(killLabel));
   fm.drawString(x3, y0, 0, minorFontFace, minorFontSize, psLabel);
   const float dy = fm.getStrHeight(minorFontFace, minorFontSize, " ");
   float y = y0 - dy;
@@ -660,20 +660,16 @@ void ScoreboardRenderer::drawPlayerScore(const Player* player,
     }
   }
 
+  // quell warnings
+  if (highlightTKratio && x2 == 0.0f) { }
+
   if (World::getWorld()->allowRabbit()) {
-    sprintf(score, "%2d%% %4d %3d-%-3d%s[%2d]", player->getRabbitScore(),
-	    player->getScore(), player->getWins(), player->getLosses(),
-	    highlightTKratio ? ColorStrings[CyanColor].c_str() : "",
-	    player->getTeamKills());
+    sprintf(score, "%2d%% %4d", player->getRabbitScore(),
+	    player->getScore());
   } else if (World::getWorld()->allowTeams()) {
-    sprintf(score, "%4d %4d-%-4d%s[%2d]", player->getScore(),
-	    player->getWins(), player->getLosses(),
-	    highlightTKratio ? ColorStrings[CyanColor].c_str() : "",
-	    player->getTeamKills());
+    sprintf(score, "%4d", player->getScore());
   } else {
-    sprintf(score, "%4d %4d-%-4d%s", player->getScore(),
-	    player->getWins(), player->getLosses(),
-	    highlightTKratio ? ColorStrings[CyanColor].c_str() : "");
+    sprintf(score, "%4d", player->getScore());
   }
 
   // kills
@@ -746,7 +742,7 @@ void ScoreboardRenderer::drawPlayerScore(const Player* player,
   playerInfo += player->getCallSign();
 
   // motto in parentheses
-  if (player->getMotto()[0] != '\0' && mottoLen>0) {
+  if (false && player->getMotto()[0] != '\0' && mottoLen>0) {
     playerInfo += " (";
     playerInfo += TextUtils::str_trunc_continued (player->getMotto(), mottoLen);
     playerInfo += ")";
@@ -808,8 +804,8 @@ void ScoreboardRenderer::drawPlayerScore(const Player* player,
   if (player->getTeam() != ObserverTeam) {
     hudColor3fv(Team::getTankColor(teamIndex));
     fm.drawString(x1, y, 0, minorFontFace, minorFontSize, score);
-    hudColor3fv(Team::getTankColor(teamIndex));
-    fm.drawString(x2, y, 0, minorFontFace, minorFontSize, kills);
+//    hudColor3fv(Team::getTankColor(teamIndex));
+//    fm.drawString(x2, y, 0, minorFontFace, minorFontSize, kills);
   }
   fm.drawString(x3, y, 0, minorFontFace, minorFontSize, playerInfo);
   if (statusInfo.size() > 0) {
