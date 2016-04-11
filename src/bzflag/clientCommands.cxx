@@ -1006,9 +1006,11 @@ static std::string cmdCycleRadar(const std::string&,
   std::vector<float> radarLevels;
 
   for (size_t i = 0; i < args.size(); ++i)
-    if (args[i] == "off")
-      radarLevels.push_back(0.0f);
-    else if (atof(args[i].c_str()) > 0.0f)
+    // the BZDB lookup to see if radar is off really lags the GCW Zero, so disabling the off option...
+//    if (args[i] == "off")
+//      radarLevels.push_back(0.0f);
+//    else 
+    if (atof(args[i].c_str()) > 0.0f)
       radarLevels.push_back(atof(args[i].c_str()));
     else
       return usageText;
@@ -1029,12 +1031,15 @@ static std::string cmdCycleRadar(const std::string&,
   static size_t radarLevelIndex = radarLevels.size() - 1;
 
   // if it's off and the current level is some form of on, turn it back on and set it
+  // again, disabling the off option...
+  /*
   if (BZDB.get("displayRadar") == "0" && radarLevels[radarLevelIndex] > 0.0f) {
     BZDB.set("displayRadar", "1");
     BZDB.setFloat("displayRadarRange", radarLevels[radarLevelIndex]);
 
     return std::string();
   }
+  */
 
   ++radarLevelIndex;
   if (radarLevelIndex >= radarLevels.size())
