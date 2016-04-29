@@ -48,7 +48,19 @@ GLint gluProject(double objX, double objY, double objZ,
 }
 
 void glOrtho(double left, double right, double bottom, double top, double near_val, double far_val) {
-  glOrthof((float) left, (float) right, (float) bottom, (float) top, (float) near_val, (float) far_val);
+  // apparently at least two OpenGL ES systems have broken glOrtho
+  // implementations that don't seem to do anything, so we'll implement
+  // it ourselves
+  const GLfloat orthoMatrix[] = {
+    2.0f / (float) (right - left), 0.0f, 0.0f, 0.0f,
+    0.0f, 2.0f / (float) (top - bottom), 0.0f, 0.0f,
+    0.0f, 0.0f, -2.0f / (float) (far_val - near_val), 0.0f,
+    (float) -(right + left) / (float) (right - left),
+       (float) -(top + bottom) / (float) (top - bottom),
+       (float) -(far_val + near_val) / (float) (far_val - near_val),
+       1.0f
+  };
+  glMultMatrixf(orthoMatrix);
 }
 
 void glClipPlane(GLenum plane, const double *equation)
