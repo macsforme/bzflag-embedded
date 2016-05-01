@@ -135,10 +135,10 @@ JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL), onScreenKeyboard
 
   keyboardHelp = new HUDuiLabel;
   keyboardHelp->setFontFace(fontFace);
-  keyboardHelp->setString("Press Start for keyboard");
+  keyboardHelp->setString("Highlight a field and press Start to enter text");
   listHUD.push_back(keyboardHelp);
 
-  initNavigation(listHUD, 1, listHUD.size() - 3);
+  initNavigation(listHUD, 1, listHUD.size() - 4);
 
   // cut teamIcon out of the nav loop
   team->setNext(server);
