@@ -133,6 +133,11 @@ JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL), onScreenKeyboard
   failedMessage->setString("");
   listHUD.push_back(failedMessage);
 
+  keyboardHelp = new HUDuiLabel;
+  keyboardHelp->setFontFace(fontFace);
+  keyboardHelp->setString("Press Start for keyboard");
+  listHUD.push_back(keyboardHelp);
+
   initNavigation(listHUD, 1, listHUD.size() - 3);
 
   // cut teamIcon out of the nav loop
@@ -336,6 +341,7 @@ void JoinMenu::resize(int _width, int _height)
 
   // use a big font for title, smaller font for the rest
   const float titleFontSize = (float)_height / 15.0f;
+  const float tinyFontSize = (float)_height / 54.0f;
   const float fontSize = (float)_height / 36.0f;
   center = 0.5f * (float)_width;
 
@@ -358,7 +364,12 @@ void JoinMenu::resize(int _width, int _height)
   const float h = fm.getStrHeight(MainMenu::getFontFace(), fontSize, "");
   const int count = listHUD.size();
   for (int i = 1; i < count; i++) {
-    listHUD[i]->setFontSize(fontSize);
+    if(i == 12) {
+      listHUD[i]->setFontSize(tinyFontSize);
+      y -= 0.5f * h;
+    }
+    else
+      listHUD[i]->setFontSize(fontSize);
     listHUD[i]->setPosition(x, y);
     if (i != 5)
       y -= 1.0f * h;
@@ -368,6 +379,7 @@ void JoinMenu::resize(int _width, int _height)
   // these should be centered
   centerLabelHorizontally(status);
   centerLabelHorizontally(failedMessage);
+  centerLabelHorizontally(keyboardHelp);
   
   updateTeamTexture();
 }
