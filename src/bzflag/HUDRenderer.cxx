@@ -530,7 +530,7 @@ void HUDRenderer::AddLockOnMarker(const fvec3& pos, std::string name,
   lockOnMarkers.push_back(newMarker);
 }
 
-void			HUDRenderer::setRestartKeyLabel(const std::string& label)
+void			HUDRenderer::setRestartKeyLabel(const std::string& /* label */)
 {
   restartLabel = TextUtils::format(BundleMgr::getCurrentBundle()->getLocalString(restartLabelFormat).c_str());
   FontManager &fm = FontManager::instance();
