@@ -24,7 +24,6 @@
 #include "Protocol.h"
 #include "BundleMgr.h"
 #include "Bundle.h"
-//#include "global.h"
 
 // local implementation headers
 #include "HUDDialogStack.h"
