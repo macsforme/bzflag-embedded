@@ -459,6 +459,8 @@ void OnScreenKeyboardMenu::execute()
       info->callsign[CallSignLen - 1] = '\0';
       info->token[0] = '\0';
 
+      keyboardMessage[0] = '\0';
+
       HUDDialogStack::get()->pop();
     } else if (textLabel->getString() == "Password:") {
       StartupInfo* info = getStartupInfo();
@@ -466,16 +468,22 @@ void OnScreenKeyboardMenu::execute()
       info->password[PasswordLen - 1] = '\0';
       info->token[0] = '\0';
 
+      keyboardMessage[0] = '\0';
+
       HUDDialogStack::get()->pop();
     } else if (textLabel->getString() == "Server:") {
       StartupInfo* info = getStartupInfo();
       strncpy(info->serverName, enteredTextLabel->getString().c_str(), 79);
       info->serverName[79] = '\0';
 
+      keyboardMessage[0] = '\0';
+
       HUDDialogStack::get()->pop();
     } else if (textLabel->getString() == "Port:") {
       StartupInfo* info = getStartupInfo();
       info->serverPort = atoi(enteredTextLabel->getString().substr(0, 5).c_str());
+
+      keyboardMessage[0] = '\0';
 
       HUDDialogStack::get()->pop();
     }
