@@ -417,10 +417,6 @@ void			GUIOptionsMenu::resize(int _width, int _height)
     ((HUDuiList*)listHUD[i++])->setIndex(BZDB.evalInt("controlPanelTimestamp"));
     ((HUDuiList*)listHUD[i++])->setIndex(BZDB.isTrue("displayReloadTimer") ? 1
 					 : 0);
-    if (BZDB.isTrue("hideMottos"))
-      ((HUDuiList*)listHUD[i++])->setIndex(0);
-    else
-      ((HUDuiList*)listHUD[i++])->setIndex(BZDB.evalInt("mottoDispLen") / 4);
   }
 }
 
