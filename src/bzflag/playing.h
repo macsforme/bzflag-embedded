@@ -103,6 +103,8 @@ extern void joinGame();
 
 extern HUDRenderer	*hud;
 extern char		messageMessage[PlayerIdPLen + MessageLen];
+extern char		keyboardMessage[MessageLen];
+extern char		keyboardLabel[20];
 extern ServerLink*	serverLink;
 extern int		numFlags;
 extern StartupInfo	startupInfo;

@@ -95,6 +95,7 @@ bzflag_SOURCES =			\
 	motd.cxx			\
 	NewVersionMenu.cxx		\
 	NewVersionMenu.h		\
+	OnScreenKeyboardMenu.cxx	\
 	OptionsMenu.cxx			\
 	OptionsMenu.h			\
 	Player.cxx			\

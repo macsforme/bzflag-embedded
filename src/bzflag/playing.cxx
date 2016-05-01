@@ -155,6 +155,9 @@ DefaultCompleter	completer;
 
 char			messageMessage[PlayerIdPLen + MessageLen];
 
+char			keyboardMessage[MessageLen];
+char			keyboardLabel[20];
+
 double			lastObserverUpdateTime = -1;
 
 static void		setHuntTarget();

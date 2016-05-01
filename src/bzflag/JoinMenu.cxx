@@ -34,7 +34,7 @@
 JoinMenu* JoinMenu::activeMenu = NULL;
 
 
-JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL)
+JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL), onScreenKeyboardMenu(NULL)
 {
   // cache font face ID
   int fontFace = MainMenu::getFontFace();
@@ -144,6 +144,7 @@ JoinMenu::~JoinMenu()
 {
   delete serverStartMenu;
   delete serverMenu;
+  delete onScreenKeyboardMenu;
 }
 
 HUDuiDefaultKey* JoinMenu::getDefaultKey()
@@ -242,6 +243,28 @@ void JoinMenu::execute()
 
     // schedule attempt to join game
     joinGame();
+  } else if (_focus == callsign || _focus == password || _focus == server || _focus == port) {
+    if (!onScreenKeyboardMenu) onScreenKeyboardMenu = new OnScreenKeyboardMenu;
+
+    loadInfo();
+    StartupInfo* info = getStartupInfo();
+
+    if (_focus == callsign) {
+      strcpy(keyboardMessage, info->callsign);
+      strcpy(keyboardLabel, "Callsign:");
+    } else if (_focus == password) {
+      // this will be obfuscated inside
+      strcpy(keyboardMessage, info->password);
+      strcpy(keyboardLabel, "Password:");
+    } else if (_focus == server) {
+      strcpy(keyboardMessage, info->serverName);
+      strcpy(keyboardLabel, "Server:");
+    } else if (_focus == port) {
+      sprintf(keyboardMessage, "%i", info->serverPort);
+      strcpy(keyboardLabel, "Port:");
+    }
+
+    HUDDialogStack::get()->push(onScreenKeyboardMenu);
   }
 }
 

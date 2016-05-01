@@ -30,6 +30,7 @@
 #include "HUDuiList.h"
 #include "HUDuiTypeIn.h"
 #include "HUDuiTextureLabel.h"
+#include "OnScreenKeyboardMenu.h"
 
 class ServerStartMenu;
 class ServerMenu;
@@ -73,6 +74,7 @@ class JoinMenu : public HUDDialog {
     ServerStartMenu*	serverStartMenu;
     ServerMenu*		serverMenu;
     static JoinMenu*	activeMenu;
+    OnScreenKeyboardMenu* onScreenKeyboardMenu;
 };
 
 
