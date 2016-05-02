@@ -28,7 +28,7 @@ typedef struct CommandListItem {
 
 /* FIXME -- gcc is not liking array type with sizeof() without size
  * for some reason */
-extern const CmdListItem commandList[29];
+extern const CmdListItem commandList[30];
 
 #endif /* __COMMANDS_H__ */
 

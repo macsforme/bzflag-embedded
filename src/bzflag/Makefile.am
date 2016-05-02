@@ -24,6 +24,8 @@ bzflag_SOURCES =			\
 	BaseLocalPlayer.h		\
 	CacheMenu.cxx			\
 	CacheMenu.h			\
+	ChatMenu.cxx			\
+	ChatMenu.h			\
 	clientConfig.cxx		\
 	clientConfig.h			\
 	CommandsImplementation.cxx	\
@@ -96,6 +98,7 @@ bzflag_SOURCES =			\
 	NewVersionMenu.cxx		\
 	NewVersionMenu.h		\
 	OnScreenKeyboardMenu.cxx	\
+	OnScreenKeyboardMenu.h		\
 	OptionsMenu.cxx			\
 	OptionsMenu.h			\
 	Player.cxx			\

@@ -31,6 +31,7 @@
 #include "MainWindow.h"
 #include "ShotStats.h"
 #include "ControlPanel.h"
+#include "HUDDialogStack.h"
 #include "HUDRenderer.h"
 
 #include "Protocol.h"

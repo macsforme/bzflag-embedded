@@ -38,6 +38,7 @@
 /* local implementation headers */
 #include "LocalPlayer.h"
 #include "sound.h"
+#include "ChatMenu.h"
 #include "ComposeDefaultKey.h"
 #include "SilenceDefaultKey.h"
 #include "ServerCommandKey.h"
@@ -192,6 +193,11 @@ static std::string cmdCycleRadar(const std::string&,
 static std::string cmdCyclePanel(const std::string&,
 				  const CommandManager::ArgList& args, bool*);
 
+/** open the chat menu
+ */
+static std::string cmdOpenChatMenu(const std::string&,
+				  const CommandManager::ArgList& args, bool*);
+
 
 const struct CommandListItem commandList[] = {
   { "fire",		&cmdFire,		"fire:  fire a shot" },
@@ -222,7 +228,8 @@ const struct CommandListItem commandList[] = {
   { "toggleConsole",	&cmdToggleConsole,	"toggleConsole:  toggle console visibility" },
   { "toggleFlags",	&cmdToggleFlags,	"toggleFlags {main|radar}:  turn off/on field radar flags" },
   { "cycleRadar",	&cmdCycleRadar,		"cycleRadar {level1 [level2 ...] [off]}:  cycle to the next radar zoom level" },
-  { "cyclePanel",	&cmdCyclePanel,		"cyclePanel {left[_off]|right[_off]}:  cycle to the previous or next message panel tab" }
+  { "cyclePanel",	&cmdCyclePanel,		"cyclePanel {left[_off]|right[_off]}:  cycle to the previous or next message panel tab" },
+  { "openChatMenu",	&cmdOpenChatMenu,      	"openChatMenu:  open the chat menu" }
 };
 
 
@@ -1090,6 +1097,16 @@ static std::string cmdCyclePanel(const std::string&,
 	BZDB.setBool("displayConsole", false);
     }
   }
+
+  return std::string();
+}
+
+static std::string cmdOpenChatMenu(const std::string&,
+				  const CommandManager::ArgList&, bool*)
+{
+  extern ChatMenu* chatMenu;
+
+  HUDDialogStack::get()->push(chatMenu);
 
   return std::string();
 }

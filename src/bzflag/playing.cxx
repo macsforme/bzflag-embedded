@@ -69,6 +69,7 @@
 // local implementation headers
 #include "AutoPilot.h"
 #include "bzflag.h"
+#include "ChatMenu.h"
 #include "commands.h"
 #include "daylight.h"
 #include "Downloads.h"
@@ -103,6 +104,7 @@
 static const float	FlagHelpDuration = 60.0f;
 StartupInfo	startupInfo;
 static MainMenu*	mainMenu;
+ChatMenu*	chatMenu;
 ServerLink*		serverLink = NULL;
 static World	   *world = NULL;
 static LocalPlayer     *myTank = NULL;
@@ -7323,6 +7325,7 @@ void			startPlaying(BzfDisplay* _display,
 
   // prepare dialogs
   mainMenu = new MainMenu;
+  chatMenu = new ChatMenu;
 
   // normal error callback (doesn't force a redraw)
   setErrorCallback(defaultErrorCallback);
@@ -7484,6 +7487,7 @@ void			startPlaying(BzfDisplay* _display,
   while (HUDDialogStack::get()->isActive())
     HUDDialogStack::get()->pop();
   delete mainMenu;
+  delete chatMenu;
   delete sceneBuilder;
   sceneRenderer->setBackground(NULL);
   sceneRenderer->setSceneDatabase(NULL);

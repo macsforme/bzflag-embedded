@@ -33,6 +33,8 @@
 #include "TextureManager.h"
 #include "playing.h"
 #include "HUDui.h"
+#include "LocalCommand.h"
+#include "Roster.h"
 
 bool HUDuiGridLabel::doKeyPress(const BzfKeyEvent& key)
 {
@@ -362,9 +364,14 @@ void OnScreenKeyboardMenu::show()
 
 void OnScreenKeyboardMenu::dismiss()
 {
-  if (textLabel->getString() == "Callsign:" || textLabel->getString() == "Password:" || textLabel->getString() == "Server:" || textLabel->getString() == "Port:")
+  if (textLabel->getString() == "Callsign:" || textLabel->getString() == "Password:" || textLabel->getString() == "Server:" || textLabel->getString() == "Port:") {
     // clear backend variable
     keyboardMessage[0] = '\0';
+  } else {
+    // typing a message, so save it for next time
+    strncpy(keyboardMessage, enteredTextLabel->getString().c_str(), MessageLen - 1);
+    keyboardMessage[MessageLen - 1] = '\0';
+  }
 }
 
 void OnScreenKeyboardMenu::initKeyLabels()
@@ -483,6 +490,56 @@ void OnScreenKeyboardMenu::execute()
       info->serverPort = atoi(enteredTextLabel->getString().substr(0, 5).c_str());
 
       keyboardMessage[0] = '\0';
+
+      HUDDialogStack::get()->pop();
+    } else if (
+	       textLabel->getString() == "[All]:" ||
+	       textLabel->getString() == "[Team]:" ||
+	       textLabel->getString() == "[Admins]:" ||
+	       (textLabel->getString().size() > 4 && textLabel->getString().substr(0, 3) == "[->")
+	       ) {
+      if (enteredTextLabel->getString().length() > 0) {
+	const char* cmd = enteredTextLabel->getString().c_str();
+	if (LocalCommand::execute(cmd)) {
+	  ;
+	} else if (serverLink) {
+	  LocalPlayer *myTank = LocalPlayer::getMyTank();
+
+	  if(textLabel->getString() == "[All]:")
+	    nboPackUByte(messageMessage, AllPlayers);
+	  else if(textLabel->getString() == "[Team]:")
+	    nboPackUByte(messageMessage, TeamToPlayerId(myTank->getTeam()));
+	  else if (textLabel->getString() == "[Admins]:")
+	    nboPackUByte(messageMessage, AdminPlayers);
+	  else
+	  {
+	    std::string targetCallsign = textLabel->getString().substr(3, textLabel->getString().length() - 5);
+
+	    myTank->setRecipient(NULL);
+
+	    for (int i = 0; i < curMaxPlayers; i++) {
+	      if (remotePlayers[i]) {
+		if (targetCallsign == remotePlayers[i]->getCallSign()) {
+		  myTank->setRecipient(remotePlayers[i]);
+		  break;
+		}
+	      }
+	    }
+	    const Player* recipient = myTank->getRecipient();
+	    if (recipient)
+	      nboPackUByte(messageMessage, recipient->getId());
+	  }
+
+	  char messageBuffer[MessageLen];
+	  strncpy(messageBuffer, enteredTextLabel->getString().c_str(), MessageLen - 1);
+	  messageBuffer[MessageLen - 1] = '\0';
+	  nboPackString(messageMessage + PlayerIdPLen, messageBuffer,
+			MessageLen);
+	  serverLink->send(MsgMessage, sizeof(messageMessage), messageMessage);
+	}
+      }
+
+      enteredTextLabel->setString("");
 
       HUDDialogStack::get()->pop();
     }
