@@ -29,7 +29,7 @@ DefaultDBItem	defaultDBItems[] = {
   { "saveSettings",		"1",			true,	StateDatabase::ReadWrite,	NULL },
   { "udpnet",			"1",			true,	StateDatabase::ReadWrite,	NULL },
   { "timedate",			"0",			true,	StateDatabase::ReadWrite,	NULL },
-  { "motto",			"",			true,	StateDatabase::ReadWrite,	NULL },
+  { "motto",			"GCW Zero",		true,	StateDatabase::ReadWrite,	NULL },
   { "team",			"Rogue",		true,	StateDatabase::ReadWrite,	NULL },
   { "list",			DefaultListServerURL,	true,	StateDatabase::ReadWrite,	NULL },
   { "motdServer",		DefaultMOTDServer,	true,	StateDatabase::ReadWrite,	NULL },

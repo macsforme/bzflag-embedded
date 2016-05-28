@@ -61,7 +61,6 @@ class JoinMenu : public HUDDialog {
     float		center;
     HUDuiTypeIn*	callsign;
     HUDuiTypeIn*	password;
-    HUDuiTypeIn*	motto;
     HUDuiList*		team;
     HUDuiTextureLabel*  teamIcon;
     HUDuiTypeIn*	server;

@@ -112,13 +112,6 @@ JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL), onScreenKeyboard
   port->setString(buffer);
   listHUD.push_back(port);
 
-  motto = new HUDuiTypeIn;
-  motto->setFontFace(fontFace);
-  motto->setLabel("Motto:");
-  motto->setMaxLength(MottoLen - 1);
-  motto->setString(info->motto);
-  listHUD.push_back(motto);
-
   startServer = new HUDuiLabel;
   startServer->setFontFace(fontFace);
   startServer->setString("Start Server");
@@ -199,7 +192,6 @@ void JoinMenu::loadInfo()
   info->team = getTeam();
   strcpy(info->serverName, server->getString().c_str());
   info->serverPort = atoi(port->getString().c_str());
-  strcpy(info->motto, motto->getString().c_str());
 }
 
 void JoinMenu::execute()
@@ -364,7 +356,7 @@ void JoinMenu::resize(int _width, int _height)
   const float h = fm.getStrHeight(MainMenu::getFontFace(), fontSize, "");
   const int count = listHUD.size();
   for (int i = 1; i < count; i++) {
-    if(i == 12) {
+    if(i == 11) {
       listHUD[i]->setFontSize(tinyFontSize);
       y -= 0.5f * h;
     }
@@ -373,7 +365,7 @@ void JoinMenu::resize(int _width, int _height)
     listHUD[i]->setPosition(x, y);
     if (i != 5)
       y -= 1.0f * h;
-    if (i <= 2 || i == 9) y -= 0.5f * h;
+    if (i <= 2 || i == 8) y -= 0.5f * h;
   }
   
   // these should be centered
