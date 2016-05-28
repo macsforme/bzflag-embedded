@@ -23,7 +23,7 @@
 #include "HUDui.h"
 
 OptionsMenu::OptionsMenu() : guiOptionsMenu(NULL), effectsMenu(NULL),
-			     cacheMenu(NULL), saveWorldMenu(NULL),
+			     cacheMenu(NULL),
 			     inputMenu(NULL), audioMenu(NULL),
 			     displayMenu(NULL)
 {
@@ -86,11 +86,6 @@ OptionsMenu::OptionsMenu() : guiOptionsMenu(NULL), effectsMenu(NULL),
   option->update();
   listHUD.push_back(option);
 
-  saveWorld = label = new HUDuiLabel;
-  label->setFontFace(fontFace);
-  label->setLabel("Save World");
-  listHUD.push_back(label);
-
   initNavigation(listHUD, 1, listHUD.size()-1);
 }
 
@@ -99,7 +94,6 @@ OptionsMenu::~OptionsMenu()
   delete guiOptionsMenu;
   delete effectsMenu;
   delete cacheMenu;
-  delete saveWorldMenu;
   delete inputMenu;
   delete audioMenu;
   delete displayMenu;
@@ -117,9 +111,6 @@ void OptionsMenu::execute()
   } else if (_focus == cacheOptions) {
     if (!cacheMenu) cacheMenu = new CacheMenu;
     HUDDialogStack::get()->push(cacheMenu);
-  } else if (_focus == saveWorld) {
-    if (!saveWorldMenu) saveWorldMenu = new SaveWorldMenu;
-    HUDDialogStack::get()->push(saveWorldMenu);
   } else if (_focus == inputSetting) {
     if (!inputMenu) inputMenu = new InputMenu;
     HUDDialogStack::get()->push(inputMenu);
