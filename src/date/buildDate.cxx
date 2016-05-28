@@ -15,6 +15,7 @@
 
 #include "common.h"
 #include "version.h"
+#include "StateDatabase.h"
 
 /* system headers */
 #include <sstream>
@@ -107,7 +108,8 @@ const char*		getProtocolVersion()
 
 const char*		getServerVersion()
 {
-  static std::string serverVersion = std::string("BZFS") + getProtocolVersion();
+  static std::string serverVersion = ""; // no idea why, but we can't pull the server list unless this is declared static (even though it's now dynamic)...
+  serverVersion = std::string(BZDB.isSet("desktopServerList") && BZDB.evalInt("desktopServerList") ? "BZFS" : "GCW0") + getProtocolVersion();
   return serverVersion.c_str();
 }
 

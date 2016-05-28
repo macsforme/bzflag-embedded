@@ -49,6 +49,7 @@ class JoinMenu : public HUDDialog {
     void		updateTeamTexture() const;
 
   private:
+    static void		listCallback(HUDuiControl*, const void*);
     static void		teamCallback(HUDuiControl*, const void*);
     TeamColor		getTeam() const;
     void		setTeam(TeamColor);
@@ -71,6 +72,7 @@ class JoinMenu : public HUDDialog {
     HUDuiLabel*		connectLabel;
     HUDuiLabel*		failedMessage;
     HUDuiLabel*		keyboardHelp;
+    HUDuiList*		listOption;
     ServerStartMenu*	serverStartMenu;
     ServerMenu*		serverMenu;
     static JoinMenu*	activeMenu;

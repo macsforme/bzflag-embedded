@@ -112,9 +112,19 @@ JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL), onScreenKeyboard
   port->setString(buffer);
   listHUD.push_back(port);
 
-  startServer = new HUDuiLabel;
-  startServer->setFontFace(fontFace);
-  startServer->setString("Start Server");
+  //  startServer = new HUDuiLabel;
+  //  startServer->setFontFace(fontFace);
+  //  startServer->setString("Start Server");
+
+  listOption = new HUDuiList;
+  listOption->setFontFace(fontFace);
+  listOption->setLabel("Server List:");
+  listOption->setCallback(listCallback, this);
+  std::vector<std::string>& listOptions = listOption->getList();
+  listOptions.push_back(std::string("GCW Zero"));
+  listOptions.push_back(std::string("Desktop"));
+  listOption->update();
+  listHUD.push_back(listOption);
 
   status = new HUDuiLabel;
   status->setFontFace(fontFace);
@@ -296,6 +306,11 @@ void JoinMenu::setStatus(const char* msg, const std::vector<std::string> *)
   centerLabelHorizontally(status);
 }
 
+void JoinMenu::listCallback(HUDuiControl* w, const void*)
+{
+  BZDB.set("desktopServerList", ((const HUDuiList*) w)->getIndex() ? "1" : "0");
+}
+
 void JoinMenu::teamCallback(HUDuiControl*, const void* source)
 {
   ((const JoinMenu*)source)->updateTeamTexture();
@@ -356,7 +371,7 @@ void JoinMenu::resize(int _width, int _height)
   const float h = fm.getStrHeight(MainMenu::getFontFace(), fontSize, "");
   const int count = listHUD.size();
   for (int i = 1; i < count; i++) {
-    if(i == 11) {
+    if(i == 12) {
       listHUD[i]->setFontSize(tinyFontSize);
       y -= 0.5f * h;
     }
@@ -365,7 +380,7 @@ void JoinMenu::resize(int _width, int _height)
     listHUD[i]->setPosition(x, y);
     if (i != 5)
       y -= 1.0f * h;
-    if (i <= 2 || i == 8) y -= 0.5f * h;
+    if (i <= 2 || i == 8 || i == 9) y -= 0.5f * h;
   }
   
   // these should be centered
@@ -374,6 +389,8 @@ void JoinMenu::resize(int _width, int _height)
   centerLabelHorizontally(keyboardHelp);
   
   updateTeamTexture();
+  ((HUDuiList*)listHUD[9])->setIndex(BZDB.evalInt("desktopServerList"));
+
 }
 
 // Local Variables: ***

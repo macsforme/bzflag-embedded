@@ -32,6 +32,7 @@ DefaultDBItem	defaultDBItems[] = {
   { "motto",			"GCW Zero",		true,	StateDatabase::ReadWrite,	NULL },
   { "team",			"Rogue",		true,	StateDatabase::ReadWrite,	NULL },
   { "list",			DefaultListServerURL,	true,	StateDatabase::ReadWrite,	NULL },
+  { "desktopServerList",	"0",			true,	StateDatabase::ReadWrite,	NULL },
   { "motdServer",		DefaultMOTDServer,	true,	StateDatabase::ReadWrite,	NULL },
   { "volume",			"10",			true,	StateDatabase::ReadWrite,	NULL },
   { "latitude",			"37.5",			true,	StateDatabase::ReadWrite,	NULL },
