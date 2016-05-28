@@ -126,7 +126,6 @@ static bool		serverDied = false;
 bool			fireButton = false;
 bool			roamButton = false;
 static bool		firstLife = false;
-static bool		showFPS = false;
 static bool		showDrawTime = false;
 bool			pausedByUnmap = false;
 static bool		unmapped = false;
@@ -660,8 +659,8 @@ static bool doKeyCommon(const BzfKeyEvent& key, bool pressed)
       case 't':
 	// toggle frames-per-second display
 	if (pressed) {
-	  showFPS = !showFPS;
-	  if (!showFPS) {
+	  BZDB.setBool("showFPS", !BZDB.isSet("showFPS"));
+	  if (!BZDB.isSet("showFPS")) {
 	    hud->setFPS(-1.0);
 	  }
 	}
@@ -5264,7 +5263,7 @@ static void renderRoamMouse()
 static void drawUI()
 {
   // setup the triangle counts  (FIXME: hackish)
-  if (showFPS && showDrawTime) {
+  if (BZDB.isSet("showFPS") && showDrawTime) {
     hud->setFrameTriangleCount(sceneRenderer->getFrameTriangleCount());
     // NOTE:  the radar triangle count is actually from the previous frame
     if (radar) {
@@ -5465,7 +5464,7 @@ void drawFrame(const float dt)
     frameCount++;
     cumTime += float(dt);
     if (cumTime >= 2.0) {
-      if (showFPS) hud->setFPS(float(frameCount) / cumTime);
+      if (BZDB.eval("showFPS")) hud->setFPS(float(frameCount) / cumTime);
       cumTime = 0.00000001f;
       frameCount = 0;
     }

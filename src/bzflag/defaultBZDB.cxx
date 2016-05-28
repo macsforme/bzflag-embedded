@@ -207,6 +207,7 @@ DefaultDBItem	defaultDBItems[] = {
   { "mottoDispLen",		"32",			true,	StateDatabase::ReadWrite,	NULL },
   { "scoreboardSort",		"0",			true,	StateDatabase::ReadWrite,	NULL },
   { "maxScoreboardLines",	"0",			true,	StateDatabase::ReadWrite,	NULL },
+  { "showFPS",			"0",			true,	StateDatabase::ReadWrite,	NULL },
 
   // listFilters
   { "listFilter",  "",					true, StateDatabase::ReadWrite, NULL },

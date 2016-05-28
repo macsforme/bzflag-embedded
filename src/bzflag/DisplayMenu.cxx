@@ -24,9 +24,12 @@
 /* local implementation headers */
 #include "MainMenu.h"
 #include "HUDDialogStack.h"
+#include "HUDRenderer.h"
 #include "HUDuiList.h"
 #include "playing.h"
 #include "HUDui.h"
+
+extern HUDRenderer* hud;
 
 DisplayMenu::DisplayMenu() : formatMenu(NULL)
 {
@@ -254,6 +257,16 @@ DisplayMenu::DisplayMenu() : formatMenu(NULL)
     listHUD.push_back(label);
   }
 
+  option = new HUDuiList;
+  option->setFontFace(fontFace);
+  option->setLabel("Show Framerate");
+  option->setCallback(callback, "F");
+  options = &option->getList();
+  options->push_back(std::string("Off"));
+  options->push_back(std::string("On"));
+  option->update();
+  listHUD.push_back(option);
+
   initNavigation(listHUD, 1,listHUD.size()-1);
 }
 
@@ -358,6 +371,9 @@ void			DisplayMenu::resize(int _width, int _height)
 
   // energy saver
   ((HUDuiList*)listHUD[i])->setIndex(BZDB.evalInt("saveEnergy"));
+
+  // display framerate
+  ((HUDuiList*)listHUD.back())->setIndex(BZDB.evalInt("showFPS"));
 }
 
 int DisplayMenu::gammaToIndex(float gamma)
@@ -457,9 +473,16 @@ void			DisplayMenu::callback(HUDuiControl* w, const void* data) {
     getMainWindow()->getWindow()->setVerticalSync(list->getIndex() == 2);
     break;
   case 'g':
+    {
     BzfWindow* window = getMainWindow()->getWindow();
     if (window->hasGammaControl())
       window->setGamma(indexToGamma(list->getIndex()));
+    break;
+    }
+  case 'F':
+    BZDB.setBool("showFPS", (list->getIndex() != 0));
+    if(list->getIndex() == 0)
+      hud->setFPS(-1.0);
     break;
   }
 }
