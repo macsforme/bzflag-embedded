@@ -231,7 +231,7 @@ void ScoreboardRenderer::render(bool forceDisplay)
     fm.setOpacity(dimFactor);
   }
 
-  if (BZDB.isTrue("displayScore") || forceDisplay){
+  if (BZDB.isTrue("displayConsole") || forceDisplay){
     OpenGLGState::resetState();
     renderScoreboard();
   } else {
