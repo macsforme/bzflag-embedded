@@ -800,6 +800,14 @@ int			main(int argc, char** argv)
 
   ServerListCache::get()->loadCache();
 
+  // hack for GCW Zero crash when texturing is turned off
+  if (startupInfo.hasConfiguration) {
+    if (BZDB.isSet("texture") && BZDB.get("texture") == "no") {
+      TextureManager& tm = TextureManager::instance();
+      BZDB.set("texture", tm.getMaxFilterName());
+    }
+  }
+
   // restore some configuration (command line overrides these)
   if (startupInfo.hasConfiguration) {
     if (BZDB.isSet("callsign")) {
