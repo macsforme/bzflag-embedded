@@ -118,7 +118,7 @@ JoinMenu::JoinMenu() : serverStartMenu(NULL), serverMenu(NULL), onScreenKeyboard
 
   listOption = new HUDuiList;
   listOption->setFontFace(fontFace);
-  listOption->setLabel("Server List:");
+  listOption->setLabel("Protocol:");
   listOption->setCallback(listCallback, this);
   std::vector<std::string>& listOptions = listOption->getList();
   listOptions.push_back(std::string("GCW Zero"));
