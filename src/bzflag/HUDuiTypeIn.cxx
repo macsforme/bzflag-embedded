@@ -82,78 +82,20 @@ void			HUDuiTypeIn::setEditing(bool _allowEdit)
 
 bool			HUDuiTypeIn::doKeyPress(const BzfKeyEvent& key)
 {
-  static const char backspace = '\b';	// ^H
-  static const char whitespace = ' ';
-
   if (!allowEdit) return false; //or return true ??
-  char c = key.ascii;
-  if (c == 0){
-		switch (key.button) {
-		case BzfKeyEvent::Up:
-		  HUDui::setFocus(getPrev());
-		  return true;
 
-		case BzfKeyEvent::Down:
-		  HUDui::setFocus(getNext());
-		  return true;
+  switch (key.button) {
+  case BzfKeyEvent::Up:
+    HUDui::setFocus(getPrev());
+    return true;
 
-		case BzfKeyEvent::Left:
-		  if (cursorPos > 0)
-		cursorPos--;
-		  return true;
+  case BzfKeyEvent::Down:
+    HUDui::setFocus(getNext());
+    return true;
 
-		case BzfKeyEvent::Right:
-		  if (cursorPos < (int)string.length())
-		cursorPos++;
-		  return true;
-
-		case BzfKeyEvent::Home:
-		  cursorPos = 0;
-		  return true;
-
-		case BzfKeyEvent::End:
-		  cursorPos = string.length();
-		  return true;
-
-		case BzfKeyEvent::Backspace:
-		  c = backspace;
-		  break;
-
-		case BzfKeyEvent::Delete:
-		  if (cursorPos < (int)string.length()) {
-		cursorPos++;
-		c = backspace;
-		  } else {
-		return true;
-		  }
-		  break;
-
-		default:
-		  return false;
-	  }
-  }
-
-  if (c >0 && (!isprint(c) && c != backspace))
+  default:
     return false;
-
-  if (c == backspace) {
-    if (cursorPos == 0)
-		return true;
-
-    cursorPos--;
-    string = string.substr(0, cursorPos) + string.substr(cursorPos + 1, string.length() - cursorPos + 1);
-    onSetFont();
-  } else if (c > 0) {
-    if (isspace(c))
-		c = whitespace;
-    if ((int)string.length() == maxLength)
-		return true;
-
-    string = string.substr(0, cursorPos) + c + string.substr( cursorPos, string.length() - cursorPos);
-    cursorPos++;
-    onSetFont();
   }
-  return true;
 }
 
 bool			HUDuiTypeIn::doKeyRelease(const BzfKeyEvent& key)
