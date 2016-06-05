@@ -83,7 +83,7 @@ ActionBinding::ActionBinding() {
   wayToBindActions.insert(std::make_pair(std::string("toggle slowKeyboard"), press));
   wayToBindActions.insert(std::make_pair(std::string("hunt"), press));
   wayToBindActions.insert(std::make_pair(std::string("addhunt"), press));
-  wayToBindActions.insert(std::make_pair(std::string("restart"), release));
+  wayToBindActions.insert(std::make_pair(std::string("restart"), press));
   wayToBindActions.insert(std::make_pair(std::string("autopilot"), press));
   wayToBindActions.insert(std::make_pair(std::string("cycleRadar"), press));
   wayToBindActions.insert(std::make_pair(std::string("cyclePanel"), press));
