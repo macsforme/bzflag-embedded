@@ -94,7 +94,7 @@ ActionBinding::ActionBinding() {
   wayToBindActions.insert(std::make_pair(std::string("messagepanel misc"), press));
 
   defaultBinding.insert(BindingTable::value_type("Enter", "restart"));
-  defaultBinding.insert(BindingTable::value_type("Space", "cycleRadar 0.25 1 0.5"));
+  defaultBinding.insert(BindingTable::value_type("Space", "cycleRadar"));
   defaultBinding.insert(BindingTable::value_type("Ctrl+Space", "openChatMenu"));
   defaultBinding.insert(BindingTable::value_type("Backspace", "fire"));
   defaultBinding.insert(BindingTable::value_type("Ctrl+Backspace", "identify"));

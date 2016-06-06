@@ -1003,21 +1003,42 @@ static std::string cmdAddHunt(const std::string&,
 }
 
 static std::string cmdCycleRadar(const std::string&,
-				  const CommandManager::ArgList& args, bool*)
+				 const CommandManager::ArgList& /* args */, bool*)
 {
   const std::string usageText = "usage: cycleRadar {level1 [level2 ...] [off]}:  cycle to the next radar zoom level";
 
+/*
   if (args.size() == 0)
     return usageText;
+*/
 
+  // dirty hack necessitated by the performance implications of BZDB lookups
+  static unsigned int currentIndex = 0;
+
+  // set the next size
+  switch (currentIndex) {
+  case 0:
+    BZDB.setFloat("displayRadarRange", 0.25f);
+    break;
+  case 1:
+    BZDB.setFloat("displayRadarRange", 1.0f);
+    break;
+  case 2:
+    BZDB.setFloat("displayRadarRange", 0.5f);
+    break;
+  }
+
+  ++currentIndex;
+  if (currentIndex > 2)
+    currentIndex = 0;
+
+/*
   std::vector<float> radarLevels;
 
   for (size_t i = 0; i < args.size(); ++i)
-    // the BZDB lookup to see if radar is off really lags the GCW Zero, so disabling the off option...
-//    if (args[i] == "off")
-//      radarLevels.push_back(0.0f);
-//    else 
-    if (atof(args[i].c_str()) > 0.0f)
+    if (args[i] == "off")
+      radarLevels.push_back(0.0f);
+    else if (atof(args[i].c_str()) > 0.0f)
       radarLevels.push_back((float)atof(args[i].c_str()));
     else
       return usageText;
@@ -1038,15 +1059,12 @@ static std::string cmdCycleRadar(const std::string&,
   static size_t radarLevelIndex = radarLevels.size() - 1;
 
   // if it's off and the current level is some form of on, turn it back on and set it
-  // again, disabling the off option...
-  /*
   if (BZDB.get("displayRadar") == "0" && radarLevels[radarLevelIndex] > 0.0f) {
     BZDB.set("displayRadar", "1");
     BZDB.setFloat("displayRadarRange", radarLevels[radarLevelIndex]);
 
     return std::string();
   }
-  */
 
   ++radarLevelIndex;
   if (radarLevelIndex >= radarLevels.size())
@@ -1058,6 +1076,7 @@ static std::string cmdCycleRadar(const std::string&,
     BZDB.setFloat("displayRadarRange", radarLevels[radarLevelIndex]);
     BZDB.set("displayRadar", "1");
   }
+*/
 
   return std::string();
 }
