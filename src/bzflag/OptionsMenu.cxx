@@ -111,9 +111,11 @@ void OptionsMenu::execute()
   } else if (_focus == cacheOptions) {
     if (!cacheMenu) cacheMenu = new CacheMenu;
     HUDDialogStack::get()->push(cacheMenu);
+    /*
   } else if (_focus == inputSetting) {
     if (!inputMenu) inputMenu = new InputMenu;
     HUDDialogStack::get()->push(inputMenu);
+    */
   } else if (_focus == audioSetting) {
     if (!audioMenu) audioMenu = new AudioMenu;
     HUDDialogStack::get()->push(audioMenu);

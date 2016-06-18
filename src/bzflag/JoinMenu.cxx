@@ -207,12 +207,15 @@ void JoinMenu::loadInfo()
 void JoinMenu::execute()
 {
   HUDuiControl* _focus = HUDui::getFocus();
+  /*
   if (_focus == startServer) {
 
     if (!serverStartMenu) serverStartMenu = new ServerStartMenu;
     HUDDialogStack::get()->push(serverStartMenu);
 
-  } else if (_focus == findServer) {
+  } else
+  */
+  if (_focus == findServer) {
 
     if (!serverMenu) serverMenu = new ServerMenu;
     HUDDialogStack::get()->push(serverMenu);
