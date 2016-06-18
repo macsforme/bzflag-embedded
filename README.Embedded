@@ -187,7 +187,7 @@ $ # Retrieve and build GLU for OpenGL ES
 $ git clone https://github.com/macsforme/glues.git
 $ cd glues
 $ ./autogen.sh
-$ ./configure --host=mips --prefix=$DEPS_DIR
+$ ./configure --host=mipsel-gcw0-linux --disable-shared --prefix=$DEPS_DIR
 $ make -j`nproc`
 $ make install
 $ cd ..
@@ -196,7 +196,7 @@ $ # Retrieve and build c-ares (substitute the latest version)
 $ wget http://c-ares.haxx.se/download/c-ares-1.10.0.tar.gz
 $ tar -xzf c-ares-1.10.0.tar.gz
 $ cd c-ares-1.10.0
-$ ./configure --host=mips --prefix=$DEPS_DIR
+$ ./configure --host=mipsel-gcw0-linux --disable-shared --prefix=$DEPS_DIR
 $ make -j`nproc`
 $ make install
 $ cd ..
@@ -205,7 +205,8 @@ $ # Retrieve and build libcurl (substitute the latest version)
 $ wget http://curl.haxx.se/download/curl-7.45.0.tar.bz2
 $ tar -xjf curl-7.45.0.tar.bz2
 $ cd curl-7.45.0
-$ ./configure --host=mips --prefix=$DEPS_DIR --enable-ares=$DEPS_DIR \
+$ ./configure --host=mipsel-gcw0-linux --disable-shared --prefix=$DEPS_DIR \
+	--enable-ares=$DEPS_DIR \
 	--with-ssl=/opt/gcw0-toolchain/usr/mipsel-gcw0-linux-uclibc/sysroot
 $ make -j`nproc`
 $ make install
@@ -215,8 +216,8 @@ $ # Retrieve and build BZFlag for Embedded Devices
 $ git clone https://github.com/macsforme/bzflag-embedded.git -b gcw0
 $ cd bzflag-embedded
 $ ./autogen.sh
-$ ./configure --host=mips --prefix=$BUILD_DIR --with-gles --disable-plugins \
-	--with-libcurl=$DEPS_DIR \
+$ ./configure --host=mipsel-gcw0-linux --prefix=$BUILD_DIR --with-gles \
+	--disable-plugins --with-libcurl=$DEPS_DIR \
 	--with-sdl-prefix=/opt/gcw0-toolchain/usr/mipsel-gcw0-linux-uclibc/sysroot/usr
 $ make -j`nproc`
 $ make install
