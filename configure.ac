@@ -59,7 +59,30 @@ fi
 AC_CONFIG_AUX_DIR(misc)
 
 CONF_DATE=`date -u +%Y-%m-%d`
-MANUAL_DATE=2016-04-01
+# https://reproducible-builds.org/specs/source-date-epoch/
+if test -z "$SOURCE_DATE_EPOCH"; then
+    BUILD_DATE=$CONF_DATE
+else
+    # accept any numeric value
+    if expr 0 + "$SOURCE_DATE_EPOCH" > /dev/null ; then
+	BUILD_DATE=`date -u -d "@$SOURCE_DATE_EPOCH" +%Y-%m-%d 2> /dev/null`
+	# try using perl if the date command fails
+	if test -z "$BUILD_DATE"; then
+	    BUILD_DATE=`perl -le "use POSIX; print strftime '%Y-%m-%d', gmtime '$SOURCE_DATE_EPOCH'"`
+	fi
+    else
+	AC_MSG_ERROR([Invalid SOURCE_DATE_EPOCH value])
+    fi
+fi
+case "$BUILD_DATE" in
+    # double square brackets because of m4
+    [[0-9]][[0-9]][[0-9]][[0-9]]-[[01]][[0-9]]-[[0-3]][[0-9]])
+	# looks like YYYY-MM-DD
+	;;
+    *)
+	AC_MSG_ERROR([Failed to set BUILD_DATE])
+	;;
+esac
 
 # print out the title with a pretty box computed to wrap around
 title="Configuring $PACKAGE_STRING on $CONF_DATE"
@@ -87,7 +110,9 @@ dnl all configured definitions get written here
 AC_CONFIG_HEADERS([include/config.h])
 
 AC_SUBST(PACKAGE_STRING)
-AC_SUBST(MANUAL_DATE)
+AC_SUBST(BUILD_DATE)
+AC_DEFINE_UNQUOTED(BUILD_DATE, "$BUILD_DATE", [BZFlag build date])
+
 
 # Let the C++ code know about OS
 AC_DEFINE_UNQUOTED(BZ_BUILD_OS, "$host_os", [BZFlag System Environment])
@@ -1238,6 +1263,7 @@ AC_MSG_RESULT([           Binaries: ${bindir}])
 AC_MSG_RESULT([            Plugins: ${libdir}])
 AC_MSG_RESULT([       Manual pages: ${mandir}])
 AC_MSG_RESULT([])
+AC_MSG_RESULT([BUILD_DATE    = ${BUILD_DATE}])
 AC_MSG_RESULT([CC            = ${CC}])
 AC_MSG_RESULT([CXX           = ${CXX}])
 AC_MSG_RESULT([CFLAGS        = ${CFLAGS}])
