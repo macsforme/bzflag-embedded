@@ -54,7 +54,7 @@
 #endif
 
 #ifndef BZ_EMBEDDED_VERSION
-#  define BZ_EMBEDDED_VERSION	1
+#  define BZ_EMBEDDED_VERSION	2
 #endif
 
 // DEVEL | RC# | STABLE | MAINT
