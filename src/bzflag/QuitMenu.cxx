@@ -46,7 +46,7 @@ QuitMenu::QuitMenu()
 
   label = new HUDuiLabel;
   label->setFontFace(MainMenu::getFontFace());
-  label->setString("Enter to quit, Esc to resume");
+  label->setString("Start to quit, Select to resume");
   listHUD.push_back(label);
 
   label = new HUDuiLabel;
