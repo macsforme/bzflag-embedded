@@ -229,14 +229,10 @@ bool SDLDisplay::getKey(const SDL_Event& sdlEvent, BzfKeyEvent& key, bool isDown
     break;
   case SDLK_PAUSE:
     // lock
-    key.button = BzfKeyEvent::Pause;
-
-    break;
+    return false;
   case SDLK_HOME:
     // power
-    key.button = BzfKeyEvent::Home;
-
-    break;
+    return false;
   case SDLK_F6:
     // fake F6
     key.button = BzfKeyEvent::F6;
